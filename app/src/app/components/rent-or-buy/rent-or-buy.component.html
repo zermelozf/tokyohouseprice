@@ -1,0 +1,206 @@
+<div class="calculator-container">
+  <div class="interactive-article">
+    <div class="form-section">
+      <div class="section-header">
+        <h2>1. The Property to Buy</h2>
+        <div class="expert-mode-toggle">
+          <label for="expertModeBuy">Expert Mode</label>
+          <input type="checkbox" id="expertModeBuy" [(ngModel)]="expertModeBuy">
+        </div>
+      </div>
+      <p class="section-description">Let's start with the property you're considering. In simple mode, just provide the total price. In expert mode, you can specify land and building prices separately, along with other details.</p>
+
+      <!-- Simple Mode -->
+      <div *ngIf="!expertModeBuy">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Property Price</label>
+            <input type="number" [ngModel]="buy.propertyPrice" (ngModelChange)="onPropertyPriceChange($event)">
+          </div>
+          <div class="form-group">
+            <label>Building Age</label>
+            <input type="number" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Building Type</label>
+            <select [(ngModel)]="buy.buildingType" (ngModelChange)="onFormChange()">
+              <option *ngFor="let type of buildingTypes" [value]="type">{{type}}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expert Mode -->
+      <div *ngIf="expertModeBuy">
+        <div class="form-row">
+          <div class="form-group">
+            <label>House Price</label>
+            <input type="number" [(ngModel)]="buy.housePrice" (ngModelChange)="onExpertBuyChange()">
+          </div>
+          <div class="form-group">
+            <label>Land Price</label>
+            <input type="number" [(ngModel)]="buy.landPrice" (ngModelChange)="onExpertBuyChange()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Maintenance (%)</label>
+            <input type="number" [(ngModel)]="buy.maintenance" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group">
+            <label>Property Tax (%)</label>
+            <input type="number" [(ngModel)]="buy.propertyTax" (ngModelChange)="onFormChange()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Building Age</label>
+            <input type="number" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group">
+            <label>Amortization Period (computed)</label>
+            <input type="number" [value]="amortizationPeriod" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fee Rate (%)</label>
+            <input type="number" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group">
+            <label>Building Type</label>
+            <select [(ngModel)]="buy.buildingType" (ngModelChange)="onFormChange()">
+              <option *ngFor="let type of buildingTypes" [value]="type">{{type}}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-header">
+        <h2>2. The Loan</h2>
+      </div>
+      <p class="section-description">If you're buying, you'll likely need a loan. Provide the details here.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Loan Period</label>
+          <input type="number" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onFormChange()">
+        </div>
+        <div class="form-group">
+          <label>Loan Fee (%)</label>
+          <input type="number" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Loan Rate (%)</label>
+          <input type="number" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()">
+        </div>
+        <div class="form-group">
+          <label>Upfront Amount (%)</label>
+          <input type="number" [(ngModel)]="loan.upfrontAmount" (ngModelChange)="onFormChange()">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-header">
+        <h2>3. The Rental Option</h2>
+        <div class="expert-mode-toggle">
+          <label for="expertModeRent">Expert Mode</label>
+          <input type="checkbox" id="expertModeRent" [(ngModel)]="expertModeRent">
+        </div>
+      </div>
+      <p class="section-description">Now, what would it cost to rent a comparable place?</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Monthly Rent</label>
+          <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onFormChange()">
+        </div>
+        <div class="form-group" *ngIf="expertModeRent">
+          <label>Gift Money</label>
+          <input type="number" [(ngModel)]="rent.giftMoney" (ngModelChange)="onFormChange()">
+        </div>
+      </div>
+      <div class="form-row" *ngIf="expertModeRent">
+        <div class="form-group">
+          <label>Guarantee</label>
+          <input type="number" [(ngModel)]="rent.guarantee" (ngModelChange)="onFormChange()">
+        </div>
+        <div class="form-group">
+          <label>Renewal Fee (months)</label>
+          <input type="number" [(ngModel)]="rent.renewal" (ngModelChange)="onFormChange()">
+        </div>
+      </div>
+    </div>
+
+    <div class="results-section">
+
+    <div class="form-section">
+      <div class="section-header">
+        <h2>4. Macro-Economic Factors</h2>
+      </div>
+      <p class="section-description">Finally, let's consider some bigger economic factors that can influence your decision over the long term. These are advanced inputs.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Inflation Rate (%)</label>
+          <input type="number" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()">
+        </div>
+        <div class="form-group">
+          <label>Land Appreciation (%)</label>
+          <input type="number" [(ngModel)]="macro.landAppreciation" (ngModelChange)="onFormChange()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Opportunity Cost (%)</label>
+          <input type="number" [(ngModel)]="macro.opportunityCost" (ngModelChange)="onFormChange()">
+        </div>
+        <div class="form-group">
+          <label>Simulation Years</label>
+          <input type="number" [(ngModel)]="macro.simulationYears" (ngModelChange)="onFormChange()">
+        </div>
+      </div>
+    </div>
+
+    <!-- NPV Analysis Section -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2>6. NPV Analysis</h2>
+      </div>
+      <p class="section-description">This analysis shows the Net Present Value (NPV) and Internal Rate of Return (IRR) for buying versus renting over time.</p>
+      
+      <div *ngIf="isLoading" class="loading-indicator">
+        <p>Calculating NPV analysis...</p>
+      </div>
+      
+      <div *ngIf="error" class="error-message">
+        <p>{{ error }}</p>
+      </div>
+      
+      <div class="charts-container">
+        <div class="chart-wrapper">
+          <canvas #npvChart></canvas>
+          <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+            NPV chart will appear here after calculation
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #irrChart></canvas>
+          <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+            IRR chart will appear here after calculation
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #cashflowChart></canvas>
+          <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+            Cashflow chart will appear here after calculation
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

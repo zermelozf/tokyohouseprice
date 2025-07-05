@@ -32,14 +32,30 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
                i18n="@@nav.calculator">
               Calculator
             </a>
-            <a routerLink="/article" 
-               class="navbar-item" 
-               routerLinkActive="active" 
-               [routerLinkActiveOptions]="{exact: false}"
-               (click)="closeMenu()"
-               i18n="@@nav.article">
-              Article
-            </a>
+            
+            <div class="nav-item dropdown" (mouseleave)="closeBlogMenu()">
+              <button class="navbar-item dropdown-toggle" (click)="toggleBlogMenu()">
+                Blog <span class="arrow-down" [class.open]="isBlogMenuOpen"></span>
+              </button>
+              <div class="dropdown-menu" *ngIf="isBlogMenuOpen">
+                <a routerLink="/article" 
+                   class="dropdown-item" 
+                   routerLinkActive="active" 
+                   [routerLinkActiveOptions]="{exact: false}"
+                   (click)="closeMenu()"
+                   i18n="@@nav.article">
+                  Market Analysis
+                </a>
+                <a routerLink="/rentorbuy"
+                   class="dropdown-item"
+                   routerLinkActive="active"
+                   [routerLinkActiveOptions]="{exact: true}"
+                   (click)="closeMenu()"
+                   i18n="@@nav.rentorbuy">
+                  Rent vs Buy
+                </a>
+              </div>
+            </div>
           </div>
 
           <div class="language-switcher">
@@ -114,6 +130,70 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
     }
 
     .navbar-item.active {
+      color: #FF69B4;
+      background-color: #FFF0F5;
+    }
+
+    .nav-item.dropdown {
+      position: relative;
+    }
+
+    .dropdown-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: 500;
+      color: #666;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .arrow-down {
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid #666;
+      transition: all 0.2s ease;
+    }
+
+    .arrow-down.open {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-toggle:hover .arrow-down {
+      border-top-color: #FF69B4;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 0.5rem;
+      min-width: 200px;
+      z-index: 1001;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .dropdown-item {
+      text-decoration: none;
+      color: #666;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .dropdown-item:hover, .dropdown-item.active {
       color: #FF69B4;
       background-color: #FFF0F5;
     }
@@ -265,6 +345,7 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
 export class NavbarComponent implements OnInit {
   currentLang: string;
   isMenuOpen = false;
+  isBlogMenuOpen = false;
 
   constructor(private languageService: LanguageService) {
     this.currentLang = this.languageService.getCurrentLang();
@@ -283,5 +364,14 @@ export class NavbarComponent implements OnInit {
 
   closeMenu() {
     this.isMenuOpen = false;
+    this.isBlogMenuOpen = false;
+  }
+
+  toggleBlogMenu() {
+    this.isBlogMenuOpen = !this.isBlogMenuOpen;
+  }
+
+  closeBlogMenu() {
+    this.isBlogMenuOpen = false;
   }
 } 
