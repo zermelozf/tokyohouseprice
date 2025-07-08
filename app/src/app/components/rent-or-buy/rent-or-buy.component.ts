@@ -66,6 +66,12 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   expertModeBuy = true;
   expertModeRent = false;
   
+  // Collapse states for each section
+  isPropertyCollapsed = false;
+  isLoanCollapsed = false;
+  isRentCollapsed = false;
+  isEconomicCollapsed = false;
+  
   cashFlowData: CashFlow[] = [];
   isLoading = false;
   error: string | null = null;
@@ -78,10 +84,8 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     propertyTax: 1.4,
     buildingAge: 0,
     feeRate: 3.5,
-    buildingType: 'Light Steel'
+    amortizationPeriod: 35
   };
-
-  buildingTypes = ['Wood', 'Concrete', 'Light Steel'];
 
   rent = {
     monthlyRent: 25,
@@ -123,6 +127,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     setTimeout(() => {
       console.log('ngAfterViewInit - attempting to calculate NPV');
       console.log('Chart refs available:', !!this.npvChartRef, !!this.irrChartRef, !!this.cashflowChartRef);
+      this.updateSliderStyles();
       this.calculateNpv();
     }, 100);
   }
@@ -156,7 +161,54 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
 
   onFormChange(): void {
     console.log('onFormChange called');
+    this.updateSliderStyles();
     this.triggerFormChange();
+  }
+
+  private updateSliderStyles(): void {
+    // Update CSS custom properties for slider fill effect
+    const sliders = [
+      // Property sliders
+      { value: this.buy.amortizationPeriod, min: 0, max: 50 },
+      { value: this.buy.buildingAge, min: 0, max: 50 },
+      { value: this.buy.maintenance, min: 0, max: 5 },
+      { value: this.buy.propertyTax, min: 0, max: 3 },
+      { value: this.buy.feeRate, min: 0, max: 10 },
+      // Loan sliders
+      { value: this.loan.loanPeriod, min: 1, max: 50 },
+      { value: this.loan.loanFee, min: 0, max: 5 },
+      { value: this.loan.loanRate, min: 0, max: 10 },
+      { value: this.loan.upfrontAmount, min: 0, max: 100 },
+      // Economic factors sliders
+      { value: this.macro.inflationRate, min: 0, max: 10 },
+      { value: this.macro.landAppreciation, min: -5, max: 15 },
+      { value: this.macro.opportunityCost, min: 0, max: 15 }
+    ];
+
+    const rangeInputs = document.querySelectorAll('input[type="range"]');
+    rangeInputs.forEach((slider, index) => {
+      if (sliders[index]) {
+        const { value, min, max } = sliders[index];
+        const percentage = ((value - min) / (max - min)) * 100;
+        (slider as HTMLElement).style.setProperty('--fill-percentage', `${percentage}%`);
+      }
+    });
+  }
+
+  togglePropertySection(): void {
+    this.isPropertyCollapsed = !this.isPropertyCollapsed;
+  }
+
+  toggleLoanSection(): void {
+    this.isLoanCollapsed = !this.isLoanCollapsed;
+  }
+
+  toggleRentSection(): void {
+    this.isRentCollapsed = !this.isRentCollapsed;
+  }
+
+  toggleEconomicSection(): void {
+    this.isEconomicCollapsed = !this.isEconomicCollapsed;
   }
 
   private triggerFormChange(): void {
@@ -165,7 +217,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   private mapToNpvParams(): NpvParams {
-    const houseValue = this.buy.housePrice * Math.max(0, 1 - this.buy.buildingAge / this.amortizationPeriod);
+    const houseValue = this.buy.housePrice * Math.max(0, 1 - this.buy.buildingAge / this.buy.amortizationPeriod);
     const totalPropertyValue = (houseValue + this.buy.landPrice) * 10000;
     const brokerFees = totalPropertyValue * (this.buy.feeRate / 100);
     const totalCostWithFees = totalPropertyValue + brokerFees;
@@ -185,7 +237,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
         house_value: this.buy.housePrice * 10000,
         land_value: this.buy.landPrice * 10000,
         house_age: this.buy.buildingAge,
-        fully_amortized_age: this.amortizationPeriod,
+        fully_amortized_age: this.buy.amortizationPeriod,
         appreciation_rate: this.macro.landAppreciation / 100,
         maintenance_rate: this.buy.maintenance / 100
       },
@@ -478,18 +530,5 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
 
   get monthlyRentCost(): number {
     return this.rent.monthlyRent;
-  }
-
-  get amortizationPeriod(): number {
-    switch (this.buy.buildingType) {
-      case 'Wood':
-        return 22;
-      case 'Light Steel':
-        return 34;
-      case 'Concrete':
-        return 47;
-      default:
-        return 34; // Default to Wood
-    }
   }
 }
