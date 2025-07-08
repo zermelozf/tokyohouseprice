@@ -29,8 +29,17 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
                routerLinkActive="active" 
                [routerLinkActiveOptions]="{exact: true}"
                (click)="closeMenu()" 
-               i18n="@@nav.calculator">
-              Calculator
+               i18n="@@nav.house-pricer">
+              House Pricer
+            </a>
+            
+            <a routerLink="/rentorubuy"
+               class="navbar-item"
+               routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact: true}"
+               (click)="closeMenu()"
+               i18n="@@nav.rentorbuy">
+              Rent vs Buy
             </a>
             
             <div class="nav-item dropdown" (mouseleave)="closeBlogMenu()">
@@ -45,14 +54,6 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
                    (click)="closeMenu()"
                    i18n="@@nav.article">
                   Market Analysis
-                </a>
-                <a routerLink="/rentorbuy"
-                   class="dropdown-item"
-                   routerLinkActive="active"
-                   [routerLinkActiveOptions]="{exact: true}"
-                   (click)="closeMenu()"
-                   i18n="@@nav.rentorbuy">
-                  Rent vs Buy
                 </a>
               </div>
             </div>

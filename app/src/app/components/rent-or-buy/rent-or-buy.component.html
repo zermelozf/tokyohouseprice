@@ -18,16 +18,25 @@
             <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group">
-            <label>Gift Money (万円)</label>
+            <label>
+              Gift Money (万円)
+              <span class="info-icon" title="Money given by landlord as incentive, typically 1-2 months rent">?</span>
+            </label>
             <input type="number" [(ngModel)]="rent.giftMoney" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group">
             <label>Guarantee (万円)</label>
             <input type="number" [(ngModel)]="rent.guarantee" (ngModelChange)="onFormChange()">
           </div>
-          <div class="form-group">
-            <label>Renewal Fee (months)</label>
-            <input type="number" [(ngModel)]="rent.renewal" (ngModelChange)="onFormChange()">
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Rent Inflation:
+                <span class="info-icon" title="Annual rate at which rent is expected to increase over time">?</span>
+              </span>
+              <span class="label-value">{{macro.inflationRate}}%</span>
+            </label>
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()">
           </div>
         </div>
         
@@ -55,7 +64,10 @@
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Amortization Period:</span>
+              <span class="label-text">
+                Amortization Period:
+                <span class="info-icon" title="Number of years over which the building's value will depreciate to zero">?</span>
+              </span>
               <span class="label-value">{{buy.amortizationPeriod}} years</span>
             </label>
             <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod" (ngModelChange)="onFormChange()">
@@ -69,7 +81,10 @@
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Maintenance:</span>
+              <span class="label-text">
+                Maintenance:
+                <span class="info-icon" title="Annual maintenance cost as percentage of property value (repairs, renovations, etc.)">?</span>
+              </span>
               <span class="label-value">{{buy.maintenance}}%</span>
             </label>
             <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance" (ngModelChange)="onFormChange()">
@@ -83,7 +98,10 @@
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Agent Fee:</span>
+              <span class="label-text">
+                Agent Fee:
+                <span class="info-icon" title="Real estate agent commission fee, typically 3-6% of purchase price">?</span>
+              </span>
               <span class="label-value">{{buy.feeRate}}%</span>
             </label>
             <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()">
@@ -112,6 +130,14 @@
             <canvas #npvChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               NPV chart will appear here after calculation
+            </div>
+          </div>
+          
+          <div class="chart-wrapper">
+            <h4>Cumulative Costs: Rent vs Buy</h4>
+            <canvas #cumulativeCostChart></canvas>
+            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+              Cumulative cost chart will appear here after calculation
             </div>
           </div>
           
@@ -156,21 +182,30 @@
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Loan Fee:</span>
+              <span class="label-text">
+                Loan Fee:
+                <span class="info-icon" title="One-time processing fee charged by the bank for mortgage origination">?</span>
+              </span>
               <span class="label-value">{{loan.loanFee}}%</span>
             </label>
             <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Loan Rate:</span>
+              <span class="label-text">
+                Loan Rate:
+                <span class="info-icon" title="Annual interest rate charged on the mortgage loan">?</span>
+              </span>
               <span class="label-value">{{loan.loanRate}}%</span>
             </label>
             <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Down Payment:</span>
+              <span class="label-text">
+                Down Payment:
+                <span class="info-icon" title="Percentage of property price paid upfront, not financed through mortgage">?</span>
+              </span>
               <span class="label-value">{{loan.upfrontAmount}}%</span>
             </label>
             <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount" (ngModelChange)="onFormChange()">
@@ -193,21 +228,20 @@
         <div class="section-content" [class.collapsed]="isEconomicCollapsed">
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Rent Inflation:</span>
-              <span class="label-value">{{macro.inflationRate}}%</span>
-            </label>
-            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()">
-          </div>
-          <div class="form-group range-group">
-            <label>
-              <span class="label-text">House Appreciation:</span>
+              <span class="label-text">
+                House Appreciation:
+                <span class="info-icon" title="Annual rate at which property value is expected to increase (can be negative)">?</span>
+              </span>
               <span class="label-value">{{macro.landAppreciation}}%</span>
             </label>
             <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group range-group">
             <label>
-              <span class="label-text">Opportunity Cost:</span>
+              <span class="label-text">
+                Opportunity Cost:
+                <span class="info-icon" title="Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)">?</span>
+              </span>
               <span class="label-value">{{macro.opportunityCost}}%</span>
             </label>
             <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost" (ngModelChange)="onFormChange()">

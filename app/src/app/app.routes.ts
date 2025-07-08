@@ -8,11 +8,12 @@ import { RentOrBuyComponent } from './components/rent-or-buy/rent-or-buy.compone
 // Define shared routes that will be used for both languages
 const sharedRoutes: Routes = [
   { path: '', component: PriceCalculatorComponent },
+  { path: 'calculator', component: PriceCalculatorComponent },
   { path: 'map', component: TokyoMapComponent },
   { path: 'nakano', component: NakanoMapComponent },
   { path: 'article', component: HousePriceArticleComponent },
   { path: 'story', component: HousePriceArticleComponent },
-  { path: 'rentorbuy', component: RentOrBuyComponent },
+  { path: 'rentorubuy', component: RentOrBuyComponent },
 ];
 
 export const routes: Routes = [

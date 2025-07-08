@@ -53,10 +53,12 @@ interface NpvParams {
 })
 export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   @ViewChild('npvChart') npvChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('cumulativeCostChart') cumulativeCostChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('irrChart') irrChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('cashflowChart') cashflowChartRef!: ElementRef<HTMLCanvasElement>;
   
   private npvChart: Chart | null = null;
+  private cumulativeCostChart: Chart | null = null;
   private irrChart: Chart | null = null;
   private cashflowChart: Chart | null = null;
   private destroy$ = new Subject<void>();
@@ -126,7 +128,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     // Wait a bit for the view to be fully rendered
     setTimeout(() => {
       console.log('ngAfterViewInit - attempting to calculate NPV');
-      console.log('Chart refs available:', !!this.npvChartRef, !!this.irrChartRef, !!this.cashflowChartRef);
+      console.log('Chart refs available:', !!this.npvChartRef, !!this.cumulativeCostChartRef, !!this.irrChartRef, !!this.cashflowChartRef);
       this.updateSliderStyles();
       this.calculateNpv();
     }, 100);
@@ -138,6 +140,9 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     
     if (this.npvChart) {
       this.npvChart.destroy();
+    }
+    if (this.cumulativeCostChart) {
+      this.cumulativeCostChart.destroy();
     }
     if (this.irrChart) {
       this.irrChart.destroy();
@@ -167,20 +172,25 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
 
   private updateSliderStyles(): void {
     // Update CSS custom properties for slider fill effect
+    // Order matches the DOM order after moving rent inflation to Rental Option
     const sliders = [
+      // Rental Option sliders
+      { value: this.macro.inflationRate, min: 0, max: 10 }, // Rent Inflation (moved to Rental Option)
+      
       // Property sliders
       { value: this.buy.amortizationPeriod, min: 0, max: 50 },
       { value: this.buy.buildingAge, min: 0, max: 50 },
       { value: this.buy.maintenance, min: 0, max: 5 },
       { value: this.buy.propertyTax, min: 0, max: 3 },
       { value: this.buy.feeRate, min: 0, max: 10 },
+      
       // Loan sliders
       { value: this.loan.loanPeriod, min: 1, max: 50 },
       { value: this.loan.loanFee, min: 0, max: 5 },
       { value: this.loan.loanRate, min: 0, max: 10 },
       { value: this.loan.upfrontAmount, min: 0, max: 100 },
-      // Economic factors sliders
-      { value: this.macro.inflationRate, min: 0, max: 10 },
+      
+      // Economic factors sliders (rent inflation removed)
       { value: this.macro.landAppreciation, min: -5, max: 15 },
       { value: this.macro.opportunityCost, min: 0, max: 15 }
     ];
@@ -294,6 +304,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     
     console.log('Attempting to create charts...');
     this.createNpvChart();
+    this.createCumulativeCostChart();
     this.createIrrChart();
     this.createCashflowChart();
   }
@@ -356,6 +367,109 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
           },
           legend: {
             display: true
+          }
+        }
+      }
+    });
+  }
+
+  private createCumulativeCostChart(): void {
+    if (this.cumulativeCostChart) {
+      this.cumulativeCostChart.destroy();
+    }
+
+    if (!this.cumulativeCostChartRef) {
+      console.error('Cumulative cost chart ref not available');
+      return;
+    }
+
+    const ctx = this.cumulativeCostChartRef.nativeElement.getContext('2d');
+    if (!ctx) {
+      console.error('Could not get cumulative cost chart context');
+      return;
+    }
+
+    const years = this.cashFlowData.map(d => d.year);
+    
+    // Calculate cumulative costs
+    let cumulativeRentCost = 0;
+    let cumulativeBuyCost = 0;
+    
+    const cumulativeRentData: number[] = [];
+    const cumulativeBuyData: number[] = [];
+    
+    this.cashFlowData.forEach(d => {
+      cumulativeRentCost += d.rent_cost;
+      cumulativeBuyCost += (d.house_cost + d.loan_cost);
+      
+      // Convert to man-yen and use negative values for costs (cash outflows)
+      cumulativeRentData.push(-cumulativeRentCost / 10000);
+      cumulativeBuyData.push(-cumulativeBuyCost / 10000);
+    });
+
+    console.log('Creating cumulative cost chart with data:', { years, cumulativeRentData, cumulativeBuyData });
+
+    this.cumulativeCostChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets: [
+          {
+            label: 'Cumulative Rent Cost',
+            data: cumulativeRentData,
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1,
+            fill: false
+          },
+          {
+            label: 'Cumulative Buy Cost',
+            data: cumulativeBuyData,
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.1,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Cumulative Cost (万円)'
+            },
+            ticks: {
+              callback: function(value) {
+                return Math.abs(Number(value)).toLocaleString() + '万円';
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Year'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + '万円';
+              }
+            }
           }
         }
       }
