@@ -4,7 +4,7 @@
     <div class="left-sidebar">
       <div class="form-section">
         <div class="section-header">
-          <h3>Rental Option</h3>
+          <h3 i18n="@@rentorbuy.rentalOption">Rental Option</h3>
           <button class="collapse-btn" (click)="toggleRentSection()" type="button">
             <img [src]="isRentCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
                  [alt]="isRentCollapsed ? 'Expand section' : 'Collapse section'"
@@ -14,18 +14,18 @@
         
         <div class="section-content" [class.collapsed]="isRentCollapsed">
           <div class="form-group">
-            <label>Monthly Rent (万円)</label>
+            <label i18n="@@rentorbuy.monthlyRent">Monthly Rent (万円)</label>
             <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group">
             <label>
-              Gift Money (万円)
+              <span i18n="@@rentorbuy.giftMoney">Gift Money (万円)</span>
               <span class="info-icon" title="Money given by landlord as incentive, typically 1-2 months rent">?</span>
             </label>
             <input type="number" [(ngModel)]="rent.giftMoney" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group">
-            <label>Guarantee (万円)</label>
+            <label i18n="@@rentorbuy.guarantee">Guarantee (万円)</label>
             <input type="number" [(ngModel)]="rent.guarantee" (ngModelChange)="onFormChange()">
           </div>
           <div class="form-group range-group">
@@ -45,7 +45,7 @@
 
       <div class="form-section">
         <div class="section-header">
-          <h3>Property to Buy</h3>
+          <h3 i18n="@@rentorbuy.propertyToBuy">Property to Buy</h3>
           <button class="collapse-btn" (click)="togglePropertySection()" type="button">
             <img [src]="isPropertyCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
                  [alt]="isPropertyCollapsed ? 'Expand section' : 'Collapse section'"
@@ -126,7 +126,7 @@
         
         <div class="charts-container">
           <div class="chart-wrapper">
-            <h4>Net Present Value (NPV)</h4>
+            <h4 i18n="@@rentorbuy.npvChart">Net Present Value (NPV)</h4>
             <canvas #npvChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               NPV chart will appear here after calculation
@@ -134,7 +134,7 @@
           </div>
           
           <div class="chart-wrapper">
-            <h4>Cumulative Costs: Rent vs Buy</h4>
+            <h4 i18n="@@rentorbuy.cumulativeCostsChart">Cumulative Costs: Rent vs Buy</h4>
             <canvas #cumulativeCostChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               Cumulative cost chart will appear here after calculation
@@ -142,7 +142,7 @@
           </div>
           
           <div class="chart-wrapper">
-            <h4>Internal Rate of Return (IRR)</h4>
+            <h4 i18n="@@rentorbuy.irrChart">Internal Rate of Return (IRR)</h4>
             <canvas #irrChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               IRR chart will appear here after calculation
@@ -150,7 +150,7 @@
           </div>
           
           <div class="chart-wrapper">
-            <h4>Annual Cashflow Comparison</h4>
+            <h4 i18n="@@rentorbuy.annualCashflowChart">Annual Cashflow Comparison</h4>
             <canvas #cashflowChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               Cashflow chart will appear here after calculation
@@ -164,7 +164,7 @@
     <div class="right-sidebar">
       <div class="form-section">
         <div class="section-header">
-          <h3>Loan Details</h3>
+          <h3 i18n="@@rentorbuy.loanDetails">Loan Details</h3>
           <button class="collapse-btn" (click)="toggleLoanSection()" type="button">
             <img [src]="isLoanCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
                  [alt]="isLoanCollapsed ? 'Expand section' : 'Collapse section'"
@@ -217,7 +217,7 @@
 
       <div class="form-section">
         <div class="section-header">
-          <h3>Economic Factors</h3>
+          <h3 i18n="@@rentorbuy.economicFactors">Economic Factors</h3>
           <button class="collapse-btn" (click)="toggleEconomicSection()" type="button">
             <img [src]="isEconomicCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
                  [alt]="isEconomicCollapsed ? 'Expand section' : 'Collapse section'"
