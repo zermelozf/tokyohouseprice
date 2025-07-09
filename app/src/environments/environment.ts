@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000',
-  // apiUrl: 'https://tokyohouseprice-99305686342.us-central1.run.app',
+  // apiUrl: 'http://localhost:8000',
+  apiUrl: 'https://tokyohouseprice-99305686342.us-central1.run.app',
   firebaseConfig: {
     apiKey: "AIzaSyAd4-nwElGxAEIYtCe-pJH_9rszfDbYUXo",
     authDomain: "tokyohouseprice.firebaseapp.com",
