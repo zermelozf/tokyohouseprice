@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel
+import pickle
+from typing import List
 
 from utils import PropertyDataTransformer
+from npv import calculate_buy_vs_rent, NpvParams, CashFlow
 import joblib
 
 coef_ = pd.read_csv('model/coef_.csv')
@@ -118,6 +121,16 @@ async def predict(input_data: PredictionInput):
     )
     print(res)
     return res
+
+
+@app.post('/npv', response_model=List[CashFlow])
+async def npv(params: NpvParams):
+    try:
+        result = calculate_buy_vs_rent(params)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

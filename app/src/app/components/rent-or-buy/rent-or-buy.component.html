@@ -1,0 +1,255 @@
+<div class="dashboard-container">
+  <div class="dashboard-grid">
+    <!-- Left Sidebar: Rental & Property -->
+    <div class="left-sidebar">
+      <div class="form-section">
+        <div class="section-header">
+          <h3 i18n="@@rentorbuy.rentalOption">Rental Option</h3>
+          <button class="collapse-btn" (click)="toggleRentSection()" type="button">
+            <img [src]="isRentCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
+                 [alt]="isRentCollapsed ? 'Expand section' : 'Collapse section'"
+                 width="16" height="16">
+          </button>
+        </div>
+        
+        <div class="section-content" [class.collapsed]="isRentCollapsed">
+          <div class="form-group">
+            <label i18n="@@rentorbuy.monthlyRent">Monthly Rent (万円)</label>
+            <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group">
+            <label>
+              <span i18n="@@rentorbuy.giftMoney">Gift Money (万円)</span>
+              <span class="info-icon" title="Money given by landlord as incentive, typically 1-2 months rent">?</span>
+            </label>
+            <input type="number" [(ngModel)]="rent.giftMoney" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group">
+            <label i18n="@@rentorbuy.guarantee">Guarantee (万円)</label>
+            <input type="number" [(ngModel)]="rent.guarantee" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Rent Inflation:
+                <span class="info-icon" title="Annual rate at which rent is expected to increase over time">?</span>
+              </span>
+              <span class="label-value">{{macro.inflationRate}}%</span>
+            </label>
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()">
+          </div>
+        </div>
+        
+
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <h3 i18n="@@rentorbuy.propertyToBuy">Property to Buy</h3>
+          <button class="collapse-btn" (click)="togglePropertySection()" type="button">
+            <img [src]="isPropertyCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
+                 [alt]="isPropertyCollapsed ? 'Expand section' : 'Collapse section'"
+                 width="16" height="16">
+          </button>
+        </div>
+
+        <div class="section-content" [class.collapsed]="isPropertyCollapsed">
+          <div class="form-group">
+            <label>House Price (万円)</label>
+            <input type="number" [(ngModel)]="buy.housePrice" (ngModelChange)="onExpertBuyChange()">
+          </div>
+          <div class="form-group">
+            <label>Land Price (万円)</label>
+            <input type="number" [(ngModel)]="buy.landPrice" (ngModelChange)="onExpertBuyChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Amortization Period:
+                <span class="info-icon" title="Number of years over which the building's value will depreciate to zero">?</span>
+              </span>
+              <span class="label-value">{{buy.amortizationPeriod}} years</span>
+            </label>
+            <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">Building Age:</span>
+              <span class="label-value">{{buy.buildingAge}} years</span>
+            </label>
+            <input type="range" min="0" max="50" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Maintenance:
+                <span class="info-icon" title="Annual maintenance cost as percentage of property value (repairs, renovations, etc.)">?</span>
+              </span>
+              <span class="label-value">{{buy.maintenance}}%</span>
+            </label>
+            <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">Property Tax:</span>
+              <span class="label-value">{{buy.propertyTax}}%</span>
+            </label>
+            <input type="range" min="0" max="3" step="0.1" [(ngModel)]="buy.propertyTax" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Agent Fee:
+                <span class="info-icon" title="Real estate agent commission fee, typically 3-6% of purchase price">?</span>
+              </span>
+              <span class="label-value">{{buy.feeRate}}%</span>
+            </label>
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()">
+          </div>
+        </div>
+        
+
+      </div>
+    </div>
+
+    <!-- Center: Charts -->
+    <div class="center-content">
+      <div class="charts-section">
+        
+        <div *ngIf="isLoading" class="loading-indicator">
+          <p>Calculating analysis...</p>
+        </div>
+        
+        <div *ngIf="error" class="error-message">
+          <p>{{ error }}</p>
+        </div>
+        
+        <div class="charts-container">
+          <div class="chart-wrapper">
+            <h4 i18n="@@rentorbuy.npvChart">Net Present Value (NPV)</h4>
+            <canvas #npvChart></canvas>
+            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+              NPV chart will appear here after calculation
+            </div>
+          </div>
+          
+          <div class="chart-wrapper">
+            <h4 i18n="@@rentorbuy.cumulativeCostsChart">Cumulative Costs: Rent vs Buy</h4>
+            <canvas #cumulativeCostChart></canvas>
+            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+              Cumulative cost chart will appear here after calculation
+            </div>
+          </div>
+          
+          <div class="chart-wrapper">
+            <h4 i18n="@@rentorbuy.irrChart">Internal Rate of Return (IRR)</h4>
+            <canvas #irrChart></canvas>
+            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+              IRR chart will appear here after calculation
+            </div>
+          </div>
+          
+          <div class="chart-wrapper">
+            <h4 i18n="@@rentorbuy.annualCashflowChart">Annual Cashflow Comparison</h4>
+            <canvas #cashflowChart></canvas>
+            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+              Cashflow chart will appear here after calculation
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Loan & Economic -->
+    <div class="right-sidebar">
+      <div class="form-section">
+        <div class="section-header">
+          <h3 i18n="@@rentorbuy.loanDetails">Loan Details</h3>
+          <button class="collapse-btn" (click)="toggleLoanSection()" type="button">
+            <img [src]="isLoanCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
+                 [alt]="isLoanCollapsed ? 'Expand section' : 'Collapse section'"
+                 width="16" height="16">
+          </button>
+        </div>
+        
+        <div class="section-content" [class.collapsed]="isLoanCollapsed">
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">Loan Period:</span>
+              <span class="label-value">{{loan.loanPeriod}} years</span>
+            </label>
+            <input type="range" min="1" max="50" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Loan Fee:
+                <span class="info-icon" title="One-time processing fee charged by the bank for mortgage origination">?</span>
+              </span>
+              <span class="label-value">{{loan.loanFee}}%</span>
+            </label>
+            <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Loan Rate:
+                <span class="info-icon" title="Annual interest rate charged on the mortgage loan">?</span>
+              </span>
+              <span class="label-value">{{loan.loanRate}}%</span>
+            </label>
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Down Payment:
+                <span class="info-icon" title="Percentage of property price paid upfront, not financed through mortgage">?</span>
+              </span>
+              <span class="label-value">{{loan.upfrontAmount}}%</span>
+            </label>
+            <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount" (ngModelChange)="onFormChange()">
+          </div>
+        </div>
+        
+
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <h3 i18n="@@rentorbuy.economicFactors">Economic Factors</h3>
+          <button class="collapse-btn" (click)="toggleEconomicSection()" type="button">
+            <img [src]="isEconomicCollapsed ? '/chevron-expand-outline.svg' : '/chevron-collapse-outline.svg'" 
+                 [alt]="isEconomicCollapsed ? 'Expand section' : 'Collapse section'"
+                 width="16" height="16">
+          </button>
+        </div>
+        
+        <div class="section-content" [class.collapsed]="isEconomicCollapsed">
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                House Appreciation:
+                <span class="info-icon" title="Annual rate at which property value is expected to increase (can be negative)">?</span>
+              </span>
+              <span class="label-value">{{macro.landAppreciation}}%</span>
+            </label>
+            <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation" (ngModelChange)="onFormChange()">
+          </div>
+          <div class="form-group range-group">
+            <label>
+              <span class="label-text">
+                Opportunity Cost:
+                <span class="info-icon" title="Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)">?</span>
+              </span>
+              <span class="label-value">{{macro.opportunityCost}}%</span>
+            </label>
+            <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost" (ngModelChange)="onFormChange()">
+          </div>
+        </div>
+        
+
+      </div>
+    </div>
+  </div>
+</div>

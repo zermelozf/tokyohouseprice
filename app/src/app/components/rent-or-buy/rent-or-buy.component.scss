@@ -1,0 +1,563 @@
+.dashboard-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 1rem;
+  overflow: visible; // Allow tooltips to overflow completely
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 24px;
+  height: auto; // Allow natural height expansion
+  min-height: calc(100vh - 2rem);
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow: visible; // Allow tooltips to overflow
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 280px 1fr 280px;
+    gap: 20px;
+  }
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    height: auto;
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, auto) auto;
+    height: auto;
+    gap: 16px;
+  }
+}
+
+// Left Sidebar Styles
+.left-sidebar {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0;
+  overflow: visible; // Allow tooltips to overflow completely
+  height: fit-content;
+  max-height: none; // Remove height restriction to prevent clipping
+  position: relative; // Establish stacking context
+  z-index: 10; // Ensure proper stacking
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  @media (max-width: 768px) {
+    grid-row: 1;
+  }
+}
+
+// Center Content Styles
+.center-content {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0;
+  overflow-y: auto;
+  position: relative; // Establish stacking context
+  z-index: 1; // Lower than sidebars to allow tooltips to show above
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 768px) {
+    grid-row: 3;
+  }
+
+  .charts-section {
+    h2 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 1rem 0;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+         .charts-container {
+       display: grid;
+       grid-template-columns: 1fr;
+       gap: 1.5rem;
+     }
+
+    .chart-wrapper {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+      height: 350px;
+      position: relative;
+      
+      h4 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 600;
+        text-align: center;
+      }
+      
+      canvas {
+        max-width: 100%;
+        max-height: 280px;
+        height: auto !important;
+      }
+    }
+
+    .chart-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 350px;
+      color: #6c757d;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .loading-indicator {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      font-style: italic;
+    }
+
+    .error-message {
+      background-color: #ffe6e6;
+      color: #d32f2f;
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid #ffcdd2;
+      margin: 1rem 0;
+      
+      p {
+        margin: 0;
+      }
+    }
+  }
+}
+
+// Right Sidebar Styles
+.right-sidebar {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0;
+  overflow: visible; // Allow tooltips to overflow completely
+  height: fit-content;
+  max-height: none; // Remove height restriction to prevent clipping
+  position: relative; // Establish stacking context
+  z-index: 10; // Ensure proper stacking
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  @media (max-width: 768px) {
+    grid-row: 2;
+  }
+}
+
+// Form Section Styles
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  overflow: visible; // Ensure tooltips aren't clipped
+  position: relative; // Establish stacking context
+  z-index: auto; // Don't interfere with tooltip stacking
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
+
+    h3 {
+      margin: 0;
+      color: #333;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+  }
+
+
+
+  .section-content {
+    max-height: 1000px;
+    overflow: visible; // Allow tooltips to show
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 1;
+
+    &.collapsed {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin-bottom: 0;
+      overflow: hidden; // Hide content when collapsed
+    }
+  }
+}
+
+
+
+// Collapse Button
+.collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  min-width: 28px;
+  height: 28px;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus {
+    outline: none;
+    background-color: rgba(255, 105, 180, 0.1);
+  }
+
+  img {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
+  }
+
+  &:hover img {
+    opacity: 0.9;
+  }
+}
+
+// Form Group Styles
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.2rem;
+  overflow: visible; // Allow tooltips to overflow
+  position: relative; // Establish positioning context
+
+  label {
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  // Special styling for range slider labels
+  &.range-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .label-text {
+      font-weight: 500;
+    }
+    
+    .label-value {
+      font-weight: normal;
+      color: #666;
+    }
+  }
+
+  input, select {
+    width: 100%;
+    padding: 0.6rem;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background-color: white;
+
+    &:focus {
+      outline: none;
+      border-color: #FF69B4;
+      box-shadow: 0 0 0 2px rgba(255, 105, 180, 0.2);
+    }
+
+    &[readonly] {
+      background-color: #f8f9fa;
+      color: #666;
+    }
+  }
+
+  // Info icon styles
+  .info-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-color: #666;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: bold;
+    margin-left: 4px;
+    cursor: help;
+    position: relative;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #FF69B4;
+      transform: scale(1.1);
+    }
+
+    // Tooltip on hover - simplified approach
+    &:hover::after {
+      content: attr(title) !important;
+      position: fixed !important;
+      top: 20% !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      background-color: rgba(51, 51, 51, 0.95) !important;
+      color: white !important;
+      padding: 10px 15px !important;
+      border-radius: 8px !important;
+      font-size: 13px !important;
+      font-weight: normal !important;
+      line-height: 1.4 !important;
+      white-space: normal !important;
+      text-align: center !important;
+      width: max-content !important;
+      max-width: 320px !important;
+      min-width: 150px !important;
+      z-index: 9999999 !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+      pointer-events: none !important;
+      opacity: 1 !important;
+      display: block !important;
+      visibility: visible !important;
+    }
+
+    // Remove default browser tooltip completely
+    &[title] {
+      position: relative !important;
+      
+      // Hide browser's default tooltip
+      &:hover {
+        // Disable browser tooltip
+        &:before {
+          content: none !important;
+        }
+      }
+      
+      // Override any potential conflicts
+      &::after {
+        content: none;
+      }
+      
+      &:hover::after {
+        content: attr(title) !important;
+      }
+    }
+  }
+
+  select {
+    cursor: pointer;
+  }
+
+  // Range slider specific styles
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 20px;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 2px 0;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FF69B4;
+      border: 1px solid white;
+      cursor: pointer;
+      // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+      margin-top: -8px;
+
+      &:hover {
+        background: #FF1493;
+        transform: scale(1.1);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    &::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #FF69B4;
+      border: 1px solid white;
+      cursor: pointer;
+      // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #FF1493;
+        transform: scale(1.1);
+        // box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    &::-webkit-slider-runnable-track {
+      background: linear-gradient(to right, 
+        #FF69B4 0%, 
+        #FF69B4 var(--fill-percentage, 0%), 
+        #ddd var(--fill-percentage, 0%), 
+        #ddd 100%);
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-moz-range-track {
+      background: #ddd;
+      height: 4px;
+      border-radius: 2px;
+      border: none;
+    }
+
+    &::-moz-range-progress {
+      background: #FF69B4;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(255, 105, 180, 0.2);
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 1024px) and (min-width: 769px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+
+  .form-section {
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+
+  .dashboard-grid {
+    gap: 12px;
+  }
+
+  .form-section {
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+
+    // Mobile-specific tooltip adjustments - same center positioning
+    .info-icon {
+      &:hover::after {
+        top: 30% !important; // Slightly lower on mobile
+        max-width: 280px !important;
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+      }
+    }
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+
+    h3 {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+// Tooltip animation
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// Animation for smooth transitions
+.form-group input,
+.form-group select {
+  transition: all 0.2s ease;
+}
+
+.chart-wrapper {
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+// Scrollbar styling (invisible but functional)
+.left-sidebar::-webkit-scrollbar,
+.right-sidebar::-webkit-scrollbar,
+.center-content::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+.left-sidebar::-webkit-scrollbar-track,
+.right-sidebar::-webkit-scrollbar-track,
+.center-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.left-sidebar::-webkit-scrollbar-thumb,
+.right-sidebar::-webkit-scrollbar-thumb,
+.center-content::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+// For Firefox
+.left-sidebar,
+.right-sidebar,
+.center-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}

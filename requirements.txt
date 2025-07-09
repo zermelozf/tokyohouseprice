@@ -5,3 +5,4 @@ pydantic==2.6.1
 numpy==1.26.3
 pandas==2.2.3
 formulaic==1.1.1
+numpy-financial

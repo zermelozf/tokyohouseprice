@@ -3,14 +3,17 @@ import { PriceCalculatorComponent } from './components/price-calculator/price-ca
 import { TokyoMapComponent } from './components/tokyo-map/tokyo-map.component';
 import { HousePriceArticleComponent } from './components/house-price-article/house-price-article.component';
 import { NakanoMapComponent } from './components/nakano-map/nakano-map.component';
+import { RentOrBuyComponent } from './components/rent-or-buy/rent-or-buy.component';
 
 // Define shared routes that will be used for both languages
 const sharedRoutes: Routes = [
   { path: '', component: PriceCalculatorComponent },
+  { path: 'calculator', component: PriceCalculatorComponent },
   { path: 'map', component: TokyoMapComponent },
   { path: 'nakano', component: NakanoMapComponent },
   { path: 'article', component: HousePriceArticleComponent },
   { path: 'story', component: HousePriceArticleComponent },
+  { path: 'rentorubuy', component: RentOrBuyComponent },
 ];
 
 export const routes: Routes = [

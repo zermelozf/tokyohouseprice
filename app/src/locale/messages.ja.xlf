@@ -34,9 +34,25 @@
           <context context-type="linenumber">32,34</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="nav.house-pricer" datatype="html">
+        <source>House Pricer</source>
+        <target>住宅価格査定</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
+          <context context-type="linenumber">32,34</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="nav.rentorbuy" datatype="html">
+        <source>Rent vs Buy</source>
+        <target>賃貸 vs 購入</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
+          <context context-type="linenumber">35,37</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="nav.article" datatype="html">
-        <source>Article</source>
-        <target>記事</target>
+        <source>Market Analysis</source>
+        <target>市場分析</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
           <context context-type="linenumber">40,42</context>
@@ -1198,6 +1214,222 @@
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">442</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentalOption" datatype="html">
+        <source>Rental Option</source>
+        <target>賃貸オプション</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">8</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.monthlyRent" datatype="html">
+        <source>Monthly Rent (万円)</source>
+        <target>月額家賃 (万円)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.giftMoney" datatype="html">
+        <source>Gift Money (万円)</source>
+        <target>礼金 (万円)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">21</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.guarantee" datatype="html">
+        <source>Guarantee (万円)</source>
+        <target>敷金 (万円)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentInflation" datatype="html">
+        <source>Rent Inflation</source>
+        <target>家賃上昇率</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">30</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyToBuy" datatype="html">
+        <source>Property to Buy</source>
+        <target>購入物件</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">43</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.housePrice" datatype="html">
+        <source>House Price (万円)</source>
+        <target>建物価格 (万円)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">52</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.landPrice" datatype="html">
+        <source>Land Price (万円)</source>
+        <target>土地価格 (万円)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">56</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.amortizationPeriod" datatype="html">
+        <source>Amortization Period</source>
+        <target>償却期間</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">61</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buildingAge" datatype="html">
+        <source>Building Age</source>
+        <target>築年数</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">68</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.maintenance" datatype="html">
+        <source>Maintenance</source>
+        <target>メンテナンス</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">75</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyTax" datatype="html">
+        <source>Property Tax</source>
+        <target>固定資産税</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">81</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.agentFee" datatype="html">
+        <source>Agent Fee</source>
+        <target>仲介手数料</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">87</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanDetails" datatype="html">
+        <source>Loan Details</source>
+        <target>ローン詳細</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">123</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanPeriod" datatype="html">
+        <source>Loan Period</source>
+        <target>ローン期間</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">132</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanFee" datatype="html">
+        <source>Loan Fee</source>
+        <target>ローン手数料</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">139</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanRate" datatype="html">
+        <source>Loan Rate</source>
+        <target>ローン金利</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">146</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.downPayment" datatype="html">
+        <source>Down Payment</source>
+        <target>頭金</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">153</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.economicFactors" datatype="html">
+        <source>Economic Factors</source>
+        <target>経済要因</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">169</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseAppreciation" datatype="html">
+        <source>House Appreciation</source>
+        <target>不動産価値上昇率</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">179</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCost" datatype="html">
+        <source>Opportunity Cost</source>
+        <target>機会費用</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">186</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvChart" datatype="html">
+        <source>Net Present Value (NPV)</source>
+        <target>正味現在価値 (NPV)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">210</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cumulativeCostsChart" datatype="html">
+        <source>Cumulative Costs: Rent vs Buy</source>
+        <target>累積コスト: 賃貸 vs 購入</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">217</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrChart" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <target>内部収益率 (IRR)</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">224</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.annualCashflowChart" datatype="html">
+        <source>Annual Cashflow Comparison</source>
+        <target>年間キャッシュフロー比較</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">231</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.calculating" datatype="html">
+        <source>Calculating analysis...</source>
+        <target>分析を計算中...</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">205</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.chartPlaceholder" datatype="html">
+        <source>chart will appear here after calculation</source>
+        <target>計算後にチャートが表示されます</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">213</context>
         </context-group>
       </trans-unit>
     </body>
