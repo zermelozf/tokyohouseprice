@@ -14,6 +14,7 @@ interface CashFlow {
   house_value: number;
   loan_value: number;
   sale_value: number;
+  stock_value: number;
   buy_npv: number;
   buy_irr: number | null;
 }
@@ -53,14 +54,14 @@ interface NpvParams {
 })
 export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   @ViewChild('npvChart') npvChartRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('cumulativeCostChart') cumulativeCostChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('irrChart') irrChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('cashflowChart') cashflowChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('houseVsStockChart') houseVsStockChartRef!: ElementRef<HTMLCanvasElement>;
   
   private npvChart: Chart | null = null;
-  private cumulativeCostChart: Chart | null = null;
   private irrChart: Chart | null = null;
   private cashflowChart: Chart | null = null;
+  private houseVsStockChart: Chart | null = null;
   private destroy$ = new Subject<void>();
   private formChange$ = new Subject<void>();
   private apiUrl = environment.apiUrl;
@@ -74,9 +75,21 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   isRentCollapsed = false;
   isEconomicCollapsed = false;
   
+  // Mobile FAB system
+  isFabOpen = false;
+  activeModal: string | null = null;
+  
   cashFlowData: CashFlow[] = [];
   isLoading = false;
   error: string | null = null;
+  
+  // Financial analysis results
+  minYearsForAdvantage: number | null = null;
+  optimalYearsForMaxNpv: number | null = null;
+  maxNpvValue: number | null = null;
+  sellBeforeNegative: number | null = null;
+  financialRecommendation: string = '';
+  recommendationSegments: Array<{text: string, isNumber: boolean}> = [];
 
   buy = {
     propertyPrice: 8000,
@@ -114,6 +127,10 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     console.log('RentOrBuyComponent constructor - API URL:', this.apiUrl);
     this.onPropertyPriceChange(this.buy.propertyPrice);
     
+    // Ensure gift money and guarantee are synced with monthly rent from start
+    this.rent.giftMoney = this.rent.monthlyRent;
+    this.rent.guarantee = this.rent.monthlyRent;
+    
     // Set up debounced form changes
     this.formChange$.pipe(
       debounceTime(500), // Wait 500ms after the last change
@@ -128,7 +145,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     // Wait a bit for the view to be fully rendered
     setTimeout(() => {
       console.log('ngAfterViewInit - attempting to calculate NPV');
-      console.log('Chart refs available:', !!this.npvChartRef, !!this.cumulativeCostChartRef, !!this.irrChartRef, !!this.cashflowChartRef);
+      console.log('Chart refs available:', !!this.npvChartRef, !!this.irrChartRef, !!this.cashflowChartRef, !!this.houseVsStockChartRef);
       this.updateSliderStyles();
       this.calculateNpv();
     }, 100);
@@ -141,14 +158,14 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     if (this.npvChart) {
       this.npvChart.destroy();
     }
-    if (this.cumulativeCostChart) {
-      this.cumulativeCostChart.destroy();
-    }
     if (this.irrChart) {
       this.irrChart.destroy();
     }
     if (this.cashflowChart) {
       this.cashflowChart.destroy();
+    }
+    if (this.houseVsStockChart) {
+      this.houseVsStockChart.destroy();
     }
   }
 
@@ -170,37 +187,39 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     this.triggerFormChange();
   }
 
+  onRentChange(): void {
+    console.log('onRentChange called');
+    // Automatically set gift money and guarantee to equal monthly rent
+    this.rent.giftMoney = this.rent.monthlyRent;
+    this.rent.guarantee = this.rent.monthlyRent;
+    this.onFormChange();
+  }
+
   private updateSliderStyles(): void {
     // Update CSS custom properties for slider fill effect
-    // Order matches the DOM order after moving rent inflation to Rental Option
-    const sliders = [
-      // Rental Option sliders
-      { value: this.macro.inflationRate, min: 0, max: 10 }, // Rent Inflation (moved to Rental Option)
-      
-      // Property sliders
-      { value: this.buy.amortizationPeriod, min: 0, max: 50 },
-      { value: this.buy.buildingAge, min: 0, max: 50 },
-      { value: this.buy.maintenance, min: 0, max: 5 },
-      { value: this.buy.propertyTax, min: 0, max: 3 },
-      { value: this.buy.feeRate, min: 0, max: 10 },
-      
-      // Loan sliders
-      { value: this.loan.loanPeriod, min: 1, max: 50 },
-      { value: this.loan.loanFee, min: 0, max: 5 },
-      { value: this.loan.loanRate, min: 0, max: 10 },
-      { value: this.loan.upfrontAmount, min: 0, max: 100 },
-      
-      // Economic factors sliders (rent inflation removed)
-      { value: this.macro.landAppreciation, min: -5, max: 15 },
-      { value: this.macro.opportunityCost, min: 0, max: 15 }
-    ];
+    // Use data attributes to identify sliders instead of relying on DOM order
+    const sliderMappings = {
+      'rent-inflation': { value: this.macro.inflationRate, min: 0, max: 10 },
+      'amortization-period': { value: this.buy.amortizationPeriod, min: 0, max: 50 },
+      'building-age': { value: this.buy.buildingAge, min: 0, max: 50 },
+      'maintenance': { value: this.buy.maintenance, min: 0, max: 5 },
+      'property-tax': { value: this.buy.propertyTax, min: 0, max: 3 },
+      'agent-fee': { value: this.buy.feeRate, min: 0, max: 10 },
+      'loan-period': { value: this.loan.loanPeriod, min: 1, max: 50 },
+      'loan-fee': { value: this.loan.loanFee, min: 0, max: 5 },
+      'loan-rate': { value: this.loan.loanRate, min: 0, max: 10 },
+      'down-payment': { value: this.loan.upfrontAmount, min: 0, max: 100 },
+      'house-appreciation': { value: this.macro.landAppreciation, min: -5, max: 15 },
+      'opportunity-cost': { value: this.macro.opportunityCost, min: 0, max: 15 }
+    };
 
-    const rangeInputs = document.querySelectorAll('input[type="range"]');
-    rangeInputs.forEach((slider, index) => {
-      if (sliders[index]) {
-        const { value, min, max } = sliders[index];
+    // Update sliders using data attributes for reliable identification
+    Object.entries(sliderMappings).forEach(([key, config]) => {
+      const slider = document.querySelector(`input[type="range"][data-slider="${key}"]`) as HTMLElement;
+      if (slider) {
+        const { value, min, max } = config;
         const percentage = ((value - min) / (max - min)) * 100;
-        (slider as HTMLElement).style.setProperty('--fill-percentage', `${percentage}%`);
+        slider.style.setProperty('--fill-percentage', `${percentage}%`);
       }
     });
   }
@@ -303,10 +322,144 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     }
     
     console.log('Attempting to create charts...');
+    this.analyzeNpvData();
     this.createNpvChart();
-    this.createCumulativeCostChart();
     this.createIrrChart();
     this.createCashflowChart();
+    this.createHouseVsStockChart();
+  }
+
+  private analyzeNpvData(): void {
+    if (!this.cashFlowData || this.cashFlowData.length === 0) {
+      this.minYearsForAdvantage = null;
+      this.optimalYearsForMaxNpv = null;
+      this.maxNpvValue = null;
+      this.sellBeforeNegative = null;
+      this.financialRecommendation = 'No data available for analysis.';
+      return;
+    }
+
+    // Find first year where NPV > 0 (breakeven point)
+    let firstPositiveYear: number | null = null;
+    
+    // Find year with maximum NPV (optimal point)
+    let maxNpv = -Infinity;
+    let optimalYear: number | null = null;
+    
+    // Track when NPV goes negative again after being positive
+    let hasBeenPositive = false;
+    let lastPositiveYear: number | null = null;
+    
+    for (const data of this.cashFlowData) {
+      // Track first positive NPV
+      if (data.buy_npv > 0 && firstPositiveYear === null) {
+        firstPositiveYear = data.year;
+      }
+      
+      // Track maximum NPV
+      if (data.buy_npv > maxNpv) {
+        maxNpv = data.buy_npv;
+        optimalYear = data.year;
+      }
+      
+      // Track when NPV becomes negative after being positive
+      if (data.buy_npv > 0) {
+        hasBeenPositive = true;
+        lastPositiveYear = data.year;
+      } else if (hasBeenPositive && data.buy_npv <= 0) {
+        // NPV went negative after being positive
+        break;
+      }
+    }
+
+    this.minYearsForAdvantage = firstPositiveYear;
+    this.optimalYearsForMaxNpv = optimalYear;
+    this.maxNpvValue = maxNpv > -Infinity ? maxNpv : null;
+    
+    // Set sell before negative only if NPV actually goes negative again
+    if (hasBeenPositive && lastPositiveYear !== null) {
+      const nextYear = lastPositiveYear + 1;
+      const nextYearData = this.cashFlowData.find(d => d.year === nextYear);
+      if (nextYearData && nextYearData.buy_npv <= 0) {
+        this.sellBeforeNegative = lastPositiveYear;
+      } else {
+        this.sellBeforeNegative = null;
+      }
+    } else {
+      this.sellBeforeNegative = null;
+    }
+
+    // Generate recommendation text
+    this.generateFinancialRecommendation();
+  }
+
+  private generateFinancialRecommendation(): void {
+    if (this.minYearsForAdvantage === null) {
+      this.financialRecommendation = ' With these settings, renting would always save you more money than buying.';
+      this.parseRecommendationForHighlighting(this.financialRecommendation);
+    } else if (this.optimalYearsForMaxNpv === null) {
+      this.financialRecommendation = ' Unable to calculate the best strategy with current data.';
+      this.parseRecommendationForHighlighting(this.financialRecommendation);
+    } else {
+      const breakEvenText = this.minYearsForAdvantage === 1 ? 'right away' : `after living there for ${this.minYearsForAdvantage} years`;
+      const profitText = this.maxNpvValue ? ` and save ${Math.round(this.maxNpvValue / 10000)} 万円 compared to renting` : '';
+      
+      let recommendation = '';
+      
+      if (this.minYearsForAdvantage === this.optimalYearsForMaxNpv) {
+        recommendation = ` Buying pays off ${breakEvenText} and gives you the best savings at year ${this.optimalYearsForMaxNpv}${profitText}.`;
+      } else {
+        recommendation = ` Buying starts paying off ${breakEvenText}. For maximum savings, stay until year ${this.optimalYearsForMaxNpv}${profitText}.`;
+      }
+      
+      // Add advice about selling before losses
+      if (this.sellBeforeNegative !== null) {
+        if (this.sellBeforeNegative === this.optimalYearsForMaxNpv) {
+          recommendation += ` After year ${this.sellBeforeNegative}, renting becomes cheaper again.`;
+        } else {
+          recommendation += ` Also,  you should sell before year ${this.sellBeforeNegative + 1} - after that, renting becomes cheaper.`;
+        }
+      }
+      
+      this.financialRecommendation = recommendation;
+      this.parseRecommendationForHighlighting(recommendation);
+    }
+  }
+
+  private parseRecommendationForHighlighting(text: string): void {
+    this.recommendationSegments = [];
+    
+    // Regular expression to match numbers (including those followed by 万円 or years)
+    const numberRegex = /(\d+(?:\s*万円|\s*years?)?)/g;
+    
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = numberRegex.exec(text)) !== null) {
+      // Add text before the number
+      if (match.index > lastIndex) {
+        this.recommendationSegments.push({
+          text: text.substring(lastIndex, match.index),
+          isNumber: false
+        });
+      }
+      
+      // Add the number itself
+      this.recommendationSegments.push({
+        text: match[1],
+        isNumber: true
+      });
+      
+      lastIndex = match.index + match[1].length;
+    }
+    
+    // Add remaining text after the last number
+    if (lastIndex < text.length) {
+      this.recommendationSegments.push({
+        text: text.substring(lastIndex),
+        isNumber: false
+      });
+    }
   }
 
   private createNpvChart(): void {
@@ -367,107 +520,11 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
           },
           legend: {
             display: true
-          }
-        }
-      }
-    });
-  }
-
-  private createCumulativeCostChart(): void {
-    if (this.cumulativeCostChart) {
-      this.cumulativeCostChart.destroy();
-    }
-
-    if (!this.cumulativeCostChartRef) {
-      console.error('Cumulative cost chart ref not available');
-      return;
-    }
-
-    const ctx = this.cumulativeCostChartRef.nativeElement.getContext('2d');
-    if (!ctx) {
-      console.error('Could not get cumulative cost chart context');
-      return;
-    }
-
-    const years = this.cashFlowData.map(d => d.year);
-    
-    // Calculate cumulative costs
-    let cumulativeRentCost = 0;
-    let cumulativeBuyCost = 0;
-    
-    const cumulativeRentData: number[] = [];
-    const cumulativeBuyData: number[] = [];
-    
-    this.cashFlowData.forEach(d => {
-      cumulativeRentCost += d.rent_cost;
-      cumulativeBuyCost += (d.house_cost + d.loan_cost);
-      
-      // Convert to man-yen and use negative values for costs (cash outflows)
-      cumulativeRentData.push(-cumulativeRentCost / 10000);
-      cumulativeBuyData.push(-cumulativeBuyCost / 10000);
-    });
-
-    console.log('Creating cumulative cost chart with data:', { years, cumulativeRentData, cumulativeBuyData });
-
-    this.cumulativeCostChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: years,
-        datasets: [
-          {
-            label: 'Cumulative Rent Cost',
-            data: cumulativeRentData,
-            borderColor: 'rgb(255, 99, 132)',
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            tension: 0.1,
-            fill: false
-          },
-          {
-            label: 'Cumulative Buy Cost',
-            data: cumulativeBuyData,
-            borderColor: 'rgb(54, 162, 235)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            tension: 0.1,
-            fill: false
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Cumulative Cost (万円)'
-            },
-            ticks: {
-              callback: function(value) {
-                return Math.abs(Number(value)).toLocaleString() + '万円';
-              }
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Year'
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top'
           },
           tooltip: {
             callbacks: {
-              label: function(context) {
-                return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + '万円';
+              label: function(context: any) {
+                return context.dataset.label + ': ' + Math.round(context.parsed.y) + '万円';
               }
             }
           }
@@ -534,6 +591,14 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
           },
           legend: {
             display: true
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context: any) {
+                if (context.parsed.y === null) return context.dataset.label + ': N/A';
+                return context.dataset.label + ': ' + Math.round(context.parsed.y) + '%';
+              }
+            }
           }
         }
       }
@@ -608,6 +673,102 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
           },
           legend: {
             display: true
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context: any) {
+                return context.dataset.label + ': ' + Math.round(context.parsed.y) + '万円';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private createHouseVsStockChart(): void {
+    if (this.houseVsStockChart) {
+      this.houseVsStockChart.destroy();
+    }
+
+    if (!this.houseVsStockChartRef) {
+      console.error('House vs Stock chart ref not available');
+      return;
+    }
+
+    const ctx = this.houseVsStockChartRef.nativeElement.getContext('2d');
+    if (!ctx) {
+      console.error('Could not get House vs Stock chart context');
+      return;
+    }
+
+    const years = this.cashFlowData.map(d => d.year);
+    const buyNetWorth = this.cashFlowData.map(d => d.sale_value / 10000); // Net worth = sale value after broker fees and loan payoff
+    const stockValue = this.cashFlowData.map(d => d.stock_value / 10000); // Convert to man-yen
+
+    console.log('Creating Buy Net Worth vs Stock chart with data:', { years, buyNetWorth, stockValue });
+
+    this.houseVsStockChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets: [
+          {
+            label: 'Buy House',
+            data: buyNetWorth,
+            borderColor: 'rgb(255, 159, 64)',
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            tension: 0.1,
+            fill: false
+          },
+          {
+            label: 'Invest in Stocks',
+            data: stockValue,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Value (万円)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Year'
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Buy House vs Stock Investment Net Worth'
+          },
+          legend: {
+            display: true
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context: any) {
+                return context.dataset.label + ': ' + Math.round(context.parsed.y) + '万円';
+              }
+            }
           }
         }
       }
@@ -644,5 +805,34 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
 
   get monthlyRentCost(): number {
     return this.rent.monthlyRent;
+  }
+
+  // Mobile FAB methods
+  toggleFab(): void {
+    this.isFabOpen = !this.isFabOpen;
+  }
+
+  openModal(type: string): void {
+    this.activeModal = type;
+    this.isFabOpen = false; // Close FAB when modal opens
+    
+    // Update slider styles after modal renders
+    setTimeout(() => {
+      this.updateSliderStyles();
+    }, 50);
+  }
+
+  closeModal(): void {
+    this.activeModal = null;
+  }
+
+  getModalTitle(): string {
+    switch (this.activeModal) {
+      case 'rental': return $localize`:@@rentorbuy.rentalOption:Rental Option`;
+      case 'property': return $localize`:@@rentorbuy.propertyDetails:Property Details`;
+      case 'loan': return $localize`:@@rentorbuy.loanDetails:Loan Details`;
+      case 'economic': return $localize`:@@rentorbuy.economicFactors:Economic Factors`;
+      default: return '';
+    }
   }
 }

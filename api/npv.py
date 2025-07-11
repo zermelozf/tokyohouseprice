@@ -14,6 +14,7 @@ class CashFlow(BaseModel):
     house_value: float
     loan_value: float
     sale_value: float
+    stock_value: float
     buy_npv: float
     buy_irr: Optional[float]
 
@@ -111,13 +112,17 @@ def calculate_buy_vs_rent(params: NpvParams) -> List[CashFlow]:
             house.value_at_year(year) * (1 - params.broker_fee)
         
         cashflow_diff = np.array(buy_cashflows + [sale_cash]) - np.array(rent_cashflows)
-        
         irr_value = npf.irr(cashflow_diff)
         if np.isnan(irr_value) or np.isinf(irr_value):
             irr_value = None
         else:
             irr_value = float(irr_value)
+        buy_cashflows.append(house.cashflow(year) + loan.cashflow(year))
         
+        stock_value = 0.0
+        for i, (r, b) in enumerate(zip(rent_cashflows, buy_cashflows)):
+            stock_value += (r - b) * (1 + params.opportunity_cost_rate) ** (year - i)
+
         cashflow = CashFlow(
             year=year,
             rent_cost=rent.cashflow(year),
@@ -130,9 +135,10 @@ def calculate_buy_vs_rent(params: NpvParams) -> List[CashFlow]:
                 params.opportunity_cost_rate, 
                 cashflow_diff
             ),
-            buy_irr=irr_value
+            buy_irr=irr_value,
+            stock_value=stock_value
         )
-        buy_cashflows.append(house.cashflow(year) + loan.cashflow(year))
+        
         cashflows.append(cashflow)
 
     return cashflows

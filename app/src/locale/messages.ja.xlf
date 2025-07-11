@@ -1416,6 +1416,14 @@
           <context context-type="linenumber">231</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="rentorbuy.buyNetWorthVsStockChart" datatype="html">
+        <source>Buy House Net Worth vs Stock Investment</source>
+        <target>住宅購入純資産 vs 株式投資</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">239</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="rentorbuy.calculating" datatype="html">
         <source>Calculating analysis...</source>
         <target>分析を計算中...</target>
@@ -1430,6 +1438,48 @@
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
           <context context-type="linenumber">213</context>
+        </context-group>
+      </trans-unit>
+      
+      <!-- Mobile FAB and Modal Labels -->
+      <trans-unit id="rentorbuy.rental" datatype="html">
+        <source>Rental</source>
+        <target>賃貸</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">12</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.property" datatype="html">
+        <source>Property</source>
+        <target>物件</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">16</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loan" datatype="html">
+        <source>Loan</source>
+        <target>ローン</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">20</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.economic" datatype="html">
+        <source>Economic</source>
+        <target>経済</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">24</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyDetails" datatype="html">
+        <source>Property Details</source>
+        <target>物件詳細</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">669</context>
         </context-group>
       </trans-unit>
     </body>

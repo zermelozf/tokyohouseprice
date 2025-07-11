@@ -1,4 +1,204 @@
 <div class="dashboard-container">
+  <!-- Mobile FAB System -->
+  <div class="mobile-fab-system" [class.active]="isFabOpen">
+    <!-- Main FAB Button -->
+    <button class="main-fab" (click)="toggleFab()" type="button">
+      <span class="fab-icon" [class.rotated]="isFabOpen">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+        </svg>
+      </span>
+    </button>
+    
+    <!-- FAB Options -->
+    <div class="fab-options" *ngIf="isFabOpen">
+      <button class="fab-option rental" (click)="openModal('rental')" type="button">
+        <span class="fab-label" i18n="@@rentorbuy.rental">Rental</span>
+        <span class="fab-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/>
+          </svg>
+        </span>
+      </button>
+      <button class="fab-option property" (click)="openModal('property')" type="button">
+        <span class="fab-label" i18n="@@rentorbuy.property">Property</span>
+        <span class="fab-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12,3L2,12H5V20H19V12H22L12,3M12,8.75A1.25,1.25 0 0,1 13.25,10A1.25,1.25 0 0,1 12,11.25A1.25,1.25 0 0,1 10.75,10A1.25,1.25 0 0,1 12,8.75M12,15C13.5,15 15.61,15.5 16.5,16V18H7.5V16C8.39,15.5 10.5,15 12,15Z"/>
+          </svg>
+        </span>
+      </button>
+      <button class="fab-option loan" (click)="openModal('loan')" type="button">
+        <span class="fab-label" i18n="@@rentorbuy.loan">Loan</span>
+        <span class="fab-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9Z"/>
+          </svg>
+        </span>
+      </button>
+      <button class="fab-option economic" (click)="openModal('economic')" type="button">
+        <span class="fab-label" i18n="@@rentorbuy.economic">Economic</span>
+        <span class="fab-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M16,6L18.29,8.29L13.41,13.17L9.41,9.17L2,16.59L3.41,18L9.41,12L13.41,16L19.71,9.71L22,12V6H16Z"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" *ngIf="activeModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ getModalTitle() }}</h3>
+        <button class="modal-close" (click)="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <ng-container [ngSwitch]="activeModal">
+          <!-- Rental Modal Content -->
+          <div *ngSwitchCase="'rental'" class="modal-section">
+            <div class="form-group">
+              <label i18n="@@rentorbuy.monthlyRent">Monthly Rent (万円)</label>
+              <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onRentChange()">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.rentInflation">Rent Inflation</span>:
+                  <span class="info-icon" title="Annual rate at which rent is expected to increase over time">?</span>
+                </span>
+                <span class="label-value">{{macro.inflationRate}}%</span>
+              </label>
+              <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()" data-slider="rent-inflation">
+            </div>
+          </div>
+
+          <!-- Property Modal Content -->
+          <div *ngSwitchCase="'property'" class="modal-section">
+            <div class="form-group">
+              <label i18n="@@rentorbuy.housePrice">House Price (万円)</label>
+              <input type="number" [(ngModel)]="buy.housePrice" (ngModelChange)="onExpertBuyChange()">
+            </div>
+            <div class="form-group">
+              <label i18n="@@rentorbuy.landPrice">Land Price (万円)</label>
+              <input type="number" [(ngModel)]="buy.landPrice" (ngModelChange)="onExpertBuyChange()">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.amortizationPeriod">Amortization Period</span>:
+                  <span class="info-icon" title="Number of years over which the building's value will depreciate to zero">?</span>
+                </span>
+                <span class="label-value">{{buy.amortizationPeriod}} years</span>
+              </label>
+              <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod" (ngModelChange)="onFormChange()" data-slider="amortization-period">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text"><span i18n="@@rentorbuy.buildingAge">Building Age</span>:</span>
+                <span class="label-value">{{buy.buildingAge}} years</span>
+              </label>
+              <input type="range" min="0" max="50" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()" data-slider="building-age">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.maintenance">Maintenance</span>:
+                  <span class="info-icon" title="Annual maintenance cost as percentage of property value (repairs, renovations, etc.)">?</span>
+                </span>
+                <span class="label-value">{{buy.maintenance}}%</span>
+              </label>
+              <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance" (ngModelChange)="onFormChange()" data-slider="maintenance">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text"><span i18n="@@rentorbuy.propertyTax">Property Tax</span>:</span>
+                <span class="label-value">{{buy.propertyTax}}%</span>
+              </label>
+              <input type="range" min="0" max="3" step="0.1" [(ngModel)]="buy.propertyTax" (ngModelChange)="onFormChange()" data-slider="property-tax">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.agentFee">Agent Fee</span>:
+                  <span class="info-icon" title="Real estate agent commission fee, typically 3-6% of purchase price">?</span>
+                </span>
+                <span class="label-value">{{buy.feeRate}}%</span>
+              </label>
+              <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()" data-slider="agent-fee">
+            </div>
+          </div>
+
+          <!-- Loan Modal Content -->
+          <div *ngSwitchCase="'loan'" class="modal-section">
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text"><span i18n="@@rentorbuy.loanPeriod">Loan Period</span>:</span>
+                <span class="label-value">{{loan.loanPeriod}} years</span>
+              </label>
+              <input type="range" min="1" max="50" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onFormChange()" data-slider="loan-period">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.loanFee">Loan Fee</span>:
+                  <span class="info-icon" title="One-time processing fee charged by the bank for mortgage origination">?</span>
+                </span>
+                <span class="label-value">{{loan.loanFee}}%</span>
+              </label>
+              <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()" data-slider="loan-fee">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.loanRate">Loan Rate</span>:
+                  <span class="info-icon" title="Annual interest rate charged on the mortgage loan">?</span>
+                </span>
+                <span class="label-value">{{loan.loanRate}}%</span>
+              </label>
+              <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()" data-slider="loan-rate">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.downPayment">Down Payment</span>:
+                  <span class="info-icon" title="Percentage of property price paid upfront, not financed through mortgage">?</span>
+                </span>
+                <span class="label-value">{{loan.upfrontAmount}}%</span>
+              </label>
+              <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount" (ngModelChange)="onFormChange()" data-slider="down-payment">
+            </div>
+          </div>
+
+          <!-- Economic Modal Content -->
+          <div *ngSwitchCase="'economic'" class="modal-section">
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.houseAppreciation">House Appreciation</span>:
+                  <span class="info-icon" title="Annual rate at which property value is expected to increase (can be negative)">?</span>
+                </span>
+                <span class="label-value">{{macro.landAppreciation}}%</span>
+              </label>
+              <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation" (ngModelChange)="onFormChange()" data-slider="house-appreciation">
+            </div>
+            <div class="form-group range-group">
+              <label>
+                <span class="label-text">
+                  <span i18n="@@rentorbuy.opportunityCost">Opportunity Cost</span>:
+                  <span class="info-icon" title="Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)">?</span>
+                </span>
+                <span class="label-value">{{macro.opportunityCost}}%</span>
+              </label>
+              <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost" (ngModelChange)="onFormChange()" data-slider="opportunity-cost">
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
   <div class="dashboard-grid">
     <!-- Left Sidebar: Rental & Property -->
     <div class="left-sidebar">
@@ -15,18 +215,7 @@
         <div class="section-content" [class.collapsed]="isRentCollapsed">
           <div class="form-group">
             <label i18n="@@rentorbuy.monthlyRent">Monthly Rent (万円)</label>
-            <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onFormChange()">
-          </div>
-          <div class="form-group">
-            <label>
-              <span i18n="@@rentorbuy.giftMoney">Gift Money (万円)</span>
-              <span class="info-icon" title="Money given by landlord as incentive, typically 1-2 months rent">?</span>
-            </label>
-            <input type="number" [(ngModel)]="rent.giftMoney" (ngModelChange)="onFormChange()">
-          </div>
-          <div class="form-group">
-            <label i18n="@@rentorbuy.guarantee">Guarantee (万円)</label>
-            <input type="number" [(ngModel)]="rent.guarantee" (ngModelChange)="onFormChange()">
+            <input type="number" [(ngModel)]="rent.monthlyRent" (ngModelChange)="onRentChange()">
           </div>
           <div class="form-group range-group">
             <label>
@@ -36,7 +225,7 @@
               </span>
               <span class="label-value">{{macro.inflationRate}}%</span>
             </label>
-            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate" (ngModelChange)="onFormChange()" data-slider="rent-inflation">
           </div>
         </div>
         
@@ -70,14 +259,14 @@
               </span>
               <span class="label-value">{{buy.amortizationPeriod}} years</span>
             </label>
-            <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod" (ngModelChange)="onFormChange()" data-slider="amortization-period">
           </div>
           <div class="form-group range-group">
             <label>
               <span class="label-text">Building Age:</span>
               <span class="label-value">{{buy.buildingAge}} years</span>
             </label>
-            <input type="range" min="0" max="50" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="50" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()" data-slider="building-age">
           </div>
           <div class="form-group range-group">
             <label>
@@ -87,14 +276,14 @@
               </span>
               <span class="label-value">{{buy.maintenance}}%</span>
             </label>
-            <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance" (ngModelChange)="onFormChange()" data-slider="maintenance">
           </div>
           <div class="form-group range-group">
             <label>
               <span class="label-text">Property Tax:</span>
               <span class="label-value">{{buy.propertyTax}}%</span>
             </label>
-            <input type="range" min="0" max="3" step="0.1" [(ngModel)]="buy.propertyTax" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="3" step="0.1" [(ngModel)]="buy.propertyTax" (ngModelChange)="onFormChange()" data-slider="property-tax">
           </div>
           <div class="form-group range-group">
             <label>
@@ -104,7 +293,7 @@
               </span>
               <span class="label-value">{{buy.feeRate}}%</span>
             </label>
-            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()" data-slider="agent-fee">
           </div>
         </div>
         
@@ -127,6 +316,15 @@
         <div class="charts-container">
           <div class="chart-wrapper">
             <h4 i18n="@@rentorbuy.npvChart">Net Present Value (NPV)</h4>
+            <div class="npv-explanation">
+              <p><strong>What is NPV?</strong> Net Present Value shows how much money you save or gain by buying instead of renting. When the line is above zero, buying is better than renting. The higher the line, the more money you save.</p>
+            </div>
+            <div *ngIf="!isLoading && !error && cashFlowData.length > 0 && financialRecommendation" class="financial-recommendation">
+              <p><strong>💡 Smart Investment Strategy:</strong> 
+                <span *ngFor="let segment of recommendationSegments" 
+                      [class.highlight-number]="segment.isNumber">{{ segment.text }}</span>
+              </p>
+            </div>
             <canvas #npvChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               NPV chart will appear here after calculation
@@ -134,26 +332,35 @@
           </div>
           
           <div class="chart-wrapper">
-            <h4 i18n="@@rentorbuy.cumulativeCostsChart">Cumulative Costs: Rent vs Buy</h4>
-            <canvas #cumulativeCostChart></canvas>
-            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
-              Cumulative cost chart will appear here after calculation
+            <h4 i18n="@@rentorbuy.buyNetWorthVsStockChart">Buy House vs Invest in Stock Net Worth</h4>
+            <div class="chart-explanation">
+              <p><strong>What does this show?</strong> This compares your total wealth if you buy a house versus investing your down payment in stocks while renting. The higher line shows which option makes you richer over time.</p>
             </div>
-          </div>
-          
-          <div class="chart-wrapper">
-            <h4 i18n="@@rentorbuy.irrChart">Internal Rate of Return (IRR)</h4>
-            <canvas #irrChart></canvas>
+            <canvas #houseVsStockChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
-              IRR chart will appear here after calculation
+              Buy Net Worth vs Stock chart will appear here after calculation
             </div>
           </div>
           
           <div class="chart-wrapper">
             <h4 i18n="@@rentorbuy.annualCashflowChart">Annual Cashflow Comparison</h4>
+            <div class="chart-explanation">
+              <p><strong>What does this show?</strong> This shows how much money you spend each year on housing. Red bars show yearly rent costs, blue bars show yearly costs of buying (mortgage, maintenance, taxes). Lower bars mean less money spent per year.</p>
+            </div>
             <canvas #cashflowChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
               Cashflow chart will appear here after calculation
+            </div>
+          </div>
+          
+          <div class="chart-wrapper">
+            <h4 i18n="@@rentorbuy.irrChart">Internal Rate of Return (IRR)</h4>
+            <div class="chart-explanation">
+              <p><strong>What does this show?</strong> IRR measures how good your house investment is, like interest rate on savings. Higher percentages mean better returns. Compare this to stock market returns (usually 6-8%) to see if buying beats other investments.</p>
+            </div>
+            <canvas #irrChart></canvas>
+            <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
+              IRR chart will appear here after calculation
             </div>
           </div>
         </div>
@@ -178,7 +385,7 @@
               <span class="label-text">Loan Period:</span>
               <span class="label-value">{{loan.loanPeriod}} years</span>
             </label>
-            <input type="range" min="1" max="50" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onFormChange()">
+            <input type="range" min="1" max="50" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onFormChange()" data-slider="loan-period">
           </div>
           <div class="form-group range-group">
             <label>
@@ -188,7 +395,7 @@
               </span>
               <span class="label-value">{{loan.loanFee}}%</span>
             </label>
-            <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()" data-slider="loan-fee">
           </div>
           <div class="form-group range-group">
             <label>
@@ -198,7 +405,7 @@
               </span>
               <span class="label-value">{{loan.loanRate}}%</span>
             </label>
-            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()" data-slider="loan-rate">
           </div>
           <div class="form-group range-group">
             <label>
@@ -208,7 +415,7 @@
               </span>
               <span class="label-value">{{loan.upfrontAmount}}%</span>
             </label>
-            <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount" (ngModelChange)="onFormChange()" data-slider="down-payment">
           </div>
         </div>
         
@@ -234,7 +441,7 @@
               </span>
               <span class="label-value">{{macro.landAppreciation}}%</span>
             </label>
-            <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation" (ngModelChange)="onFormChange()">
+            <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation" (ngModelChange)="onFormChange()" data-slider="house-appreciation">
           </div>
           <div class="form-group range-group">
             <label>
@@ -244,7 +451,7 @@
               </span>
               <span class="label-value">{{macro.opportunityCost}}%</span>
             </label>
-            <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost" (ngModelChange)="onFormChange()">
+            <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost" (ngModelChange)="onFormChange()" data-slider="opportunity-cost">
           </div>
         </div>
         
