@@ -1232,22 +1232,7 @@
           <context context-type="linenumber">17</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.giftMoney" datatype="html">
-        <source>Gift Money (万円)</source>
-        <target>礼金 (万円)</target>
-        <context-group purpose="location">
-          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
-          <context context-type="linenumber">21</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="rentorbuy.guarantee" datatype="html">
-        <source>Guarantee (万円)</source>
-        <target>敷金 (万円)</target>
-        <context-group purpose="location">
-          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
-          <context context-type="linenumber">26</context>
-        </context-group>
-      </trans-unit>
+
       <trans-unit id="rentorbuy.rentInflation" datatype="html">
         <source>Rent Inflation</source>
         <target>家賃上昇率</target>
@@ -1392,14 +1377,7 @@
           <context context-type="linenumber">210</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.cumulativeCostsChart" datatype="html">
-        <source>Cumulative Costs: Rent vs Buy</source>
-        <target>累積コスト: 賃貸 vs 購入</target>
-        <context-group purpose="location">
-          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
-          <context context-type="linenumber">217</context>
-        </context-group>
-      </trans-unit>
+
       <trans-unit id="rentorbuy.irrChart" datatype="html">
         <source>Internal Rate of Return (IRR)</source>
         <target>内部収益率 (IRR)</target>
@@ -1417,8 +1395,8 @@
         </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.buyNetWorthVsStockChart" datatype="html">
-        <source>Buy House Net Worth vs Stock Investment</source>
-        <target>住宅購入純資産 vs 株式投資</target>
+        <source>Buy House vs Invest in Stock Net Worth</source>
+        <target>住宅購入 vs 株式投資純資産</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
           <context context-type="linenumber">239</context>
@@ -1481,6 +1459,92 @@
           <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
           <context context-type="linenumber">669</context>
         </context-group>
+      </trans-unit>
+      
+      <!-- Chart Explanations -->
+      <trans-unit id="rentorbuy.npvExplanationTitle" datatype="html">
+        <source>What is NPV?</source>
+        <target>NPVとは何ですか？</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvExplanationText" datatype="html">
+        <source>Net Present Value shows how much money you save or gain by buying instead of renting. When the line is above zero, buying is better than renting. The higher the line, the more money you save.</source>
+        <target>正味現在価値は、賃貸の代わりに購入することでどのくらいお金を節約または獲得できるかを示します。線がゼロより上にある場合、購入は賃貸よりも良いです。線が高いほど、より多くのお金を節約できます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.smartInvestmentStrategy" datatype="html">
+        <source>💡 Smart Investment Strategy:</source>
+        <target>💡 スマート投資戦略：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.chartExplanationTitle" datatype="html">
+        <source>What does this show?</source>
+        <target>これは何を示していますか？</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseVsStockExplanation" datatype="html">
+        <source>This compares your total wealth if you buy a house versus investing your down payment in stocks while renting. The higher line shows which option makes you richer over time.</source>
+        <target>これは、賃貸しながら頭金を株式に投資する場合と住宅を購入する場合の総資産を比較します。高い線は、時間の経過とともにどちらの選択肢があなたをより豊かにするかを示しています。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowExplanation" datatype="html">
+        <source>This shows how much money you spend each year on housing. Red bars show yearly rent costs, blue bars show yearly costs of buying (mortgage, maintenance, taxes). Lower bars mean less money spent per year.</source>
+        <target>これは、住居に毎年どのくらいのお金を使うかを示しています。赤いバーは年間の賃貸費用、青いバーは購入の年間費用（住宅ローン、メンテナンス、税金）を示します。バーが低いほど、年間の支出が少ないことを意味します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrExplanation" datatype="html">
+        <source>IRR measures how good your house investment is, like interest rate on savings. Higher percentages mean better returns. Compare this to stock market returns (usually 6-8%) to see if buying beats other investments.</source>
+        <target>IRRは、貯蓄の金利のように、あなたの住宅投資がどれだけ良いかを測定します。高いパーセンテージは、より良いリターンを意味します。これを株式市場のリターン（通常6-8％）と比較して、購入が他の投資を上回るかどうかを確認してください。</target>
+      </trans-unit>
+      
+      <!-- Chart Placeholders -->
+      <trans-unit id="rentorbuy.npvChartPlaceholder" datatype="html">
+        <source>NPV chart will appear here after calculation</source>
+        <target>計算後にNPVチャートがここに表示されます</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseVsStockChartPlaceholder" datatype="html">
+        <source>Buy Net Worth vs Stock chart will appear here after calculation</source>
+        <target>計算後に住宅購入純資産対株式チャートがここに表示されます</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowChartPlaceholder" datatype="html">
+        <source>Cashflow chart will appear here after calculation</source>
+        <target>計算後にキャッシュフローチャートがここに表示されます</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrChartPlaceholder" datatype="html">
+        <source>IRR chart will appear here after calculation</source>
+        <target>計算後にIRRチャートがここに表示されます</target>
+      </trans-unit>
+      
+      <!-- Tooltips -->
+      <trans-unit id="rentorbuy.rentInflationTooltip" datatype="html">
+        <source>Annual rate at which rent is expected to increase over time</source>
+        <target>時間の経過とともに家賃が上昇すると予想される年率</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.amortizationPeriodTooltip" datatype="html">
+        <source>Number of years over which the building's value will depreciate to zero</source>
+        <target>建物の価値がゼロまで減価償却される年数</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.maintenanceTooltip" datatype="html">
+        <source>Annual maintenance cost as percentage of property value (repairs, renovations, etc.)</source>
+        <target>物件価値に対する年間メンテナンス費用の割合（修理、改修など）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.agentFeeTooltip" datatype="html">
+        <source>Real estate agent commission fee, typically 3-6% of purchase price</source>
+        <target>不動産仲介手数料、通常は購入価格の3-6％</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanFeeTooltip" datatype="html">
+        <source>One-time processing fee charged by the bank for mortgage origination</source>
+        <target>住宅ローン組成のために銀行が請求する一回限りの手数料</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanRateTooltip" datatype="html">
+        <source>Annual interest rate charged on the mortgage loan</source>
+        <target>住宅ローンに請求される年間金利</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.downPaymentTooltip" datatype="html">
+        <source>Percentage of property price paid upfront, not financed through mortgage</source>
+        <target>住宅ローンで資金調達されない、前払いで支払われる物件価格の割合</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseAppreciationTooltip" datatype="html">
+        <source>Annual rate at which property value is expected to increase (can be negative)</source>
+        <target>物件価値が上昇すると予想される年率（負の値も可能）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostTooltip" datatype="html">
+        <source>Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)</source>
+        <target>頭金を他の投資（株式、債券など）に投資した場合の期待収益率</target>
       </trans-unit>
     </body>
   </file>

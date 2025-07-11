@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Inject, LOCALE_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -123,7 +123,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     upfrontAmount: 20.0,
   };
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, @Inject(LOCALE_ID) private locale: string) {
     console.log('RentOrBuyComponent constructor - API URL:', this.apiUrl);
     this.onPropertyPriceChange(this.buy.propertyPrice);
     
@@ -393,31 +393,82 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     this.generateFinancialRecommendation();
   }
 
+  private getTranslatedText(key: string, fallback: string): string {
+    if (this.locale === 'ja') {
+      const translations: { [key: string]: string } = {
+        'never_advantageous': 'この設定では、賃貸の方が購入よりも常にお金を節約できます。',
+        'unable_to_calculate': '現在のデータでは最適戦略を計算できません。',
+        'right_away': 'すぐに',
+        'after_years_prefix': '住んでから',
+        'after_years_suffix': '年後に',
+        'save_compared_to_renting': '万円を賃貸と比較して節約',
+        'buying_pays_off': '購入は',
+        'pays_off_and_best_savings': 'に投資回収し、',
+        'best_savings_at_year': '年目に最高の節約効果を発揮します',
+        'buying_starts_paying_off': '購入は',
+        'starts_paying_off': 'に投資回収を始めます。',
+        'for_maximum_savings': '最大の節約のため、',
+        'stay_until_year': '年目まで住み続けてください',
+        'after_year_renting_cheaper': '年目以降、賃貸の方が安くなります。',
+        'sell_before_year': 'また、',
+        'sell_before_year_suffix': '年目前に売却すべきです - その後は賃貸の方が安くなります。',
+        'and_save': 'そして'
+      };
+      return translations[key] || fallback;
+    }
+    return fallback;
+  }
+
   private generateFinancialRecommendation(): void {
     if (this.minYearsForAdvantage === null) {
-      this.financialRecommendation = ' With these settings, renting would always save you more money than buying.';
+      this.financialRecommendation = ' ' + this.getTranslatedText('never_advantageous', 'With these settings, renting would always save you more money than buying.');
       this.parseRecommendationForHighlighting(this.financialRecommendation);
     } else if (this.optimalYearsForMaxNpv === null) {
-      this.financialRecommendation = ' Unable to calculate the best strategy with current data.';
+      this.financialRecommendation = ' ' + this.getTranslatedText('unable_to_calculate', 'Unable to calculate the best strategy with current data.');
       this.parseRecommendationForHighlighting(this.financialRecommendation);
     } else {
-      const breakEvenText = this.minYearsForAdvantage === 1 ? 'right away' : `after living there for ${this.minYearsForAdvantage} years`;
-      const profitText = this.maxNpvValue ? ` and save ${Math.round(this.maxNpvValue / 10000)} 万円 compared to renting` : '';
+      const breakEvenText = this.minYearsForAdvantage === 1 
+        ? this.getTranslatedText('right_away', 'right away')
+        : this.locale === 'ja' 
+          ? `${this.getTranslatedText('after_years_prefix', 'after living there for')}${this.minYearsForAdvantage}${this.getTranslatedText('after_years_suffix', ' years')}`
+          : `after living there for ${this.minYearsForAdvantage} years`;
+      
+      const profitText = this.maxNpvValue 
+        ? this.locale === 'ja'
+          ? `${this.getTranslatedText('and_save', ' and save')}${Math.round(this.maxNpvValue / 10000)}${this.getTranslatedText('save_compared_to_renting', ' 万円 compared to renting')}`
+          : ` and save ${Math.round(this.maxNpvValue / 10000)} 万円 compared to renting`
+        : '';
       
       let recommendation = '';
       
       if (this.minYearsForAdvantage === this.optimalYearsForMaxNpv) {
-        recommendation = ` Buying pays off ${breakEvenText} and gives you the best savings at year ${this.optimalYearsForMaxNpv}${profitText}.`;
+        if (this.locale === 'ja') {
+          recommendation = ` ${this.getTranslatedText('buying_pays_off', 'Buying pays off')}${breakEvenText}${this.getTranslatedText('pays_off_and_best_savings', ' and gives you the best savings at year')}${this.optimalYearsForMaxNpv}${this.getTranslatedText('best_savings_at_year', '')}${profitText}。`;
+        } else {
+          recommendation = ` Buying pays off ${breakEvenText} and gives you the best savings at year ${this.optimalYearsForMaxNpv}${profitText}.`;
+        }
       } else {
-        recommendation = ` Buying starts paying off ${breakEvenText}. For maximum savings, stay until year ${this.optimalYearsForMaxNpv}${profitText}.`;
+        if (this.locale === 'ja') {
+          recommendation = ` ${this.getTranslatedText('buying_starts_paying_off', 'Buying starts paying off')}${breakEvenText}${this.getTranslatedText('starts_paying_off', '.')} ${this.getTranslatedText('for_maximum_savings', 'For maximum savings, ')}${this.optimalYearsForMaxNpv}${this.getTranslatedText('stay_until_year', ' until year')}${profitText}。`;
+        } else {
+          recommendation = ` Buying starts paying off ${breakEvenText}. For maximum savings, stay until year ${this.optimalYearsForMaxNpv}${profitText}.`;
+        }
       }
       
       // Add advice about selling before losses
       if (this.sellBeforeNegative !== null) {
         if (this.sellBeforeNegative === this.optimalYearsForMaxNpv) {
-          recommendation += ` After year ${this.sellBeforeNegative}, renting becomes cheaper again.`;
+          if (this.locale === 'ja') {
+            recommendation += ` ${this.sellBeforeNegative}${this.getTranslatedText('after_year_renting_cheaper', ' After year, renting becomes cheaper again.')}`;
+          } else {
+            recommendation += ` After year ${this.sellBeforeNegative}, renting becomes cheaper again.`;
+          }
         } else {
-          recommendation += ` Also,  you should sell before year ${this.sellBeforeNegative + 1} - after that, renting becomes cheaper.`;
+          if (this.locale === 'ja') {
+            recommendation += ` ${this.getTranslatedText('sell_before_year', 'Also, ')}${this.sellBeforeNegative + 1}${this.getTranslatedText('sell_before_year_suffix', ' - after that, renting becomes cheaper.')}`;
+          } else {
+            recommendation += ` Also,  you should sell before year ${this.sellBeforeNegative + 1} - after that, renting becomes cheaper.`;
+          }
         }
       }
       
@@ -429,8 +480,8 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   private parseRecommendationForHighlighting(text: string): void {
     this.recommendationSegments = [];
     
-    // Regular expression to match numbers (including those followed by 万円 or years)
-    const numberRegex = /(\d+(?:\s*万円|\s*years?)?)/g;
+    // Regular expression to match numbers (including those followed by 万円, years, 年目, 年後, etc.)
+    const numberRegex = /(\d+(?:\s*万円|\s*years?|\s*年目?|\s*年後)?)/g;
     
     let lastIndex = 0;
     let match;
