@@ -305,6 +305,14 @@
     <div class="center-content">
       <div class="charts-section">
         
+        <!-- Purpose explanation box -->
+        <div class="purpose-explanation" *ngIf="isIntroVisible" [class.fade-out]="isIntroFadingOut">
+          <button class="close-intro-btn" (click)="closeIntroBox()" type="button" title="Close introduction">×</button>
+          <h3 i18n="@@rentorbuy.toolPurpose">🤓 Buy vs Rent: The Ultimate Financial Nerd Tool 📊</h3>
+          <p i18n="@@rentorbuy.toolDescription">Hey there! 👋 Beware this isn't your typical rent-vs-buy calculator but rather the nerdy version complete with NPV and IRR analysis. Feel free to tweak everything from property depreciation curves to opportunity costs and see the real-time impact! 🚀</p>
+          <p i18n="@@rentorbuy.toolLearnMore">And if you think that isn't nerdy enough, please read the <a href="/rent-or-buy-analysis">detailed article</a> 🤓✨</p>
+        </div>
+        
         <div *ngIf="isLoading" class="loading-indicator">
           <p i18n="@@rentorbuy.calculating">Calculating analysis...</p>
         </div>
@@ -334,7 +342,7 @@
           <div class="chart-wrapper">
             <h4 i18n="@@rentorbuy.buyNetWorthVsStockChart">Buy House vs Invest in Stock Net Worth</h4>
             <div class="chart-explanation">
-              <p><strong i18n="@@rentorbuy.chartExplanationTitle">What does this show?</strong> <span i18n="@@rentorbuy.houseVsStockExplanation">This compares your total wealth if you buy a house versus investing your down payment in stocks while renting. The higher line shows which option makes you richer over time.</span></p>
+              <p><strong i18n="@@rentorbuy.chartExplanationTitle">What does this show? </strong> <span i18n="@@rentorbuy.houseVsStockExplanation">This compares your total wealth if you buy a house versus investing your down payment in stocks while renting. The higher line shows which option makes you richer over time.</span></p>
             </div>
             <canvas #houseVsStockChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
@@ -345,7 +353,7 @@
           <div class="chart-wrapper">
             <h4 i18n="@@rentorbuy.annualCashflowChart">Annual Cashflow Comparison</h4>
             <div class="chart-explanation">
-              <p><strong i18n="@@rentorbuy.chartExplanationTitle">What does this show?</strong> <span i18n="@@rentorbuy.cashflowExplanation">This shows how much money you spend each year on housing. Red bars show yearly rent costs, blue bars show yearly costs of buying (mortgage, maintenance, taxes). Lower bars mean less money spent per year.</span></p>
+              <p><strong i18n="@@rentorbuy.chartExplanationTitle">What does this show? </strong> <span i18n="@@rentorbuy.cashflowExplanation">This shows how much money you spend each year on housing. Red bars show yearly rent costs, blue bars show yearly costs of buying (mortgage, maintenance, taxes). Lower bars mean less money spent per year.</span></p>
             </div>
             <canvas #cashflowChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">
@@ -356,7 +364,7 @@
           <div class="chart-wrapper">
             <h4 i18n="@@rentorbuy.irrChart">Internal Rate of Return (IRR)</h4>
             <div class="chart-explanation">
-              <p><strong i18n="@@rentorbuy.chartExplanationTitle">What does this show?</strong> <span i18n="@@rentorbuy.irrExplanation">IRR measures how good your house investment is, like interest rate on savings. Higher percentages mean better returns. Compare this to stock market returns (usually 6-8%) to see if buying beats other investments.</span></p>
+              <p><strong i18n="@@rentorbuy.chartExplanationTitle">What does this show? </strong> <span i18n="@@rentorbuy.irrExplanation">IRR measures how good your house investment is, like interest rate on savings. Higher percentages mean better returns. Compare this to stock market returns (usually 6-8%) to see if buying beats other investments.</span></p>
             </div>
             <canvas #irrChart></canvas>
             <div *ngIf="!isLoading && !error && cashFlowData.length === 0" class="chart-placeholder">

@@ -1546,6 +1546,184 @@
         <source>Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)</source>
         <target>頭金を他の投資（株式、債券など）に投資した場合の期待収益率</target>
       </trans-unit>
+      
+      <!-- Purpose Explanation -->
+      <trans-unit id="rentorbuy.toolPurpose" datatype="html">
+        <source>🤓 Buy vs Rent: The Ultimate Financial Nerd Tool 📊</source>
+        <target>🤓 購入 vs 賃貸：究極の金融オタクツール 📊</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolDescription" datatype="html">
+        <source>Hey there, fellow number crunchers! 👋 This isn't your typical rent-vs-buy calculator. We're talking full-blown financial modeling here - complete with NPV calculations, IRR analysis, and Monte Carlo-style sensitivity testing. Tweak everything from property depreciation curves to opportunity costs and watch the math unfold in real-time! 🚀</source>
+        <target>こんにちは、数字マニアの仲間たち！👋 これは典型的な賃貸vs購入計算機ではありません。ここでは本格的な金融モデリングを行います - NPV計算、IRR分析、モンテカルロ式感度テストを完備！物件の減価償却曲線から機会費用まで、あらゆるパラメータを調整して、数学がリアルタイムで展開されるのを見てください！🚀</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolLearnMore" datatype="html">
+        <source>And if you think that isn't nerdy enough, please read the <a href="/rent-or-buy-analysis">detailed article</a> 🤓✨</source>
+        <target>そしてそれがまだ十分にオタクでない場合は、<a href="/rent-or-buy-analysis">詳細な記事</a>をお読みください。🤓✨</target>
+      </trans-unit>
+      
+      <!-- Navbar -->
+      <trans-unit id="nav.rentOrBuyAnalysis" datatype="html">
+        <source>Rent or Buy Analysis</source>
+        <target>賃貸vs購入分析</target>
+      </trans-unit>
+      
+      <!-- Rent or Buy Article -->
+      <trans-unit id="rentorbuy.articleTitle" datatype="html">
+        <source>Understanding the Rent vs Buy Analysis: A Technical Deep Dive</source>
+        <target>賃貸vs購入分析の理解：技術的な詳細解説</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.articleSubtitle" datatype="html">
+        <source>A comprehensive guide to the mathematical models and assumptions behind our rent-or-buy calculator</source>
+        <target>私たちの賃貸vs購入計算機の背後にある数学的モデルと仮定の包括的なガイド</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.introTitle" datatype="html">
+        <source>Introduction</source>
+        <target>はじめに</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.introText" datatype="html">
+        <source>The decision between renting and buying a property is one of the most significant financial choices you'll make. Our rent-or-buy calculator goes beyond simple cost comparisons to provide a comprehensive financial analysis using proven economic models. This article explains the methodology, assumptions, and mathematical foundations behind our tool.</source>
+        <target>不動産の賃貸と購入の決定は、あなたが行う最も重要な金融的選択の一つです。私たちの賃貸vs購入計算機は、単純なコスト比較を超えて、証明された経済モデルを使用した包括的な金融分析を提供します。この記事では、私たちのツールの背後にある方法論、仮定、数学的基盤を説明します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvTitle" datatype="html">
+        <source>Net Present Value (NPV) Analysis</source>
+        <target>正味現在価値（NPV）分析</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvText" datatype="html">
+        <source>At the core of our analysis is the Net Present Value (NPV) calculation, which compares the present value of cash flows from buying versus renting. The NPV formula accounts for the time value of money by discounting future cash flows to their present value using your opportunity cost rate.</source>
+        <target>私たちの分析の中核は正味現在価値（NPV）計算で、購入と賃貸からのキャッシュフローの現在価値を比較します。NPV式は、機会費用率を使用して将来のキャッシュフローを現在価値に割り引くことで、お金の時間価値を考慮します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvFormula" datatype="html">
+        <source>NPV Formula</source>
+        <target>NPV公式</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvFormulaExplanation" datatype="html">
+        <source>Where CF_t is the cash flow at time t, r is the discount rate (opportunity cost), and t is the time period.</source>
+        <target>ここでCF_tは時間tでのキャッシュフロー、rは割引率（機会費用）、tは時間期間です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrTitle" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <target>内部収益率（IRR）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrText" datatype="html">
+        <source>The Internal Rate of Return (IRR) represents the annualized rate of return on your property investment. It's the discount rate that makes the NPV equal to zero. A higher IRR indicates a more profitable investment compared to alternative investments like stocks or bonds.</source>
+        <target>内部収益率（IRR）は、あなたの不動産投資の年間収益率を表します。これは、NPVをゼロにする割引率です。より高いIRRは、株式や債券などの代替投資と比較して、より収益性の高い投資を示します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.assumptionsTitle" datatype="html">
+        <source>Key Assumptions and Parameters</source>
+        <target>主要な仮定とパラメータ</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyDepreciation" datatype="html">
+        <source>Property Depreciation</source>
+        <target>不動産の減価償却</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyDepreciationText" datatype="html">
+        <source>Buildings depreciate over time while land typically appreciates. Our model uses a straight-line depreciation for the building component over the specified amortization period, while applying appreciation rates to the land value.</source>
+        <target>建物は時間の経過とともに減価しますが、土地は通常値上がりします。私たちのモデルは、指定された償却期間にわたって建物部分に定額法減価償却を使用し、土地価値には値上がり率を適用します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostTitle" datatype="html">
+        <source>Opportunity Cost</source>
+        <target>機会費用</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostText" datatype="html">
+        <source>This represents the return you could earn by investing your down payment in alternative investments (typically stock market returns of 6-8% annually). It's used as the discount rate in NPV calculations.</source>
+        <target>これは、頭金を代替投資に投資することで得られる可能性のある収益を表します（通常、年間6-8%の株式市場収益）。NPV計算では割引率として使用されます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.transactionCostsTitle" datatype="html">
+        <source>Transaction Costs</source>
+        <target>取引コスト</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.transactionCostsText" datatype="html">
+        <source>Includes real estate agent fees, loan origination costs, and other one-time expenses associated with purchasing property. These are factored into the initial investment calculation.</source>
+        <target>不動産仲介手数料、ローン組成費用、その他の不動産購入に関連する一回限りの費用が含まれます。これらは初期投資計算に考慮されます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.maintenanceCostsTitle" datatype="html">
+        <source>Maintenance and Operating Costs</source>
+        <target>メンテナンスと運営コスト</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.maintenanceCostsText" datatype="html">
+        <source>Annual maintenance costs are calculated as a percentage of property value, including repairs, renovations, property taxes, and insurance. These ongoing costs are crucial for accurate comparison.</source>
+        <target>年間メンテナンス費用は、修理、改修、固定資産税、保険を含む不動産価値のパーセンテージとして計算されます。これらの継続的なコストは正確な比較に不可欠です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityTitle" datatype="html">
+        <source>Sensitivity Analysis</source>
+        <target>感度分析</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityText" datatype="html">
+        <source>Our tool allows you to perform sensitivity analysis by adjusting key parameters to see how they affect the financial outcomes. This Monte Carlo-style approach helps you understand the range of possible outcomes and make more informed decisions.</source>
+        <target>私たちのツールは、主要パラメータを調整してそれらが金融結果にどのように影響するかを確認することで、感度分析を実行できます。このモンテカルロ式アプローチは、可能な結果の範囲を理解し、より十分な情報に基づいた決定を行うのに役立ちます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.keyFactorsTitle" datatype="html">
+        <source>Key Factors to Test</source>
+        <target>テストすべき主要因子</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor1" datatype="html">
+        <source>Property appreciation rates (can be negative in declining markets)</source>
+        <target>不動産値上がり率（下降市場では負の値も可能）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor2" datatype="html">
+        <source>Rent inflation rates and renewal costs</source>
+        <target>家賃インフレ率と更新費用</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor3" datatype="html">
+        <source>Interest rate changes and loan terms</source>
+        <target>金利変動とローン条件</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor4" datatype="html">
+        <source>Maintenance cost variations</source>
+        <target>メンテナンス費用の変動</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor5" datatype="html">
+        <source>Different holding periods (how long you stay)</source>
+        <target>異なる保有期間（滞在期間）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitationsTitle" datatype="html">
+        <source>Limitations and Considerations</source>
+        <target>制限と考慮事項</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitationsText" datatype="html">
+        <source>While our model provides a comprehensive financial analysis, it's important to understand its limitations:</source>
+        <target>私たちのモデルは包括的な金融分析を提供しますが、その制限を理解することが重要です：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitation1" datatype="html">
+        <source>Market conditions can change unpredictably</source>
+        <target>市場条件は予測不可能に変化する可能性があります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitation2" datatype="html">
+        <source>Personal circumstances and preferences aren't quantified</source>
+        <target>個人的な状況と好みは定量化されていません</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitation3" datatype="html">
+        <source>Tax implications vary by individual situation</source>
+        <target>税務上の影響は個人の状況によって異なります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitation4" datatype="html">
+        <source>Liquidity considerations (ease of selling vs. moving)</source>
+        <target>流動性の考慮事項（売却の容易さ vs 引っ越し）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.limitation5" datatype="html">
+        <source>Maintenance costs can vary significantly from estimates</source>
+        <target>メンテナンス費用は見積もりから大幅に変動する可能性があります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionTitle" datatype="html">
+        <source>Conclusion</source>
+        <target>結論</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionText" datatype="html">
+        <source>The rent-or-buy decision depends on numerous financial and personal factors. Our calculator provides a solid analytical framework, but remember that financial models are tools to inform your decision, not make it for you. Consider your personal circumstances, risk tolerance, and long-term goals when making this important choice.</source>
+        <target>賃貸or購入の決定は、多くの金融的・個人的要因に依存します。私たちの計算機は確固たる分析フレームワークを提供しますが、金融モデルはあなたの決定を情報に基づいて行うためのツールであり、あなたに代わって決定を行うものではないことを覚えておいてください。この重要な選択をする際は、個人的な状況、リスク許容度、長期的な目標を考慮してください。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ctaTitle" datatype="html">
+        <source>Ready to Run Your Analysis?</source>
+        <target>分析を実行する準備はできていますか？</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ctaText" datatype="html">
+        <source>Use our interactive calculator to explore different scenarios and find the best financial choice for your situation.</source>
+        <target>私たちのインタラクティブな計算機を使用して、さまざまなシナリオを探索し、あなたの状況に最適な金融的選択を見つけてください。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ctaButton" datatype="html">
+        <source>Go to Rent vs Buy Calculator</source>
+        <target>賃貸vs購入計算機へ</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

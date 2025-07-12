@@ -845,6 +845,13 @@
           <context context-type="linenumber">107</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="rentorbuy.toolLearnMore" datatype="html">
+        <source>And if you think that isn't nerdy enough, please read the <a href="/rent-or-buy-analysis">detailed article</a> 🤓✨</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">312</context>
+        </context-group>
+      </trans-unit>
     </body>
   </file>
 </xliff>

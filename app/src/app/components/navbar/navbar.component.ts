@@ -33,7 +33,7 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
               House Pricer
             </a>
             
-            <a routerLink="/rentorubuy"
+            <a routerLink="/rentorbuy"
                class="navbar-item"
                routerLinkActive="active"
                [routerLinkActiveOptions]="{exact: true}"
@@ -54,6 +54,14 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
                    (click)="closeMenu()"
                    i18n="@@nav.article">
                   Market Analysis
+                </a>
+                <a routerLink="/rent-or-buy-analysis" 
+                   class="dropdown-item" 
+                   routerLinkActive="active" 
+                   [routerLinkActiveOptions]="{exact: false}"
+                   (click)="closeMenu()"
+                   i18n="@@nav.rentOrBuyAnalysis">
+                  Rent or Buy Analysis
                 </a>
               </div>
             </div>

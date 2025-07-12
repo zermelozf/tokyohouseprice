@@ -75,6 +75,12 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   isRentCollapsed = false;
   isEconomicCollapsed = false;
   
+  // Intro box state
+  isIntroVisible = true;
+  isIntroFadingOut = false;
+  hasUserMadeChanges = false;
+  isInitializing = true;
+  
   // Mobile FAB system
   isFabOpen = false;
   activeModal: string | null = null;
@@ -139,6 +145,9 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       console.log('Debounced form change triggered');
       this.calculateNpv();
     });
+    
+    // Mark initialization as complete
+    this.isInitializing = false;
   }
 
   ngAfterViewInit(): void {
@@ -240,8 +249,33 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     this.isEconomicCollapsed = !this.isEconomicCollapsed;
   }
 
+  closeIntroBox(): void {
+    this.hideIntroWithAnimation();
+  }
+
+  private hideIntroWithAnimation(): void {
+    if (this.isIntroFadingOut || !this.isIntroVisible) {
+      return; // Already hiding or hidden
+    }
+    
+    this.isIntroFadingOut = true;
+    
+    // Hide the element after the animation completes (0.8s)
+    setTimeout(() => {
+      this.isIntroVisible = false;
+      this.isIntroFadingOut = false;
+    }, 800);
+  }
+
   private triggerFormChange(): void {
     console.log('triggerFormChange called - emitting form change');
+    
+    // Hide intro box on first user interaction (not during initialization)
+    if (!this.hasUserMadeChanges && !this.isInitializing) {
+      this.hasUserMadeChanges = true;
+      this.hideIntroWithAnimation();
+    }
+    
     this.formChange$.next();
   }
 

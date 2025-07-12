@@ -82,6 +82,85 @@
       font-size: 1.8rem;
       font-weight: 600;
     }
+    
+    .purpose-explanation {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e9ecef;
+      position: relative;
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+      opacity: 1;
+      transform: translateY(0);
+      
+      &.fade-out {
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+      }
+      
+      .close-intro-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #666;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        line-height: 1;
+        
+        &:hover {
+          background-color: rgba(255, 105, 180, 0.1);
+          color: #FF69B4;
+        }
+        
+        &:focus {
+          outline: none;
+          background-color: rgba(255, 105, 180, 0.2);
+        }
+      }
+      
+      h3 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.4rem;
+        font-weight: 600;
+        padding-right: 2rem; // Space for close button
+      }
+      
+      p {
+        margin: 0 0 1rem 0;
+        color: #555;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        a {
+          color: #FF69B4;
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.2s ease;
+          
+          &:hover {
+            color: #e91e63;
+            text-decoration: underline;
+          }
+        }
+      }
+    }
 
          .charts-container {
        display: grid;
@@ -215,7 +294,7 @@
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e9ecef;
   overflow: visible; // Ensure tooltips aren't clipped
