@@ -1724,6 +1724,238 @@
         <source>Go to Rent vs Buy Calculator</source>
         <target>賃貸vs購入計算機へ</target>
       </trans-unit>
+      <trans-unit id="rentorbuy.headerImageAlt" datatype="html">
+        <source>Financial analysis charts and graphs</source>
+        <target>金融分析チャートとグラフ</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.byline" datatype="html">
+        <source>By <a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> • March 2025</source>
+        <target><a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> 著 • 2025年3月</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareLinkedIn" datatype="html">
+        <source>Share on LinkedIn</source>
+        <target>LinkedInでシェア</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareTwitter" datatype="html">
+        <source>Share on Twitter</source>
+        <target>Twitterでシェア</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareFacebook" datatype="html">
+        <source>Share on Facebook</source>
+        <target>Facebookでシェア</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetTitle" datatype="html">
+        <source>The Decision-Making Mindset</source>
+        <target>意思決定の考え方</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetText" datatype="html">
+        <source>When comparing rent versus buy, we're essentially evaluating two options that should provide the same fundamental value: a place to live. The key insight is to find comparable properties - a house or apartment for sale and another for rent with similar characteristics in terms of location, size, amenities, and quality of life.</source>
+        <target>賃貸と購入を比較する際、我々は本質的に同じ基本的価値を提供する2つの選択肢を評価しています：住む場所です。重要な洞察は、比較可能な物件を見つけることです - 立地、サイズ、設備、生活の質において似たような特性を持つ売却用の家やアパートと賃貸用の物件を見つけることです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetApproach" datatype="html">
+        <source>Once we've identified comparable properties, the decision becomes purely financial: which option maximizes our long-term wealth? This approach removes emotional bias and focuses on the numbers, allowing us to make a data-driven decision based on our personal financial situation and market conditions.</source>
+        <target>比較可能な物件を特定した後、決定は純粋に金融的なものになります：どちらの選択肢が長期的な資産を最大化するか？このアプローチは感情的な偏見を取り除き、数字に焦点を当て、個人の金融状況と市場条件に基づいてデータ駆動の決定を行うことを可能にします。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetInsight" datatype="html">
+        <source>Key Insight</source>
+        <target>重要な洞察</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetInsightText" datatype="html">
+        <source>We're not just choosing between two properties - we're choosing between two different financial strategies that will impact our net worth over decades.</source>
+        <target>我々は単に2つの物件を選択しているのではありません - 今後数十年にわたって純資産に影響を与える2つの異なる金融戦略を選択しているのです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.modelingTitle" datatype="html">
+        <source>Modeling and Financial Tools</source>
+        <target>モデリングと金融ツール</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.modelingIntro" datatype="html">
+        <source>Our goal is to make the financial decision that maximizes our future net worth. Since we need to make this decision now based on projected future outcomes, we use two primary financial tools:</source>
+        <target>我々の目標は、将来の純資産を最大化する金融決定を行うことです。将来の予測結果に基づいて今決定を行う必要があるため、2つの主要な金融ツールを使用します：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrOptimalTiming" datatype="html">
+        <source>By analyzing IRR over different time horizons, we can identify not just whether to buy, but when to potentially sell to maximize our returns. This is crucial because the optimal holding period depends on factors like property appreciation, maintenance costs, and alternative investment opportunities.</source>
+        <target>異なる時間軸でIRRを分析することで、購入するかどうかだけでなく、リターンを最大化するためにいつ売却するかを特定できます。これは、最適な保有期間が不動産の価値上昇、メンテナンス費用、代替投資機会などの要因に依存するため重要です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoTitle" datatype="html">
+        <source>A Real Example from SUUMO.jp</source>
+        <target>SUUMO.jpからの実際の例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoIntro" datatype="html">
+        <source>Let's examine a concrete example using properties from SUUMO.jp to illustrate how this analysis works in practice.</source>
+        <target>SUUMO.jpの物件を使用した具体的な例を検討し、この分析が実際にどのように機能するかを説明しましょう。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoPropertyTitle" datatype="html">
+        <source>Example Properties</source>
+        <target>物件例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForSale" datatype="html">
+        <source>For Sale</source>
+        <target>売却物件</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleLocation" datatype="html">
+        <source>Location: Shibuya, 2-bedroom apartment</source>
+        <target>立地：渋谷、2LDKアパート</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleSize" datatype="html">
+        <source>Size: 65m², 15 years old</source>
+        <target>サイズ：65m²、築15年</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSalePrice" datatype="html">
+        <source>Price: ¥75,000,000</source>
+        <target>価格：7,500万円</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleStation" datatype="html">
+        <source>Station: 8 minutes walk to JR Shibuya</source>
+        <target>駅：JR渋谷駅徒歩8分</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForRent" datatype="html">
+        <source>For Rent</source>
+        <target>賃貸物件</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentLocation" datatype="html">
+        <source>Location: Shibuya, 2-bedroom apartment</source>
+        <target>立地：渋谷、2LDKアパート</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentSize" datatype="html">
+        <source>Size: 68m², 12 years old</source>
+        <target>サイズ：68m²、築12年</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentPrice" datatype="html">
+        <source>Rent: ¥280,000/month</source>
+        <target>家賃：月28万円</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentStation" datatype="html">
+        <source>Station: 6 minutes walk to JR Shibuya</source>
+        <target>駅：JR渋谷駅徒歩6分</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
+        <source>These properties offer similar living experiences but different financial implications. Our analysis would compare the total cost of ownership (including loan payments, maintenance, taxes) against the rental costs over various time periods.</source>
+        <target>これらの物件は似たような生活体験を提供しますが、金融的な影響は異なります。我々の分析では、様々な期間にわたって所有の総コスト（ローン支払い、メンテナンス、税金を含む）と賃貸コストを比較します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.qualitativeTitle" datatype="html">
+        <source>Qualitative Analysis: Understanding the Mechanics</source>
+        <target>質的分析：メカニズムの理解</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.qualitativeIntro" datatype="html">
+        <source>Before diving into numbers, let's understand the fundamental mechanics of the rent vs buy decision.</source>
+        <target>数字に踏み込む前に、賃貸対購入の決定の基本的なメカニズムを理解しましょう。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.savingRentTitle" datatype="html">
+        <source>Buying as Saving Rent</source>
+        <target>家賃節約としての購入</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.savingRentText" datatype="html">
+        <source>When you buy a house, you're essentially "saving" the rent you would otherwise pay. However, this saving comes with additional costs and responsibilities that renters don't face.</source>
+        <target>家を購入するとき、あなたは本質的に支払うであろう家賃を「節約」しています。しかし、この節約には賃貸者が直面しない追加の費用と責任が伴います。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCostsTitle" datatype="html">
+        <source>Additional Costs of Ownership</source>
+        <target>所有の追加コスト</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost1" datatype="html">
+        <source>Property taxes (typically 1-2% of property value annually)</source>
+        <target>固定資産税（通常、年間物件価値の1-2%）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost2" datatype="html">
+        <source>Maintenance and repairs (2-3% of property value annually)</source>
+        <target>メンテナンスと修理（年間物件価値の2-3%）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost3" datatype="html">
+        <source>Insurance premiums</source>
+        <target>保険料</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost4" datatype="html">
+        <source>Transaction costs (agent fees, legal fees)</source>
+        <target>取引コスト（仲介手数料、法的費用）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageTitle" datatype="html">
+        <source>The Leverage Factor</source>
+        <target>レバレッジ要因</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageText" datatype="html">
+        <source>Most buyers use mortgage financing, which introduces leverage. This amplifies both gains and losses: if property values rise, your returns are magnified, but if they fall, your losses are also amplified. The loan also creates a fixed obligation regardless of market conditions.</source>
+        <target>ほとんどの購入者は住宅ローンを利用し、これがレバレッジを導入します。これは利益と損失の両方を増幅します：不動産価値が上昇すればリターンが拡大しますが、下落すれば損失も拡大します。ローンは市場条件に関係なく固定的な義務を生み出します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCasesTitle" datatype="html">
+        <source>Edge Cases and Long-term Considerations</source>
+        <target>エッジケースと長期的考慮事項</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCasesText" datatype="html">
+        <source>Several scenarios can significantly impact the rent vs buy decision:</source>
+        <target>いくつかのシナリオは賃貸対購入の決定に大きな影響を与える可能性があります：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase1" datatype="html">
+        <source><strong>Short holding periods:</strong> Transaction costs can outweigh benefits if you move within 3-5 years</source>
+        <target><strong>短期保有期間：</strong>3-5年以内に移転する場合、取引費用が利益を上回る可能性があります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase2" datatype="html">
+        <source><strong>Market downturns:</strong> Leverage can lead to negative equity situations</source>
+        <target><strong>市場の下落：</strong>レバレッジは負の資本状況を引き起こす可能性があります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase3" datatype="html">
+        <source><strong>Interest rate changes:</strong> Rising rates increase borrowing costs and can affect property values</source>
+        <target><strong>金利変動：</strong>金利上昇は借入コストを増加させ、不動産価値に影響を与える可能性があります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase4" datatype="html">
+        <source><strong>Maintenance surprises:</strong> Major repairs can significantly impact total cost of ownership</source>
+        <target><strong>メンテナンスの予期せぬ出費：</strong>大規模な修理は所有の総コストに大きな影響を与える可能性があります</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.quantitativeTitle" datatype="html">
+        <source>Quantitative Analysis: NPV of Cash Flow Differences</source>
+        <target>定量分析：キャッシュフロー差異のNPV</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.quantitativeIntro" datatype="html">
+        <source>The quantitative analysis boils down to comparing the Net Present Value of cash flow differences between buying and renting.</source>
+        <target>定量分析は、購入と賃貸の間のキャッシュフロー差異の正味現在価値を比較することに要約されます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowDifferenceTitle" datatype="html">
+        <source>Cash Flow Difference Calculation</source>
+        <target>キャッシュフロー差異の計算</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowDifferenceText" datatype="html">
+        <source>For each year, we calculate: (Cost of Buying) - (Cost of Renting). A positive NPV indicates that buying is financially advantageous.</source>
+        <target>各年について、我々は計算します：（購入コスト）-（賃貸コスト）。正のNPVは購入が財務的に有利であることを示します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowFormula" datatype="html">
+        <source>Annual Cash Flow Difference</source>
+        <target>年間キャッシュフロー差異</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowFormulaExplanation" datatype="html">
+        <source>Plus end-of-period considerations like property appreciation and down payment opportunity cost.</source>
+        <target>加えて、不動産の価値上昇や頭金の機会費用などの期末考慮事項。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityIntro" datatype="html">
+        <source>Real estate markets are inherently uncertain. Our calculator uses Monte Carlo-style sensitivity analysis to help you understand how different scenarios might affect your decision.</source>
+        <target>不動産市場は本質的に不確実です。我々の計算機は、モンテカルロ式感度分析を使用して、異なるシナリオがあなたの決定にどのように影響するかを理解するのを支援します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.monteCarloTitle" datatype="html">
+        <source>Monte Carlo Approach</source>
+        <target>モンテカルロアプローチ</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.monteCarloText" datatype="html">
+        <source>By adjusting key parameters and observing how they affect the NPV and IRR, you can stress-test your decision against various market conditions and personal circumstances.</source>
+        <target>主要パラメータを調整し、それらがNPVとIRRにどのような影響を与えるかを観察することで、様々な市場条件と個人的な状況に対してあなたの決定をストレステストできます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor6" datatype="html">
+        <source>Economic downturns and market volatility</source>
+        <target>経済低迷と市場の変動</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityInsight" datatype="html">
+        <source>Sensitivity Insight</source>
+        <target>感度洞察</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityInsightText" datatype="html">
+        <source>If your decision remains consistent across a wide range of scenarios, you can be more confident in your choice. If small changes in assumptions flip your decision, you may want to gather more data or consider the risks more carefully.</source>
+        <target>幅広いシナリオにわたってあなたの決定が一貫している場合、あなたの選択により確信を持てます。仮定の小さな変更があなの決定を覆す場合、より多くのデータを収集するか、リスクをより慎重に検討することをお勧めします。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionReminder" datatype="html">
+        <source>Remember that financial models are tools to inform your decision, not make it for you. Consider your personal circumstances, risk tolerance, career stability, and long-term goals. The "right" decision varies for each person and depends on both financial and non-financial factors.</source>
+        <target>金融モデルはあなたの決定を情報提供するためのツールであり、あなたに代わって決定を行うものではないことを覚えておいてください。個人的な状況、リスク許容度、キャリアの安定性、長期的な目標を考慮してください。「正しい」決定は人それぞれ異なり、金融的および非金融的要因の両方に依存します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionFinal" datatype="html">
+        <source>Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.</source>
+        <target>我々の計算機は分析フレームワークを提供しますが、最終的な決定はあなたのものです。これらのツールを使用してトレードオフを理解しますが、持家の無形の利益や賃貸が提供する柔軟性を考慮することを忘れないでください。</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

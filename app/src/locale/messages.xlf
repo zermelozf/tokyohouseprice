@@ -852,6 +852,200 @@
           <context context-type="linenumber">312</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="rentorbuy.headerImageAlt" datatype="html">
+        <source>Financial analysis charts and graphs</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">4</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.byline" datatype="html">
+        <source>By <a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> • March 2025</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">10</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareLinkedIn" datatype="html">
+        <source>Share on LinkedIn</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">14</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareTwitter" datatype="html">
+        <source>Share on Twitter</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">18</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareFacebook" datatype="html">
+        <source>Share on Facebook</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">22</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetTitle" datatype="html">
+        <source>The Decision-Making Mindset</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetText" datatype="html">
+        <source>When comparing rent versus buy, we're essentially evaluating two options that should provide the same fundamental value: a place to live. The key insight is to find comparable properties - a house or apartment for sale and another for rent with similar characteristics in terms of location, size, amenities, and quality of life.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetApproach" datatype="html">
+        <source>Once we've identified comparable properties, the decision becomes purely financial: which option maximizes our long-term wealth? This approach removes emotional bias and focuses on the numbers, allowing us to make a data-driven decision based on our personal financial situation and market conditions.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetInsight" datatype="html">
+        <source>Key Insight</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetInsightText" datatype="html">
+        <source>We're not just choosing between two properties - we're choosing between two different financial strategies that will impact our net worth over decades.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.modelingTitle" datatype="html">
+        <source>Modeling and Financial Tools</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.modelingIntro" datatype="html">
+        <source>Our goal is to make the financial decision that maximizes our future net worth. Since we need to make this decision now based on projected future outcomes, we use two primary financial tools:</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrOptimalTiming" datatype="html">
+        <source>By analyzing IRR over different time horizons, we can identify not just whether to buy, but when to potentially sell to maximize our returns. This is crucial because the optimal holding period depends on factors like property appreciation, maintenance costs, and alternative investment opportunities.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoTitle" datatype="html">
+        <source>A Real Example from SUUMO.jp</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoIntro" datatype="html">
+        <source>Let's examine a concrete example using properties from SUUMO.jp to illustrate how this analysis works in practice.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoPropertyTitle" datatype="html">
+        <source>Example Properties</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForSale" datatype="html">
+        <source>For Sale</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleLocation" datatype="html">
+        <source>Location: Shibuya, 2-bedroom apartment</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleSize" datatype="html">
+        <source>Size: 65m², 15 years old</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSalePrice" datatype="html">
+        <source>Price: ¥75,000,000</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleStation" datatype="html">
+        <source>Station: 8 minutes walk to JR Shibuya</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForRent" datatype="html">
+        <source>For Rent</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentLocation" datatype="html">
+        <source>Location: Shibuya, 2-bedroom apartment</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentSize" datatype="html">
+        <source>Size: 68m², 12 years old</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentPrice" datatype="html">
+        <source>Rent: ¥280,000/month</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentStation" datatype="html">
+        <source>Station: 6 minutes walk to JR Shibuya</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
+        <source>These properties offer similar living experiences but different financial implications. Our analysis would compare the total cost of ownership (including loan payments, maintenance, taxes) against the rental costs over various time periods.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.qualitativeTitle" datatype="html">
+        <source>Qualitative Analysis: Understanding the Mechanics</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.qualitativeIntro" datatype="html">
+        <source>Before diving into numbers, let's understand the fundamental mechanics of the rent vs buy decision.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.savingRentTitle" datatype="html">
+        <source>Buying as Saving Rent</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.savingRentText" datatype="html">
+        <source>When you buy a house, you're essentially "saving" the rent you would otherwise pay. However, this saving comes with additional costs and responsibilities that renters don't face.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCostsTitle" datatype="html">
+        <source>Additional Costs of Ownership</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost1" datatype="html">
+        <source>Property taxes (typically 1-2% of property value annually)</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost2" datatype="html">
+        <source>Maintenance and repairs (2-3% of property value annually)</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost3" datatype="html">
+        <source>Insurance premiums</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.additionalCost4" datatype="html">
+        <source>Transaction costs (agent fees, legal fees)</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageTitle" datatype="html">
+        <source>The Leverage Factor</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageText" datatype="html">
+        <source>Most buyers use mortgage financing, which introduces leverage. This amplifies both gains and losses: if property values rise, your returns are magnified, but if they fall, your losses are also amplified. The loan also creates a fixed obligation regardless of market conditions.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCasesTitle" datatype="html">
+        <source>Edge Cases and Long-term Considerations</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCasesText" datatype="html">
+        <source>Several scenarios can significantly impact the rent vs buy decision:</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase1" datatype="html">
+        <source><strong>Short holding periods:</strong> Transaction costs can outweigh benefits if you move within 3-5 years</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase2" datatype="html">
+        <source><strong>Market downturns:</strong> Leverage can lead to negative equity situations</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase3" datatype="html">
+        <source><strong>Interest rate changes:</strong> Rising rates increase borrowing costs and can affect property values</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.edgeCase4" datatype="html">
+        <source><strong>Maintenance surprises:</strong> Major repairs can significantly impact total cost of ownership</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.quantitativeTitle" datatype="html">
+        <source>Quantitative Analysis: NPV of Cash Flow Differences</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.quantitativeIntro" datatype="html">
+        <source>The quantitative analysis boils down to comparing the Net Present Value of cash flow differences between buying and renting.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowDifferenceTitle" datatype="html">
+        <source>Cash Flow Difference Calculation</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowDifferenceText" datatype="html">
+        <source>For each year, we calculate: (Cost of Buying) - (Cost of Renting). A positive NPV indicates that buying is financially advantageous.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowFormula" datatype="html">
+        <source>Annual Cash Flow Difference</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowFormulaExplanation" datatype="html">
+        <source>Plus end-of-period considerations like property appreciation and down payment opportunity cost.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityIntro" datatype="html">
+        <source>Real estate markets are inherently uncertain. Our calculator uses Monte Carlo-style sensitivity analysis to help you understand how different scenarios might affect your decision.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.monteCarloTitle" datatype="html">
+        <source>Monte Carlo Approach</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.monteCarloText" datatype="html">
+        <source>By adjusting key parameters and observing how they affect the NPV and IRR, you can stress-test your decision against various market conditions and personal circumstances.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.factor6" datatype="html">
+        <source>Economic downturns and market volatility</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityInsight" datatype="html">
+        <source>Sensitivity Insight</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sensitivityInsightText" datatype="html">
+        <source>If your decision remains consistent across a wide range of scenarios, you can be more confident in your choice. If small changes in assumptions flip your decision, you may want to gather more data or consider the risks more carefully.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionReminder" datatype="html">
+        <source>Remember that financial models are tools to inform your decision, not make it for you. Consider your personal circumstances, risk tolerance, career stability, and long-term goals. The "right" decision varies for each person and depends on both financial and non-financial factors.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionFinal" datatype="html">
+        <source>Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

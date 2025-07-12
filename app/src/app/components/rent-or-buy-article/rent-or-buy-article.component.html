@@ -1,0 +1,268 @@
+<article class="article">
+  <header>
+    <div class="header-image">
+      <img src="buy-vs-rent.jpg" alt="Financial analysis charts and graphs" class="header-photo" i18n-alt="@@rentorbuy.headerImageAlt">
+    </div>
+    <h1 i18n="@@rentorbuy.articleTitle">Understanding the Rent vs Buy Analysis: A Technical Deep Dive</h1>
+    <div class="article-meta">
+      <p class="subtitle" i18n="@@rentorbuy.articleSubtitle">A comprehensive guide to the mathematical models and assumptions behind our rent-or-buy calculator</p>
+      <div class="author-date">
+        <p i18n="@@rentorbuy.byline">By <a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> • March 2025</p>
+      </div>
+      <div class="share-buttons">
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://tokyohouseprice.web.app/rent-or-buy-analysis"
+          target="_blank" class="share-button linkedin" i18n-title="@@rentorbuy.shareLinkedIn" title="Share on LinkedIn">
+          <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="https://twitter.com/intent/tweet?url=https://tokyohouseprice.web.app/rent-or-buy-analysis&text=Understanding%20the%20Rent%20vs%20Buy%20Analysis%3A%20A%20Technical%20Deep%20Dive"
+          target="_blank" class="share-button twitter" i18n-title="@@rentorbuy.shareTwitter" title="Share on Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://tokyohouseprice.web.app/rent-or-buy-analysis" target="_blank"
+          class="share-button facebook" i18n-title="@@rentorbuy.shareFacebook" title="Share on Facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="introduction">
+    <h2 i18n="@@rentorbuy.introTitle">Introduction</h2>
+    <p i18n="@@rentorbuy.introText">
+      The decision between renting and buying a property is one of the most significant financial choices you'll make. This article breaks down the analytical framework behind our rent-or-buy calculator, explaining how to approach this decision systematically and what tools can help you make the best choice for your financial future.
+    </p>
+  </section>
+
+  <section class="mindset">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.mindsetTitle">The Decision-Making Mindset</h2>
+    </div>
+    <p i18n="@@rentorbuy.mindsetText">
+      When comparing rent versus buy, we're essentially evaluating two options that should provide the same fundamental value: a place to live. The key insight is to find comparable properties - a house or apartment for sale and another for rent with similar characteristics in terms of location, size, amenities, and quality of life.
+    </p>
+    <p i18n="@@rentorbuy.mindsetApproach">
+      Once we've identified comparable properties, the decision becomes purely financial: which option maximizes our long-term wealth? This approach removes emotional bias and focuses on the numbers, allowing us to make a data-driven decision based on our personal financial situation and market conditions.
+    </p>
+    <div class="insight-box">
+      <h3 i18n="@@rentorbuy.mindsetInsight">Key Insight</h3>
+      <p i18n="@@rentorbuy.mindsetInsightText">
+        We're not just choosing between two properties - we're choosing between two different financial strategies that will impact our net worth over decades.
+      </p>
+    </div>
+  </section>
+
+  <section class="modeling-tools">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.modelingTitle">Modeling and Financial Tools</h2>
+    </div>
+    <p i18n="@@rentorbuy.modelingIntro">
+      Our goal is to make the financial decision that maximizes our future net worth. Since we need to make this decision now based on projected future outcomes, we use two primary financial tools:
+    </p>
+    
+    <h3 i18n="@@rentorbuy.npvTitle">Net Present Value (NPV)</h3>
+    <p i18n="@@rentorbuy.npvText">
+      NPV helps us assess the current value of making a buy decision by comparing the present value of all future cash flows. It accounts for the time value of money, recognizing that money today is worth more than the same amount in the future.
+    </p>
+    <div class="formula-container">
+      <div class="formula">
+        <div class="formula-title" i18n="@@rentorbuy.npvFormula">NPV Formula</div>
+        <p class="formula-text">NPV = Σ(CF_t / (1 + r)^t) - Initial Investment</p>
+        <p class="formula-explanation" i18n="@@rentorbuy.npvFormulaExplanation">
+          Where CF_t is the cash flow at time t, r is the discount rate (opportunity cost), and t is the time period.
+        </p>
+      </div>
+    </div>
+
+    <h3 i18n="@@rentorbuy.irrTitle">Internal Rate of Return (IRR)</h3>
+    <p i18n="@@rentorbuy.irrText">
+      IRR goes beyond the initial buy decision to help us determine the optimal holding period. It calculates the annualized rate of return on our property investment, allowing us to compare it directly with other investment opportunities like stocks or bonds.
+    </p>
+    <p i18n="@@rentorbuy.irrOptimalTiming">
+      By analyzing IRR over different time horizons, we can identify not just whether to buy, but when to potentially sell to maximize our returns. This is crucial because the optimal holding period depends on factors like property appreciation, maintenance costs, and alternative investment opportunities.
+    </p>
+  </section>
+
+  <section class="suumo-example">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.suumoTitle">A Real Example from SUUMO.jp</h2>
+    </div>
+    <p i18n="@@rentorbuy.suumoIntro">
+      Let's examine a concrete example using properties from SUUMO.jp to illustrate how this analysis works in practice.
+    </p>
+    <div class="example-box">
+      <h3 i18n="@@rentorbuy.suumoPropertyTitle">Example Properties</h3>
+      <div class="property-comparison">
+        <div class="property-item">
+          <h4 i18n="@@rentorbuy.suumoForSale">For Sale</h4>
+          <ul>
+            <li i18n="@@rentorbuy.suumoSaleLocation">Location: Shibuya, 2-bedroom apartment</li>
+            <li i18n="@@rentorbuy.suumoSaleSize">Size: 65m², 15 years old</li>
+            <li i18n="@@rentorbuy.suumoSalePrice">Price: ¥75,000,000</li>
+            <li i18n="@@rentorbuy.suumoSaleStation">Station: 8 minutes walk to JR Shibuya</li>
+          </ul>
+        </div>
+        <div class="property-item">
+          <h4 i18n="@@rentorbuy.suumoForRent">For Rent</h4>
+          <ul>
+            <li i18n="@@rentorbuy.suumoRentLocation">Location: Shibuya, 2-bedroom apartment</li>
+            <li i18n="@@rentorbuy.suumoRentSize">Size: 68m², 12 years old</li>
+            <li i18n="@@rentorbuy.suumoRentPrice">Rent: ¥280,000/month</li>
+            <li i18n="@@rentorbuy.suumoRentStation">Station: 6 minutes walk to JR Shibuya</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <p i18n="@@rentorbuy.suumoAnalysis">
+      These properties offer similar living experiences but different financial implications. Our analysis would compare the total cost of ownership (including loan payments, maintenance, taxes) against the rental costs over various time periods.
+    </p>
+  </section>
+
+  <section class="qualitative-analysis">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.qualitativeTitle">Qualitative Analysis: Understanding the Mechanics</h2>
+    </div>
+    <p i18n="@@rentorbuy.qualitativeIntro">
+      Before diving into numbers, let's understand the fundamental mechanics of the rent vs buy decision.
+    </p>
+    
+    <h3 i18n="@@rentorbuy.savingRentTitle">Buying as Saving Rent</h3>
+    <p i18n="@@rentorbuy.savingRentText">
+      When you buy a house, you're essentially "saving" the rent you would otherwise pay. However, this saving comes with additional costs and responsibilities that renters don't face.
+    </p>
+    
+    <div class="cost-comparison">
+      <div class="cost-item">
+        <h4 i18n="@@rentorbuy.additionalCostsTitle">Additional Costs of Ownership</h4>
+        <ul>
+          <li i18n="@@rentorbuy.additionalCost1">Property taxes (typically 1-2% of property value annually)</li>
+          <li i18n="@@rentorbuy.additionalCost2">Maintenance and repairs (2-3% of property value annually)</li>
+          <li i18n="@@rentorbuy.additionalCost3">Insurance premiums</li>
+          <li i18n="@@rentorbuy.additionalCost4">Transaction costs (agent fees, legal fees)</li>
+        </ul>
+      </div>
+      <div class="cost-item">
+        <h4 i18n="@@rentorbuy.leverageTitle">The Leverage Factor</h4>
+        <p i18n="@@rentorbuy.leverageText">
+          Most buyers use mortgage financing, which introduces leverage. This amplifies both gains and losses: if property values rise, your returns are magnified, but if they fall, your losses are also amplified. The loan also creates a fixed obligation regardless of market conditions.
+        </p>
+      </div>
+    </div>
+
+    <h3 i18n="@@rentorbuy.edgeCasesTitle">Edge Cases and Long-term Considerations</h3>
+    <p i18n="@@rentorbuy.edgeCasesText">
+      Several scenarios can significantly impact the rent vs buy decision:
+    </p>
+    <ul>
+      <li i18n="@@rentorbuy.edgeCase1"><strong>Short holding periods:</strong> Transaction costs can outweigh benefits if you move within 3-5 years</li>
+      <li i18n="@@rentorbuy.edgeCase2"><strong>Market downturns:</strong> Leverage can lead to negative equity situations</li>
+      <li i18n="@@rentorbuy.edgeCase3"><strong>Interest rate changes:</strong> Rising rates increase borrowing costs and can affect property values</li>
+      <li i18n="@@rentorbuy.edgeCase4"><strong>Maintenance surprises:</strong> Major repairs can significantly impact total cost of ownership</li>
+    </ul>
+  </section>
+
+  <section class="quantitative-analysis">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.quantitativeTitle">Quantitative Analysis: NPV of Cash Flow Differences</h2>
+    </div>
+    <p i18n="@@rentorbuy.quantitativeIntro">
+      The quantitative analysis boils down to comparing the Net Present Value of cash flow differences between buying and renting.
+    </p>
+    
+    <h3 i18n="@@rentorbuy.cashflowDifferenceTitle">Cash Flow Difference Calculation</h3>
+    <p i18n="@@rentorbuy.cashflowDifferenceText">
+      For each year, we calculate: (Cost of Buying) - (Cost of Renting). A positive NPV indicates that buying is financially advantageous.
+    </p>
+    
+    <div class="formula-container">
+      <div class="formula">
+        <div class="formula-title" i18n="@@rentorbuy.cashflowFormula">Annual Cash Flow Difference</div>
+        <p class="formula-text">CF_t = (Rent_t + Rent_increases) - (Mortgage_payment + Property_tax + Maintenance + Insurance)</p>
+        <p class="formula-explanation" i18n="@@rentorbuy.cashflowFormulaExplanation">
+          Plus end-of-period considerations like property appreciation and down payment opportunity cost.
+        </p>
+      </div>
+    </div>
+
+    <h3 i18n="@@rentorbuy.assumptionsTitle">Key Assumptions in Our Model</h3>
+    <div class="assumptions-grid">
+      <div class="assumption-item">
+        <h4 i18n="@@rentorbuy.propertyDepreciation">Property Depreciation</h4>
+        <p i18n="@@rentorbuy.propertyDepreciationText">
+          Buildings depreciate over time while land typically appreciates. Our model uses straight-line depreciation for the building component over the specified amortization period.
+        </p>
+      </div>
+      <div class="assumption-item">
+        <h4 i18n="@@rentorbuy.opportunityCostTitle">Opportunity Cost</h4>
+        <p i18n="@@rentorbuy.opportunityCostText">
+          The return you could earn by investing your down payment in alternative investments (typically 6-8% annually for stock market returns).
+        </p>
+      </div>
+      <div class="assumption-item">
+        <h4 i18n="@@rentorbuy.transactionCostsTitle">Transaction Costs</h4>
+        <p i18n="@@rentorbuy.transactionCostsText">
+          Include real estate agent fees, loan origination costs, and other one-time expenses associated with purchasing property.
+        </p>
+      </div>
+      <div class="assumption-item">
+        <h4 i18n="@@rentorbuy.maintenanceCostsTitle">Maintenance and Operating Costs</h4>
+        <p i18n="@@rentorbuy.maintenanceCostsText">
+          Annual maintenance costs calculated as a percentage of property value, including repairs, renovations, property taxes, and insurance.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sensitivity-analysis">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.sensitivityTitle">Sensitivity Analysis Using Monte Carlo</h2>
+    </div>
+    <p i18n="@@rentorbuy.sensitivityIntro">
+      Real estate markets are inherently uncertain. Our calculator uses Monte Carlo-style sensitivity analysis to help you understand how different scenarios might affect your decision.
+    </p>
+    
+    <h3 i18n="@@rentorbuy.monteCarloTitle">Monte Carlo Approach</h3>
+    <p i18n="@@rentorbuy.monteCarloText">
+      By adjusting key parameters and observing how they affect the NPV and IRR, you can stress-test your decision against various market conditions and personal circumstances.
+    </p>
+    
+    <div class="sensitivity-factors">
+      <h4 i18n="@@rentorbuy.keyFactorsTitle">Key Factors to Test</h4>
+      <ul>
+        <li i18n="@@rentorbuy.factor1">Property appreciation rates (can be negative in declining markets)</li>
+        <li i18n="@@rentorbuy.factor2">Rent inflation rates and renewal costs</li>
+        <li i18n="@@rentorbuy.factor3">Interest rate changes and loan terms</li>
+        <li i18n="@@rentorbuy.factor4">Maintenance cost variations</li>
+        <li i18n="@@rentorbuy.factor5">Different holding periods (how long you stay)</li>
+        <li i18n="@@rentorbuy.factor6">Economic downturns and market volatility</li>
+      </ul>
+    </div>
+
+    <div class="insight-box">
+      <h4 i18n="@@rentorbuy.sensitivityInsight">Sensitivity Insight</h4>
+      <p i18n="@@rentorbuy.sensitivityInsightText">
+        If your decision remains consistent across a wide range of scenarios, you can be more confident in your choice. If small changes in assumptions flip your decision, you may want to gather more data or consider the risks more carefully.
+      </p>
+    </div>
+  </section>
+
+  <section class="conclusion">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.conclusionTitle">Conclusion</h2>
+    </div>
+    <p i18n="@@rentorbuy.conclusionText">
+      The rent-or-buy decision is fundamentally about optimizing your financial future while maintaining your desired quality of life. By using NPV and IRR analysis, combined with sensitivity testing, you can make an informed decision based on your specific situation.
+    </p>
+    <p i18n="@@rentorbuy.conclusionReminder">
+      Remember that financial models are tools to inform your decision, not make it for you. Consider your personal circumstances, risk tolerance, career stability, and long-term goals. The "right" decision varies for each person and depends on both financial and non-financial factors.
+    </p>
+    <p i18n="@@rentorbuy.conclusionFinal">
+      Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.
+    </p>
+    
+    <div class="cta-section">
+      <h3 i18n="@@rentorbuy.ctaTitle">Ready to Run Your Analysis?</h3>
+      <p i18n="@@rentorbuy.ctaText">Use our interactive calculator to explore different scenarios and find the best financial choice for your situation.</p>
+      <a href="/rentorbuy" class="cta-button" i18n="@@rentorbuy.ctaButton">Go to Rent vs Buy Calculator</a>
+    </div>
+  </section>
+</article> 
