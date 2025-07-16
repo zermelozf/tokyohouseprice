@@ -923,35 +923,62 @@
       <trans-unit id="rentorbuy.suumoForSale" datatype="html">
         <source>For Sale</source>
       </trans-unit>
-      <trans-unit id="rentorbuy.suumoSaleLocation" datatype="html">
-        <source>Location: Shibuya, 2-bedroom apartment</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoSaleSize" datatype="html">
-        <source>Size: 65m², 15 years old</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoSalePrice" datatype="html">
-        <source>Price: ¥75,000,000</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoSaleStation" datatype="html">
-        <source>Station: 8 minutes walk to JR Shibuya</source>
-      </trans-unit>
+          <trans-unit id="rentorbuy.suumoSaleLocation" datatype="html">
+      <source><strong style="color: #FF69B4">Location:</strong> Shimomeguro 4, Meguro-ku, Tokyo</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoSaleLayout" datatype="html">
+      <source><strong style="color: #FF69B4">Layout:</strong> 3LDK</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoSaleFloors" datatype="html">
+      <source><strong style="color: #FF69B4">Number of floors:</strong> 2</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoSaleSize" datatype="html">
+      <source><strong style="color: #FF69B4">Floor Area:</strong> 78.53m², <strong style="color: #FF69B4">Land:</strong> 73.86m²</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoSaleAge" datatype="html">
+      <source><strong style="color: #FF69B4">Built:</strong> February 2004</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoSalePrice" datatype="html">
+      <source><strong style="color: #FF69B4">Price:</strong> ¥99,700,000</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoSaleStation" datatype="html">
+      <source><strong style="color: #FF69B4">Station:</strong> 16min walk to JR Meguro</source>
+    </trans-unit>
       <trans-unit id="rentorbuy.suumoForRent" datatype="html">
         <source>For Rent</source>
       </trans-unit>
-      <trans-unit id="rentorbuy.suumoRentLocation" datatype="html">
-        <source>Location: Shibuya, 2-bedroom apartment</source>
+          <trans-unit id="rentorbuy.suumoRentLocation" datatype="html">
+      <source><strong style="color: #FF69B4">Location:</strong> Meguro 4, Meguro-ku, Tokyo</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoRentLayout" datatype="html">
+      <source><strong style="color: #FF69B4">Layout:</strong> 3LDK</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoRentFloors" datatype="html">
+      <source><strong style="color: #FF69B4">Number of floors:</strong> 3</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoRentSize" datatype="html">
+      <source><strong style="color: #FF69B4">Floor Area:</strong> 99.4m²</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoRentAge" datatype="html">
+      <source><strong style="color: #FF69B4">Age:</strong> 15 years old</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoRentPrice" datatype="html">
+      <source><strong style="color: #FF69B4">Rent:</strong> ¥350,000/month</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoRentStation" datatype="html">
+      <source><strong style="color: #FF69B4">Station:</strong> 15min walk to JR Meguro</source>
+    </trans-unit>
+          <trans-unit id="rentorbuy.comparisonNote" datatype="html">
+      <source>Important Note on Property Comparison</source>
+    </trans-unit>
+    <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
+      <source>Note that these properties are not really comparable. I chose to restrict them to the same neighborhood - close to Meguro Station, but the renting option is much bigger and has more floors. Comparing these two options still makes sense though insofar as they are viable alternatives, and in a sense both should be good enough for a young couple with kids. So, rather than making sure each attribute of the properties match exactly, I would prefer to compare two options that fulfill whatever requirements you have even though one seems to be higher end than the other.</source>
+    </trans-unit>
+      <trans-unit id="rentorbuy.buyImageAlt" datatype="html">
+        <source>Property for sale example</source>
       </trans-unit>
-      <trans-unit id="rentorbuy.suumoRentSize" datatype="html">
-        <source>Size: 68m², 12 years old</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoRentPrice" datatype="html">
-        <source>Rent: ¥280,000/month</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoRentStation" datatype="html">
-        <source>Station: 6 minutes walk to JR Shibuya</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
-        <source>These properties offer similar living experiences but different financial implications. Our analysis would compare the total cost of ownership (including loan payments, maintenance, taxes) against the rental costs over various time periods.</source>
+      <trans-unit id="rentorbuy.rentImageAlt" datatype="html">
+        <source>Property for rent example</source>
       </trans-unit>
       <trans-unit id="rentorbuy.qualitativeTitle" datatype="html">
         <source>Qualitative Analysis: Understanding the Mechanics</source>
@@ -1045,6 +1072,28 @@
       </trans-unit>
       <trans-unit id="rentorbuy.conclusionFinal" datatype="html">
         <source>Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocTitle" datatype="html">
+        <source>Table of Contents</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocMindset" datatype="html">
+        <source>The Decision-Making Mindset</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocModeling" datatype="html">
+        <source>Modeling and Financial Tools</source>
+      </trans-unit>
+      
+      <trans-unit id="rentorbuy.tocQualitative" datatype="html">
+        <source>Qualitative Analysis</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocQuantitative" datatype="html">
+        <source>Quantitative Analysis</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocSensitivity" datatype="html">
+        <source>Sensitivity Analysis</source>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocConclusion" datatype="html">
+        <source>Conclusion</source>
       </trans-unit>
     </body>
   </file>

@@ -1,25 +1,29 @@
 <article class="article">
   <header>
     <div class="header-image">
-      <img src="buy-vs-rent.jpg" alt="Financial analysis charts and graphs" class="header-photo" i18n-alt="@@rentorbuy.headerImageAlt">
+      <img src="buy-vs-rent.jpg" alt="Financial analysis charts and graphs" class="header-photo"
+        i18n-alt="@@rentorbuy.headerImageAlt">
     </div>
-    <h1 i18n="@@rentorbuy.articleTitle">Understanding the Rent vs Buy Analysis: A Technical Deep Dive</h1>
+    <h1 i18n="@@rentorbuy.articleTitle">Rent Or Buy</h1>
     <div class="article-meta">
-      <p class="subtitle" i18n="@@rentorbuy.articleSubtitle">A comprehensive guide to the mathematical models and assumptions behind our rent-or-buy calculator</p>
+      <p class="subtitle" i18n="@@rentorbuy.articleSubtitle">Approach Housing like a Venture Capitalist</p>
       <div class="author-date">
-        <p i18n="@@rentorbuy.byline">By <a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> • March 2025</p>
+        <p i18n="@@rentorbuy.byline">By <a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> •
+          March 2025</p>
       </div>
       <div class="share-buttons">
         <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://tokyohouseprice.web.app/rent-or-buy-analysis"
-          target="_blank" class="share-button linkedin" i18n-title="@@rentorbuy.shareLinkedIn" title="Share on LinkedIn">
+          target="_blank" class="share-button linkedin" i18n-title="@@rentorbuy.shareLinkedIn"
+          title="Share on LinkedIn">
           <i class="fab fa-linkedin"></i>
         </a>
         <a href="https://twitter.com/intent/tweet?url=https://tokyohouseprice.web.app/rent-or-buy-analysis&text=Understanding%20the%20Rent%20vs%20Buy%20Analysis%3A%20A%20Technical%20Deep%20Dive"
           target="_blank" class="share-button twitter" i18n-title="@@rentorbuy.shareTwitter" title="Share on Twitter">
           <i class="fab fa-twitter"></i>
         </a>
-        <a href="https://www.facebook.com/sharer/sharer.php?u=https://tokyohouseprice.web.app/rent-or-buy-analysis" target="_blank"
-          class="share-button facebook" i18n-title="@@rentorbuy.shareFacebook" title="Share on Facebook">
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://tokyohouseprice.web.app/rent-or-buy-analysis"
+          target="_blank" class="share-button facebook" i18n-title="@@rentorbuy.shareFacebook"
+          title="Share on Facebook">
           <i class="fab fa-facebook"></i>
         </a>
       </div>
@@ -29,107 +33,325 @@
   <section class="introduction">
     <h2 i18n="@@rentorbuy.introTitle">Introduction</h2>
     <p i18n="@@rentorbuy.introText">
-      The decision between renting and buying a property is one of the most significant financial choices you'll make. This article breaks down the analytical framework behind our rent-or-buy calculator, explaining how to approach this decision systematically and what tools can help you make the best choice for your financial future.
+      In a <a href="https://tokyohouseprice.web.app/rent-or-buy-analysis">previous post</a>, I presented an analysis of
+      the factors that influence the price of a house in Tokyo 🗼. This time, I present another nerdy model to reveal
+      the financial implications of a rent vs buy decision. The aim of this post is not to convince you to either rent
+      or
+      buy, but to present a few interesting and counter-intuitive insights you can derive from a simple financial
+      model.
+    </p>
+    <p>
+      One of the perks of framing the house vs rent decision as a financial problem is that it helped me better
+      better understand another seemingly unrelated event: the <a href="https://en.wikipedia.org/wiki/Leveraged_buyout"
+        target="_blank">Leveraged Buyout</a> of the
+      company I used to work for by a <a href="https://en.wikipedia.org/wiki/Venture_capital">Japanese VC firm</a>. It
+      turns out that a
+      Leveraged Buyout and a <a href="https://en.wikipedia.org/wiki/Mortgage">House Mortgage</a> are pretty similar. So
+      if you are interested in financing your house like a VC 🕶️, I think this article might be for you.
+    </p>
+    <p>
+      In any case, I hope you find it useful, or at least interesting. Also, please don't hesitate to share your
+      thoughts and
+      feedback 🤓.
     </p>
   </section>
 
-  <section class="mindset">
-    <div class="section-header">
-      <h2 i18n="@@rentorbuy.mindsetTitle">The Decision-Making Mindset</h2>
-    </div>
-    <p i18n="@@rentorbuy.mindsetText">
-      When comparing rent versus buy, we're essentially evaluating two options that should provide the same fundamental value: a place to live. The key insight is to find comparable properties - a house or apartment for sale and another for rent with similar characteristics in terms of location, size, amenities, and quality of life.
-    </p>
-    <p i18n="@@rentorbuy.mindsetApproach">
-      Once we've identified comparable properties, the decision becomes purely financial: which option maximizes our long-term wealth? This approach removes emotional bias and focuses on the numbers, allowing us to make a data-driven decision based on our personal financial situation and market conditions.
-    </p>
-    <div class="insight-box">
-      <h3 i18n="@@rentorbuy.mindsetInsight">Key Insight</h3>
-      <p i18n="@@rentorbuy.mindsetInsightText">
-        We're not just choosing between two properties - we're choosing between two different financial strategies that will impact our net worth over decades.
-      </p>
-    </div>
+  <section class="table-of-contents">
+    <h2 i18n="@@rentorbuy.tocTitle">Table of Contents</h2>
+    <ul>
+      <li><a href="#mindset" i18n="@@rentorbuy.tocMindset">A concrete example from SUUMO.jp</a></li>
+      <li><a href="#modeling" i18n="@@rentorbuy.tocModeling">Formalizing the Comparison for Decision Making</a>
+        <ul>
+          <li><a href="#npv">Net Present Value (NPV)</a></li>
+          <li><a href="#irr">Internal Rate of Return (IRR)</a></li>
+        </ul>
+      </li>
+      <li><a href="#qualitative" i18n="@@rentorbuy.tocQualitative">Qualitative Analysis</a>
+        <ul>
+          <li><a href="#saving-rent">Buying as Saving Rent</a></li>
+          <li><a href="#edge-cases">Edge Cases and Long-term Considerations</a></li>
+        </ul>
+      </li>
+      <li><a href="#quantitative" i18n="@@rentorbuy.tocQuantitative">Quantitative Analysis</a>
+        <ul>
+          <li><a href="#cashflow-calculation">Cash Flow Difference Calculation</a></li>
+          <li><a href="#key-assumptions">Key Assumptions in Our Model</a></li>
+        </ul>
+      </li>
+      <li><a href="#sensitivity" i18n="@@rentorbuy.tocSensitivity">Sensitivity Analysis</a>
+        <ul>
+          <li><a href="#monte-carlo">Monte Carlo Approach</a></li>
+        </ul>
+      </li>
+      <li><a href="#conclusion" i18n="@@rentorbuy.tocConclusion">Conclusion</a></li>
+    </ul>
   </section>
 
-  <section class="modeling-tools">
+  <section class="mindset" id="mindset">
     <div class="section-header">
-      <h2 i18n="@@rentorbuy.modelingTitle">Modeling and Financial Tools</h2>
-    </div>
-    <p i18n="@@rentorbuy.modelingIntro">
-      Our goal is to make the financial decision that maximizes our future net worth. Since we need to make this decision now based on projected future outcomes, we use two primary financial tools:
-    </p>
-    
-    <h3 i18n="@@rentorbuy.npvTitle">Net Present Value (NPV)</h3>
-    <p i18n="@@rentorbuy.npvText">
-      NPV helps us assess the current value of making a buy decision by comparing the present value of all future cash flows. It accounts for the time value of money, recognizing that money today is worth more than the same amount in the future.
-    </p>
-    <div class="formula-container">
-      <div class="formula">
-        <div class="formula-title" i18n="@@rentorbuy.npvFormula">NPV Formula</div>
-        <p class="formula-text">NPV = Σ(CF_t / (1 + r)^t) - Initial Investment</p>
-        <p class="formula-explanation" i18n="@@rentorbuy.npvFormulaExplanation">
-          Where CF_t is the cash flow at time t, r is the discount rate (opportunity cost), and t is the time period.
-        </p>
-      </div>
-    </div>
-
-    <h3 i18n="@@rentorbuy.irrTitle">Internal Rate of Return (IRR)</h3>
-    <p i18n="@@rentorbuy.irrText">
-      IRR goes beyond the initial buy decision to help us determine the optimal holding period. It calculates the annualized rate of return on our property investment, allowing us to compare it directly with other investment opportunities like stocks or bonds.
-    </p>
-    <p i18n="@@rentorbuy.irrOptimalTiming">
-      By analyzing IRR over different time horizons, we can identify not just whether to buy, but when to potentially sell to maximize our returns. This is crucial because the optimal holding period depends on factors like property appreciation, maintenance costs, and alternative investment opportunities.
-    </p>
-  </section>
-
-  <section class="suumo-example">
-    <div class="section-header">
-      <h2 i18n="@@rentorbuy.suumoTitle">A Real Example from SUUMO.jp</h2>
+      <h2 i18n="@@rentorbuy.mindsetTitle">A concrete example from SUUMO.jp</h2>
     </div>
     <p i18n="@@rentorbuy.suumoIntro">
-      Let's examine a concrete example using properties from SUUMO.jp to illustrate how this analysis works in practice.
+      When it comes to housing, you usually have two options to consider: renting or buying. So to make things
+      a little bit more concrete, I went on <a href="https://suumo.jp/" target="_blank">SUUMO.jp</a> and found two
+      properties that I felt would be a good fit for a young couple with kids. You can see some of the details below.
     </p>
     <div class="example-box">
-      <h3 i18n="@@rentorbuy.suumoPropertyTitle">Example Properties</h3>
+      <h4 i18n="@@rentorbuy.suumoPropertyTitle">Example Properties</h4>
       <div class="property-comparison">
         <div class="property-item">
-          <h4 i18n="@@rentorbuy.suumoForSale">For Sale</h4>
+          <div class="property-image">
+            <img src="buy.png" alt="Property for sale example" i18n-alt="@@rentorbuy.buyImageAlt">
+          </div>
+          <h5 i18n="@@rentorbuy.suumoForSale">For Sale</h5>
           <ul>
-            <li i18n="@@rentorbuy.suumoSaleLocation">Location: Shibuya, 2-bedroom apartment</li>
-            <li i18n="@@rentorbuy.suumoSaleSize">Size: 65m², 15 years old</li>
-            <li i18n="@@rentorbuy.suumoSalePrice">Price: ¥75,000,000</li>
-            <li i18n="@@rentorbuy.suumoSaleStation">Station: 8 minutes walk to JR Shibuya</li>
+            <li><strong style="color: #FF69B4">Location:</strong> <span>Shimomeguro 4, Meguro-ku, Tokyo</span></li>
+            <li><strong style="color: #FF69B4">Layout:</strong> <span>3LDK</span></li>
+            <li><strong style="color: #FF69B4">Number of floors:</strong> <span>2</span></li>
+            <li><strong style="color: #FF69B4">Floor Area:</strong> <span>78.53m²</span></li>
+            <li><strong style="color: #FF69B4">Age:</strong> <span>21 years</span></li>
+            <li><strong style="color: #FF69B4">Price:</strong> <span>¥99,700,000</span></li>
+            <li><strong style="color: #FF69B4">Station:</strong> <span>16min walk to JR Meguro</span></li>
           </ul>
         </div>
         <div class="property-item">
-          <h4 i18n="@@rentorbuy.suumoForRent">For Rent</h4>
+          <div class="property-image">
+            <img src="rent.png" alt="Property for rent example" i18n-alt="@@rentorbuy.rentImageAlt">
+          </div>
+          <h5 i18n="@@rentorbuy.suumoForRent">For Rent</h5>
           <ul>
-            <li i18n="@@rentorbuy.suumoRentLocation">Location: Shibuya, 2-bedroom apartment</li>
-            <li i18n="@@rentorbuy.suumoRentSize">Size: 68m², 12 years old</li>
-            <li i18n="@@rentorbuy.suumoRentPrice">Rent: ¥280,000/month</li>
-            <li i18n="@@rentorbuy.suumoRentStation">Station: 6 minutes walk to JR Shibuya</li>
+            <li><strong style="color: #FF69B4">Location:</strong> <span>Meguro 4, Meguro-ku, Tokyo</span></li>
+            <li><strong style="color: #FF69B4">Layout:</strong> <span>3LDK</span></li>
+            <li><strong style="color: #FF69B4">Number of floors:</strong> <span>3</span></li>
+            <li><strong style="color: #FF69B4">Floor Area:</strong> <span>99.4m²</span></li>
+            <li><strong style="color: #FF69B4">Age:</strong> <span>15 years</span></li>
+            <li><strong style="color: #FF69B4">Rent:</strong> <span>¥420,000/month</span></li>
+            <li><strong style="color: #FF69B4">Station:</strong> <span>15min walk to JR Meguro</span></li>
           </ul>
         </div>
       </div>
     </div>
     <p i18n="@@rentorbuy.suumoAnalysis">
-      These properties offer similar living experiences but different financial implications. Our analysis would compare the total cost of ownership (including loan payments, maintenance, taxes) against the rental costs over various time periods.
+      These properties are obviously not really comparable. They are in the same neighborhood -
+      close to Meguro Station, but the renting option is much bigger and has more floors.
+    </p>
+    <div class="insight-box">
+      <div class="insight-icon">
+        <i class="fas fa-info-circle"></i>
+      </div>
+      <div class="insight-content">
+        <p>Comparing them still makes
+          sense though insofar as they are viable alternatives: both should be good enough for a young couple with one
+          ortwo kids.
+        </p>
+      </div>
+    </div>
+
+    <p>So, rather than making sure each attribute of the properties match exactly, I would prefer to
+      compare two options that fulfill whatever requirements you have even though on is higher
+      end than the other.
     </p>
   </section>
 
-  <section class="qualitative-analysis">
+  <section class="modeling-tools" id="modeling">
+    <div class="section-header">
+      <h2 i18n="@@rentorbuy.modelingTitle">Formalizing the Decision Making</h2>
+    </div>
+    <p i18n="@@rentorbuy.modelingIntro">
+      As mentioned in the previous section, the two properties are different, hence not strictly comparable. However, I
+      will assume they both are "good enough", and satisfy whatever criteria the buyer/renter cares about.
+    </p>
+
+    <p>With that said, we can focus on the financial aspect of the decision. And to that end, I will use two
+      very powerful tools:</p>
+    <ul>
+      <li>Net Present Value (NPV)</li>
+      <li>Internal Rate of Return (IRR)</li>
+    </ul>
+
+    <p>
+      But before we dive into the details, let's first formalize what we mean by a property.
+    </p>
+
+    <h3 id="model" i18n="@@rentorbuy.npvTitle">Modeling a Property</h3>
+    <p>
+      A property is a bundle of cash flows.
+    </p>
+
+    <p>In case we rent the property, the cashflow is pretty simple: we just pay an annual rent.
+    </p>
+
+    <div class="formula-box">
+      <p>\[ CF_{{ '{' }}rent{{ '}' }}(t) = -R \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n \]</p>
+      <p>where \( R \) is the annual rent and \( n \) is the number of years.</p>
+    </div>
+
+    <p>
+      If we buy the property, there are two types of cashflows:
+      <li>Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</li>
+      <li>Positive: the proceeds from selling the property.</li>
+    </p>
+
+    <div class="formula-box">
+      <p>\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP \]</p>
+      <p>\[ CF_{{ '{' }}buy{{ '}' }}(t) = -M - T - I - Ma \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n-1 \]</p>
+      <p>\[ CF_{{ '{' }}buy{{ '}' }}(n) = S - M - T - I - Ma \]</p>
+      <p>where \( DP \) is the down payment, \( M \) is the annual mortgage payment, \( T \) is property taxes, \( I \)
+        is insurance, \( Ma \) is maintenance, \( S \) is the sale proceeds, and \(n\) the time of the sale.</p>
+
+      <p>
+        Let's take a visual look at the cashflows for the properties described above making the assumption that we will
+        sell the property after 25 years.
+      </p>
+      <app-cashflow-chart></app-cashflow-chart>
+      <p>Now these cashflows will continue for as long as we rent, or until we sell the property. So the total value
+        years is the sum of all the cashflows.
+      </p>
+    </div>
+    <div class="formula-box">
+      <p>\[ V_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}buy{{ '}' }}(t) \]
+      </p>
+      <p>\[ V_{{ '{' }}rent{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}rent{{ '}' }}(t) \]
+      </p>
+    </div>
+
+    <p>
+      For example, if we compare the 42万円 rent with the 99.7万円 buy options introduced in the previous section, we see
+      that the rent and buy cumulative cashflow value cross on the {{ breakevenYear }}th year:
+    </p>
+
+    <app-rent-vs-buy-chart></app-rent-vs-buy-chart>
+
+    <div class="formula-box">
+      <p>
+        Or in other words, it only makes sense to buy the property if we intend to live in it for more than {{
+        breakevenYear }} years
+        (after which \( V_{{ '{' }}buy{{ '}' }}(n) > V_{{ '{' }}rent{{ '}' }}(n) \)). And the longer we live in the
+        house, the more advantageous it is to buy.
+      </p>
+
+      <p>
+        To make the comparison even easier, we can plot the difference between the two cumulative cashflows \(V_{{ '{'
+        }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \). Whenever, it is positive, it means that buying is better
+        than renting.
+      </p>
+    </div>
+
+    <div id="cashflowChart">
+      <app-cumulative-difference-chart></app-cumulative-difference-chart>
+    </div>
+    <h3 id="npv" i18n="@@rentorbuy.npvTitle">Opportunity Cost and Net Present Value (NPV)</h3>
+
+    <div class="formula-box">
+      <p>
+        However, there is another factor to consider: <a
+          href="https://https://en.wikipedia.org/wiki/Opportunity_cost">the Opportunity Cost</a> of buying vs renting.
+      </p>
+      <p>
+        For example, let's say that instead of making a down payment for the house, we instead rent and invest the down
+        payment in the stock market or in a remunerated account. Over time, that investment will grow at a some (perhaps
+        unknown) rate \(r\).
+      </p>
+
+      <p>
+        Similarly, if the mortgage we pay is less than the rent we would have paid, then we could invest the difference
+        in the stock market. So in essence, we try to maximize the return of whatever money we have left over in either
+        case.
+      </p>
+
+      <p>
+        If we follow that approach, then the future value of the cashflow difference will be:
+      </p>
+      <p>\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
+        (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
+      </p>
+    </div>
+
+    <div class="formula-box">
+      <p>\( FV_{{ '{' }}buy{{ '}' }}(n)\) is called the <a href="https://en.wikipedia.org/wiki/Future_value"
+          target="_blank">Future Value</a> of buying because it
+        corresponds to the net financial position a buyer will have compared to a renter (at year \(n\)).
+
+      <p>
+        But \(FV\) will only be available in the future. So, how much is that amount worth today?
+      </p>
+
+      <p>One way to answer that question is to imaging that someone gave us a one time lump sum today. Then we invest
+        it in the same account or stock market with return \(r\). What sum would give us the same \(FV_{{ '{' }}buy{{
+        '}' }}(n)\) in the
+        future? That one time lump sum is</p>
+      <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{ '{' }}(1 + r)^n{{ '}'
+        }} \quad (2) \]</p>
+      <p>This is called the <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present Value</a> (PV)
+        of the buy option. We can also express this directly in terms of cash
+        flows:</p>
+      <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{ '{' }}CF_{{ '{'
+        }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t){{ '}' }}{{ '{' }}(1 + r)^t{{ '}' }} \quad (3) \]</p>
+      <p>
+        Present Value (PV) is a very powerful tool as it allows us to immediately compare
+        options in terms of current wealth. In a way, the simple act of deciding to buy or rent (and sell after n years)
+        will immediately increase (or decrease) our wealth by \( PV_{{ '{' }}buy{{ '}' }}(n) \).
+      </p>
+    </div>
+
+    <div class="formula-box">
+      <p>
+        Let's again compare the two options. This time, we will consider the opportunity cost of renting vs buying and
+        plot \( PV_{{ '{' }}buy{{ '}' }}(n) \), i.e. the present value of buying a house and selling it after \(n\)
+        years.
+      </p>
+    </div>
+
+    <app-pv-buy-chart></app-pv-buy-chart>
+
+    <p>
+      I personally find this chart quite interesting and somewhat counter-intuitive.
+      When comparing it to the <a (click)="scrollToChart()" style="cursor: pointer;">cumulative cashflow chart</a>
+      presented in the previous section, the buy vs rent recommendation completely changes. When looking only at
+      absolute cashflows, then buying is a good long term option. The renting option better option looks much more
+      attractive in the long run, and it only makes sense to buy the house if we intend to stay between 10 and 25 years.
+    </p>
+    <p>Moreover, the benefit of buying a house is only ~1M yen at best, while it can cost much more if not timed
+      properly.</p>
+
+    <h3 id="irr" i18n="@@rentorbuy.irrTitle">Internal Rate of Return (IRR)</h3>
+    <p>
+      Using NPV to assess the buy vs rent decision, we get a better sense of the optimal holding period cmpoared to just
+      looking at undiscounted cash flows. However, this tells a story in terms of the absolute amount of money.
+    </p>
+    <p>
+      Another way to assess the buy vs rent decision is to look at its rate of return as if it were an investment. Just
+      like investing in the stock market.
+    </p>
+
+    <p>
+      This is what the <a href="https://en.wikipedia.org/wiki/Internal_rate_of_return" target="_blank">Internal Rate of
+        Return</a> (IRR)
+      does. While there isn't a simple formula for the IRR, we can use a numerical method to compute it from the
+      undiscounted cash flows.
+    </p>
+
+    <app-irr-chart></app-irr-chart>
+    
+    <p>
+      Interestingly, we again get a slightly different advice on when to seel
+    </p>
+  </section>
+
+  <section class="qualitative-analysis" id="qualitative">
     <div class="section-header">
       <h2 i18n="@@rentorbuy.qualitativeTitle">Qualitative Analysis: Understanding the Mechanics</h2>
     </div>
     <p i18n="@@rentorbuy.qualitativeIntro">
       Before diving into numbers, let's understand the fundamental mechanics of the rent vs buy decision.
     </p>
-    
-    <h3 i18n="@@rentorbuy.savingRentTitle">Buying as Saving Rent</h3>
+
+    <h3 id="saving-rent" i18n="@@rentorbuy.savingRentTitle">Buying as Saving Rent</h3>
     <p i18n="@@rentorbuy.savingRentText">
-      When you buy a house, you're essentially "saving" the rent you would otherwise pay. However, this saving comes with additional costs and responsibilities that renters don't face.
+      When you buy a house, you're essentially "saving" the rent you would otherwise pay. However, this saving comes
+      with additional costs and responsibilities that renters don't face.
     </p>
-    
+
     <div class="cost-comparison">
       <div class="cost-item">
         <h4 i18n="@@rentorbuy.additionalCostsTitle">Additional Costs of Ownership</h4>
@@ -143,88 +365,103 @@
       <div class="cost-item">
         <h4 i18n="@@rentorbuy.leverageTitle">The Leverage Factor</h4>
         <p i18n="@@rentorbuy.leverageText">
-          Most buyers use mortgage financing, which introduces leverage. This amplifies both gains and losses: if property values rise, your returns are magnified, but if they fall, your losses are also amplified. The loan also creates a fixed obligation regardless of market conditions.
+          Most buyers use mortgage financing, which introduces leverage. This amplifies both gains and losses: if
+          property values rise, your returns are magnified, but if they fall, your losses are also amplified. The loan
+          also creates a fixed obligation regardless of market conditions.
         </p>
       </div>
     </div>
 
-    <h3 i18n="@@rentorbuy.edgeCasesTitle">Edge Cases and Long-term Considerations</h3>
+    <h3 id="edge-cases" i18n="@@rentorbuy.edgeCasesTitle">Edge Cases and Long-term Considerations</h3>
     <p i18n="@@rentorbuy.edgeCasesText">
       Several scenarios can significantly impact the rent vs buy decision:
     </p>
     <ul>
-      <li i18n="@@rentorbuy.edgeCase1"><strong>Short holding periods:</strong> Transaction costs can outweigh benefits if you move within 3-5 years</li>
-      <li i18n="@@rentorbuy.edgeCase2"><strong>Market downturns:</strong> Leverage can lead to negative equity situations</li>
-      <li i18n="@@rentorbuy.edgeCase3"><strong>Interest rate changes:</strong> Rising rates increase borrowing costs and can affect property values</li>
-      <li i18n="@@rentorbuy.edgeCase4"><strong>Maintenance surprises:</strong> Major repairs can significantly impact total cost of ownership</li>
+      <li i18n="@@rentorbuy.edgeCase1"><strong>Short holding periods:</strong> Transaction costs can outweigh benefits
+        if you move within 3-5 years</li>
+      <li i18n="@@rentorbuy.edgeCase2"><strong>Market downturns:</strong> Leverage can lead to negative equity
+        situations</li>
+      <li i18n="@@rentorbuy.edgeCase3"><strong>Interest rate changes:</strong> Rising rates increase borrowing costs and
+        can affect property values</li>
+      <li i18n="@@rentorbuy.edgeCase4"><strong>Maintenance surprises:</strong> Major repairs can significantly impact
+        total cost of ownership</li>
     </ul>
   </section>
 
-  <section class="quantitative-analysis">
+  <section class="quantitative-analysis" id="quantitative">
     <div class="section-header">
       <h2 i18n="@@rentorbuy.quantitativeTitle">Quantitative Analysis: NPV of Cash Flow Differences</h2>
     </div>
     <p i18n="@@rentorbuy.quantitativeIntro">
-      The quantitative analysis boils down to comparing the Net Present Value of cash flow differences between buying and renting.
+      The quantitative analysis boils down to comparing the Net Present Value of cash flow differences between buying
+      and renting.
     </p>
-    
-    <h3 i18n="@@rentorbuy.cashflowDifferenceTitle">Cash Flow Difference Calculation</h3>
+
+    <h3 id="cashflow-calculation" i18n="@@rentorbuy.cashflowDifferenceTitle">Cash Flow Difference Calculation</h3>
     <p i18n="@@rentorbuy.cashflowDifferenceText">
-      For each year, we calculate: (Cost of Buying) - (Cost of Renting). A positive NPV indicates that buying is financially advantageous.
+      For each year, we calculate: (Cost of Buying) - (Cost of Renting). A positive NPV indicates that buying is
+      financially advantageous.
     </p>
-    
+
     <div class="formula-container">
       <div class="formula">
         <div class="formula-title" i18n="@@rentorbuy.cashflowFormula">Annual Cash Flow Difference</div>
-        <p class="formula-text">CF_t = (Rent_t + Rent_increases) - (Mortgage_payment + Property_tax + Maintenance + Insurance)</p>
+        <p class="formula-text">CF_t = (Rent_t + Rent_increases) - (Mortgage_payment + Property_tax + Maintenance +
+          Insurance)</p>
         <p class="formula-explanation" i18n="@@rentorbuy.cashflowFormulaExplanation">
           Plus end-of-period considerations like property appreciation and down payment opportunity cost.
         </p>
       </div>
     </div>
 
-    <h3 i18n="@@rentorbuy.assumptionsTitle">Key Assumptions in Our Model</h3>
+    <h3 id="key-assumptions" i18n="@@rentorbuy.assumptionsTitle">Key Assumptions in Our Model</h3>
     <div class="assumptions-grid">
       <div class="assumption-item">
         <h4 i18n="@@rentorbuy.propertyDepreciation">Property Depreciation</h4>
         <p i18n="@@rentorbuy.propertyDepreciationText">
-          Buildings depreciate over time while land typically appreciates. Our model uses straight-line depreciation for the building component over the specified amortization period.
+          Buildings depreciate over time while land typically appreciates. Our model uses straight-line depreciation for
+          the building component over the specified amortization period.
         </p>
       </div>
       <div class="assumption-item">
         <h4 i18n="@@rentorbuy.opportunityCostTitle">Opportunity Cost</h4>
         <p i18n="@@rentorbuy.opportunityCostText">
-          The return you could earn by investing your down payment in alternative investments (typically 6-8% annually for stock market returns).
+          The return you could earn by investing your down payment in alternative investments (typically 6-8% annually
+          for stock market returns).
         </p>
       </div>
       <div class="assumption-item">
         <h4 i18n="@@rentorbuy.transactionCostsTitle">Transaction Costs</h4>
         <p i18n="@@rentorbuy.transactionCostsText">
-          Include real estate agent fees, loan origination costs, and other one-time expenses associated with purchasing property.
+          Include real estate agent fees, loan origination costs, and other one-time expenses associated with purchasing
+          property.
         </p>
       </div>
       <div class="assumption-item">
         <h4 i18n="@@rentorbuy.maintenanceCostsTitle">Maintenance and Operating Costs</h4>
         <p i18n="@@rentorbuy.maintenanceCostsText">
-          Annual maintenance costs calculated as a percentage of property value, including repairs, renovations, property taxes, and insurance.
+          Annual maintenance costs calculated as a percentage of property value, including repairs, renovations,
+          property taxes, and insurance.
         </p>
       </div>
     </div>
   </section>
 
-  <section class="sensitivity-analysis">
+  <section class="sensitivity-analysis" id="sensitivity">
     <div class="section-header">
       <h2 i18n="@@rentorbuy.sensitivityTitle">Sensitivity Analysis Using Monte Carlo</h2>
     </div>
     <p i18n="@@rentorbuy.sensitivityIntro">
-      Real estate markets are inherently uncertain. Our calculator uses Monte Carlo-style sensitivity analysis to help you understand how different scenarios might affect your decision.
+      Real estate markets are inherently uncertain. Our calculator uses Monte Carlo-style sensitivity analysis to help
+      you understand how different scenarios might affect your decision.
     </p>
-    
-    <h3 i18n="@@rentorbuy.monteCarloTitle">Monte Carlo Approach</h3>
+
+    <h3 id="monte-carlo" i18n="@@rentorbuy.monteCarloTitle">Monte Carlo Approach</h3>
     <p i18n="@@rentorbuy.monteCarloText">
-      By adjusting key parameters and observing how they affect the NPV and IRR, you can stress-test your decision against various market conditions and personal circumstances.
+      By adjusting key parameters and observing how they affect the NPV and IRR, you can stress-test your decision
+      against various market conditions and personal circumstances.
     </p>
-    
+
     <div class="sensitivity-factors">
       <h4 i18n="@@rentorbuy.keyFactorsTitle">Key Factors to Test</h4>
       <ul>
@@ -240,29 +477,38 @@
     <div class="insight-box">
       <h4 i18n="@@rentorbuy.sensitivityInsight">Sensitivity Insight</h4>
       <p i18n="@@rentorbuy.sensitivityInsightText">
-        If your decision remains consistent across a wide range of scenarios, you can be more confident in your choice. If small changes in assumptions flip your decision, you may want to gather more data or consider the risks more carefully.
+        If your decision remains consistent across a wide range of scenarios, you can be more confident in your choice.
+        If small changes in assumptions flip your decision, you may want to gather more data or consider the risks more
+        carefully.
       </p>
     </div>
   </section>
 
-  <section class="conclusion">
+  <section class="conclusion" id="conclusion">
     <div class="section-header">
       <h2 i18n="@@rentorbuy.conclusionTitle">Conclusion</h2>
     </div>
     <p i18n="@@rentorbuy.conclusionText">
-      The rent-or-buy decision is fundamentally about optimizing your financial future while maintaining your desired quality of life. By using NPV and IRR analysis, combined with sensitivity testing, you can make an informed decision based on your specific situation.
+      The rent-or-buy decision is fundamentally about optimizing your financial future while maintaining your desired
+      quality of life. By using NPV and IRR analysis, combined with sensitivity testing, you can make an informed
+      decision based on your specific situation.
     </p>
     <p i18n="@@rentorbuy.conclusionReminder">
-      Remember that financial models are tools to inform your decision, not make it for you. Consider your personal circumstances, risk tolerance, career stability, and long-term goals. The "right" decision varies for each person and depends on both financial and non-financial factors.
+      Remember that financial models are tools to inform your decision, not make it for you. Consider your personal
+      circumstances, risk tolerance, career stability, and long-term goals. The "right" decision varies for each person
+      and depends on both financial and non-financial factors.
     </p>
     <p i18n="@@rentorbuy.conclusionFinal">
-      Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.
+      Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to
+      understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the
+      flexibility that renting provides.
     </p>
-    
+
     <div class="cta-section">
       <h3 i18n="@@rentorbuy.ctaTitle">Ready to Run Your Analysis?</h3>
-      <p i18n="@@rentorbuy.ctaText">Use our interactive calculator to explore different scenarios and find the best financial choice for your situation.</p>
+      <p i18n="@@rentorbuy.ctaText">Use our interactive calculator to explore different scenarios and find the best
+        financial choice for your situation.</p>
       <a href="/rentorbuy" class="cta-button" i18n="@@rentorbuy.ctaButton">Go to Rent vs Buy Calculator</a>
     </div>
   </section>
-</article> 
+</article>

@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import Chart from 'chart.js/auto';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { RentBuyCalculatorService } from '../../services/rent-buy-calculator.service';
 
 interface CashFlow {
   year: number;

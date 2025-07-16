@@ -1793,44 +1793,80 @@
         <target>売却物件</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoSaleLocation" datatype="html">
-        <source>Location: Shibuya, 2-bedroom apartment</source>
-        <target>立地：渋谷、2LDKアパート</target>
+        <source><strong style="color: #FF69B4">Location:</strong> Shimomeguro 4, Meguro-ku, Tokyo</source>
+        <target><strong style="color: #FF69B4">所在地：</strong>東京都目黒区下目黒4</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleLayout" datatype="html">
+        <source><strong style="color: #FF69B4">Layout:</strong> 3LDK</source>
+        <target><strong style="color: #FF69B4">間取り：</strong>3LDK</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleFloors" datatype="html">
+        <source><strong style="color: #FF69B4">Number of floors:</strong> 2</source>
+        <target><strong style="color: #FF69B4">階数：</strong>2階建て</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoSaleSize" datatype="html">
-        <source>Size: 65m², 15 years old</source>
-        <target>サイズ：65m²、築15年</target>
+        <source><strong style="color: #FF69B4">Floor Area:</strong> 78.53m², <strong style="color: #FF69B4">Land:</strong> 73.86m²</source>
+        <target><strong style="color: #FF69B4">専有面積：</strong>78.53m²、<strong style="color: #FF69B4">土地面積：</strong>73.86m²</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoSaleAge" datatype="html">
+        <source><strong style="color: #FF69B4">Built:</strong> February 2004</source>
+        <target><strong style="color: #FF69B4">築年月：</strong>2004年2月</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoSalePrice" datatype="html">
-        <source>Price: ¥75,000,000</source>
-        <target>価格：7,500万円</target>
+        <source><strong style="color: #FF69B4">Price:</strong> ¥99,700,000</source>
+        <target><strong style="color: #FF69B4">価格：</strong>9,970万円</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoSaleStation" datatype="html">
-        <source>Station: 8 minutes walk to JR Shibuya</source>
-        <target>駅：JR渋谷駅徒歩8分</target>
+        <source><strong style="color: #FF69B4">Station:</strong> 16min walk to JR Meguro</source>
+        <target><strong style="color: #FF69B4">駅：</strong>JR目黒駅徒歩16分</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoForRent" datatype="html">
         <source>For Rent</source>
         <target>賃貸物件</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoRentLocation" datatype="html">
-        <source>Location: Shibuya, 2-bedroom apartment</source>
-        <target>立地：渋谷、2LDKアパート</target>
+        <source><strong style="color: #FF69B4">Location:</strong> Meguro 4, Meguro-ku, Tokyo</source>
+        <target><strong style="color: #FF69B4">所在地：</strong>東京都目黒区目黒4</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentLayout" datatype="html">
+        <source><strong style="color: #FF69B4">Layout:</strong> 3LDK</source>
+        <target><strong style="color: #FF69B4">間取り：</strong>3LDK</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentFloors" datatype="html">
+        <source><strong style="color: #FF69B4">Number of floors:</strong> 3</source>
+        <target><strong style="color: #FF69B4">階数：</strong>3階建て</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoRentSize" datatype="html">
-        <source>Size: 68m², 12 years old</source>
-        <target>サイズ：68m²、築12年</target>
+        <source><strong style="color: #FF69B4">Floor Area:</strong> 99.4m²</source>
+        <target><strong style="color: #FF69B4">専有面積：</strong>99.4m²</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoRentAge" datatype="html">
+        <source><strong style="color: #FF69B4">Age:</strong> 15 years old</source>
+        <target><strong style="color: #FF69B4">築年数：</strong>築15年</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoRentPrice" datatype="html">
-        <source>Rent: ¥280,000/month</source>
-        <target>家賃：月28万円</target>
+        <source><strong style="color: #FF69B4">Rent:</strong> ¥350,000/month</source>
+        <target><strong style="color: #FF69B4">家賃：</strong>月35万円</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoRentStation" datatype="html">
-        <source>Station: 6 minutes walk to JR Shibuya</source>
-        <target>駅：JR渋谷駅徒歩6分</target>
+        <source><strong style="color: #FF69B4">Station:</strong> 15min walk to JR Meguro</source>
+        <target><strong style="color: #FF69B4">駅：</strong>JR目黒駅徒歩15分</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.comparisonNote" datatype="html">
+        <source>Important Note on Property Comparison</source>
+        <target>物件比較に関する重要な注意点</target>
       </trans-unit>
       <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
-        <source>These properties offer similar living experiences but different financial implications. Our analysis would compare the total cost of ownership (including loan payments, maintenance, taxes) against the rental costs over various time periods.</source>
-        <target>これらの物件は似たような生活体験を提供しますが、金融的な影響は異なります。我々の分析では、様々な期間にわたって所有の総コスト（ローン支払い、メンテナンス、税金を含む）と賃貸コストを比較します。</target>
+        <source>Note that these properties are not really comparable. I chose to restrict them to the same neighborhood - close to Meguro Station, but the renting option is much bigger and has more floors. Comparing these two options still makes sense though insofar as they are viable alternatives, and in a sense both should be good enough for a young couple with kids. So, rather than making sure each attribute of the properties match exactly, I would prefer to compare two options that fulfill whatever requirements you have even though one seems to be higher end than the other.</source>
+        <target>これらの物件は厳密には比較可能ではないことに注意してください。私は同じ地域（目黒駅周辺）に限定しましたが、賃貸オプションの方がはるかに大きく、階数も多いです。しかし、これら2つのオプションを比較することは、それらが実現可能な代替案であり、ある意味では子供のいる若いカップルにとって十分に良いという点で意味があります。したがって、物件の各属性が正確に一致することを確認するよりも、一方が他方よりも高級に見えても、あなたの要件を満たす2つのオプションを比較することを好みます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyImageAlt" datatype="html">
+        <source>Property for sale example</source>
+        <target>売却物件の例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentImageAlt" datatype="html">
+        <source>Property for rent example</source>
+        <target>賃貸物件の例</target>
       </trans-unit>
       <trans-unit id="rentorbuy.qualitativeTitle" datatype="html">
         <source>Qualitative Analysis: Understanding the Mechanics</source>
@@ -1955,6 +1991,35 @@
       <trans-unit id="rentorbuy.conclusionFinal" datatype="html">
         <source>Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.</source>
         <target>我々の計算機は分析フレームワークを提供しますが、最終的な決定はあなたのものです。これらのツールを使用してトレードオフを理解しますが、持家の無形の利益や賃貸が提供する柔軟性を考慮することを忘れないでください。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocTitle" datatype="html">
+        <source>Table of Contents</source>
+        <target>目次</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocMindset" datatype="html">
+        <source>The Decision-Making Mindset</source>
+        <target>意思決定の考え方</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocModeling" datatype="html">
+        <source>Modeling and Financial Tools</source>
+        <target>モデリングと金融ツール</target>
+      </trans-unit>
+      
+      <trans-unit id="rentorbuy.tocQualitative" datatype="html">
+        <source>Qualitative Analysis</source>
+        <target>質的分析</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocQuantitative" datatype="html">
+        <source>Quantitative Analysis</source>
+        <target>定量分析</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocSensitivity" datatype="html">
+        <source>Sensitivity Analysis</source>
+        <target>感度分析</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocConclusion" datatype="html">
+        <source>Conclusion</source>
+        <target>結論</target>
       </trans-unit>
     </body>
   </file>
