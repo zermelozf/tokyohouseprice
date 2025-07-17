@@ -40,8 +40,8 @@
       model.
     </p>
     <p>
-      One of the perks of framing the house vs rent decision as a financial problem is that it helped me better
-      better understand another seemingly unrelated event: the <a href="https://en.wikipedia.org/wiki/Leveraged_buyout"
+      One of the perks of framing the rent vs. buy decision as a financial problem is that it helped me better
+      understand another seemingly unrelated event: the <a href="https://en.wikipedia.org/wiki/Leveraged_buyout"
         target="_blank">Leveraged Buyout</a> of a company I was involved with by a <a
         href="https://en.wikipedia.org/wiki/Venture_capital">Venture Capital firm</a>. It turns out that a
       Leveraged Buyout and a <a href="https://en.wikipedia.org/wiki/Mortgage">House Mortgage</a> are pretty similar. So
@@ -62,7 +62,7 @@
       <div class="newsletter-content">
         <h3 i18n="@@rentorbuy.newsletterTitle">Subscribe to the Newsletter</h3>
         <p i18n="@@rentorbuy.newsletterDescription">
-          If you enjoy these articles, please subscribe! I'll send you an email when I publish new ones.
+          If you enjoy these articles, please subscribe! I'll send you an email whenever I publish new ones.
         </p>
         <div class="newsletter-form">
           <form (ngSubmit)="onNewsletterSubmit()" #newsletterForm="ngForm">
@@ -195,8 +195,8 @@
       <h2 i18n="@@rentorbuy.modelingTitle">A Decision Making Framework</h2>
     </div>
 
-    <p>While acknowledging the difference between the two properties, in that either option is suitable, and focus on
-      comparing them from a financial perspective. I will use two very powerful tools:</p>
+    <p>While acknowledging the differences between the two properties, I recognize that either option could be suitable. 
+      Let's focus on comparing them from a financial perspective. I will use two very powerful tools:</p>
     <ul>
       <li>Net Present Value (NPV)</li>
       <li>Internal Rate of Return (IRR)</li>
@@ -211,8 +211,8 @@
       A property is a bundle of cash flows.
     </p>
 
-    <p>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (below we'll do the
-      accounting yearly though).
+    <p>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity, 
+      we'll do the accounting yearly below).
     </p>
 
     <div class="formula-box">
@@ -222,9 +222,11 @@
 
     <p>
       In case we buy the property, there are two types of cash flows:
+    </p>
+    <ul>
       <li>Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</li>
       <li>Positive: the proceeds from selling the property.</li>
-    </p>
+    </ul>
 
     <div class="formula-box">
       <p>\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP - F \]</p>
@@ -262,8 +264,8 @@
     </div>
 
     <p>
-      For example, if we compare the 42万円 rent with the 99.7万円 buy options, we see
-      that the rent and buy cumulative cashflow value cross on the {{ breakevenYear }}th year:
+      For example, if we compare the ¥420,000 monthly rent with the ¥99,700,000 buy option, we see
+      that the rent and buy cumulative cash flow values cross in the {{ breakevenYear }}th year:
     </p>
 
     <app-rent-vs-buy-chart></app-rent-vs-buy-chart>
@@ -298,8 +300,8 @@
       </div>
 
       <p>
-        To make the comparison even easier, we can plot the difference between the two cumulative cashflows \(V_{{ '{'
-        }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \). Whenever, it is positive, it means that buying is better
+        To make the comparison even easier, we can plot the difference between the two cumulative cash flows \(V_{{ '{'
+        }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \). Whenever it is positive, it means that buying is better
         than renting.
       </p>
 
@@ -320,7 +322,7 @@
       </div>
 
       <p>
-        Also, the slope of the curve will be steeper if we pay less interests, so it might be tempting to make the
+        Also, the slope of the curve will be steeper if we pay less interest, so it might be tempting to make the
         smallest loan possible at the best rate possible. However, this is not the entire story as we will see in the
         next section.
       </p>
@@ -332,13 +334,13 @@
 
     <div class="formula-box">
       <p>
-        There is another factor to consider: <a href="https://https://en.wikipedia.org/wiki/Opportunity_cost">the
+        There is another factor to consider: <a href="https://en.wikipedia.org/wiki/Opportunity_cost" target="_blank">the
           Opportunity Cost</a> of buying vs renting.
       </p>
       <p>
         For example, let's say that instead of making a big down payment and a small loan for the house, we instead rent
         and invest the down payment in the stock market or in a remunerated account. Over time, that investment will
-        grow at a some rate \(r\).
+        grow at some rate \(r\).
       </p>
 
       <p>
@@ -357,7 +359,7 @@
 
     <div class="formula-box">
       <p>\( FV_{{ '{' }}buy{{ '}' }}(n)\) is called the <a href="https://en.wikipedia.org/wiki/Future_value"
-          target="_blank">Future Value</a> of buying. It is the we amount we will get in the future, if we invest the
+          target="_blank">Future Value</a> of buying. It is the amount we will get in the future, if we invest the
         cash flow
         difference (compared to renting) each year for \(n\) years.
 
@@ -380,7 +382,7 @@
     <div class="formula-box">
       <p>
         Let's again compare the two options, but this time using the present value of buying a house and selling it
-        after \(n\) years at the a {{ opportunityCost | percent: '1.1-1' }} rate.
+        after \(n\) years at a {{ opportunityCost | percent: '1.1-1' }} rate.
       </p>
     </div>
 
@@ -392,9 +394,9 @@
       </div>
       <div class="insight-content">
         <p>
-          Surprisingly, the buy vs rent recommendation completely changes!
+          Surprisingly, the buy vs. rent recommendation completely changes!
           It now takes 9 years instead of 4 to break even, and the renting option looks much more attractive in the long
-          run. In fact, buying is only a good option during a window of 8 years.
+          run. In fact, buying is only a good option during a specific 8-year window.
         </p>
       </div>
     </div>
@@ -432,7 +434,7 @@
         </p>
         <br>
         <p>
-          At first, if we buy and sell the property immediately, we will loose the broker fees and get nothing. So the
+          If we buy and sell the property immediately, we will lose the broker fees and get nothing. So the
           IRR is negative. But as we hold on to the property, the IRR will increase.
         </p>
         <br>
@@ -466,8 +468,8 @@
       improve the financials of the company and sell it for a profit within a few years.
     </p>
     <p>
-      At the time it sounded counter-intuitive to me that the investor would want to sell the company rapidely. If the
-      restructuring worked and the company prospects improved, then wouldn't it be a great long term investment?
+      At the time it sounded counter-intuitive to me that the investor would want to sell the company rapidly. If the
+      restructuring worked and the company prospects improved, then wouldn't it be a great long-term investment?
     </p>
     <p>
       That may be so. However, leverage is also a powerful force that can greatly increase the return on investment of
@@ -476,8 +478,8 @@
     </p>
     <p>
       In fact, all things being equal, and even without improving the profitability of the
-      company, it might still make sense to buy it with debt just to be able to mutliply the natural return of the
-      company using leverage. And you could imaging, a group of VC firms buying and selling companies to each others
+      company, it might still make sense to buy it with debt just to be able to multiply the natural return of the
+      company using leverage. And you could imagine a group of VC firms buying and selling companies to each other
       with the right timing just to maximize their IRR.
     </p>
     <p>
@@ -497,7 +499,7 @@
     <p>
       In the article above, I have used a very simple model to assess the rent-or-buy decision. In reality, there are
       many more factors to consider like the appreciation of the land, the depreciation of the house, inflation,
-      interest rates flucutations, etc.
+      interest rate fluctuations, etc.
     </p>
 
     <p>
