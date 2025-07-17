@@ -100,9 +100,10 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private calculateData() {
         // Calculate NPV difference using base service functions with 5% discount rate
-        const discountRate = 0.05;
+        const discountRate = this.calculator.opportunityCost;
+        const simulationYears = this.calculator.simumlationYears;
         
-        for (let year = 0; year <= 25; year++) {
+        for (let year = 0; year <= simulationYears; year++) {
             const rentCashFlow = this.calculator.getRentCashflow(year);
             const buyCashFlow = this.calculator.getBuyCashflow(year);
             const buyPV = this.calculator.npv(buyCashFlow, discountRate);

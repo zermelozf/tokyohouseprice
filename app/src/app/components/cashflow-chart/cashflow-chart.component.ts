@@ -11,6 +11,7 @@ import {
   ChartConfiguration,
   TooltipItem
 } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
 import { RentBuyCalculatorService } from '../../services/rent-buy-calculator.service';
 
 // Register Chart.js components
@@ -20,7 +21,8 @@ Chart.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
 interface CashFlowData {
@@ -44,8 +46,9 @@ interface CashFlowData {
           Annual cash flows show the yearly financial impact of each option. 
           The rent option shows consistent annual payments of ¥5.16M per year.
           The buy option shows higher initial costs due to the down payment (year 0), 
-          annual operating costs for interest and property taxes (years 1-24), and 
-          positive cash flow in year 25 from property sale proceeds after paying off the remaining loan.
+          annual operating costs including mortgage payments (years 1-20), then reduced costs 
+          after mortgage payoff (years 21-24), and positive cash flow in year 25 from property 
+          sale proceeds. The grey dashed line indicates when the mortgage is fully paid off.
         </p>
       </div>
     </div>
@@ -120,6 +123,8 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
     const rentData = this.data.map(d => d.rentCashFlow / 1_000_000); // Convert to millions
     const buyData = this.data.map(d => d.buyCashFlow / 1_000_000); // Convert to millions
 
+
+
     const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
@@ -171,16 +176,61 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
             callbacks: {
               title: (context: TooltipItem<'bar'>[]) => {
                 const year = context[0].label;
-                return year === '0' ? 'Initial Year' :
-                  year === '25' ? 'Sale Year (25)' : `Year ${year}`;
+                const yearNum = parseInt(year);
+                if (year === '0') return 'Initial Year';
+                if (year === '25') return 'Sale Year (25)';
+                if (yearNum === 20) return `Year ${year} (Last mortgage payment)`;
+                if (yearNum === 21) return `Year ${year} (Mortgage paid off)`;
+                return `Year ${year}`;
               },
               label: (context: TooltipItem<'bar'>) => {
                 const value = context.parsed.y;
                 const label = context.dataset.label;
+                const year = parseInt(context.label || '0');
+                
                 if (context.label === '25' && label?.includes('Buy')) {
                   return `${label} (incl. sale): ¥${value.toFixed(1)}M`;
                 }
+                if (label?.includes('Buy') && year > 20 && year < 25) {
+                  return `${label} (no mortgage): ¥${value.toFixed(1)}M`;
+                }
                 return `${label}: ¥${value.toFixed(1)}M`;
+              },
+              afterBody: (context: TooltipItem<'bar'>[]) => {
+                const year = parseInt(context[0].label || '0');
+                if (year === 20) {
+                  return 'Final mortgage payment made';
+                }
+                if (year === 21) {
+                  return 'Only property tax & maintenance from now on';
+                }
+                return '';
+              }
+            }
+          },
+          annotation: {
+            annotations: {
+              mortgagePayoff: {
+                type: 'line',
+                scaleID: 'x',
+                value: '20',
+                borderColor: '#888888',
+                borderWidth: 2,
+                borderDash: [6, 4],
+                label: {
+                  display: true,
+                  content: 'Mortgage Paid Off',
+                  position: 'center',
+                  backgroundColor: 'rgba(136, 136, 136, 0.8)',
+                  color: 'white',
+                  font: {
+                    size: 11,
+                    weight: 'normal'
+                  },
+                  padding: 4,
+                  borderRadius: 3,
+                  yAdjust: -30
+                }
               }
             }
           }

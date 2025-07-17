@@ -90,7 +90,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private calculateData() {
-    const maxYears = 25;
+    const maxYears = this.calculator.simumlationYears;
     const rentCosts = this.calculator.getRentCosts(maxYears);
     const buyCosts = this.calculator.getBuyCosts(maxYears);
 

@@ -22,16 +22,18 @@ export interface IRRData {
 })
 export class RentBuyCalculatorService {
   // Property characteristics
-  private readonly buyPrice = 99_700_000; // ¥99.7M
-  private readonly monthlyRent = 430_000;  // ¥430K/month
+  public readonly buyPrice = 99_700_000; // ¥99.7M
+  public readonly monthlyRent = 430_000;  // ¥430K/month
 
   // Assumptions for calculations
-  private readonly downPaymentRatio = 0.1;
-  private readonly mortgageRate = 0.015;
-  private readonly mortgageYears = 20;
-  private readonly propertyTaxRate = 0.014;
-  private readonly transactionCosts = 0.035;
-  private readonly maintenanceCost = 0.01;
+  public readonly downPaymentRatio = 0.2;
+  public readonly mortgageRate = 0.012;
+  public readonly mortgageYears = 20;
+  public readonly propertyTaxRate = 0.014;
+  public readonly transactionCosts = 0.05;
+  public readonly maintenanceCost = 0.01;
+  public readonly opportunityCost = 0.045;
+  public readonly simumlationYears = 25;
 
   getBuyCashflow(years: number): number[] {
 
@@ -104,7 +106,7 @@ export class RentBuyCalculatorService {
   /**
    * Calculate NPV of a cashflow array at given discount rate
    */
-  npv(cashflows: number[], discountRate: number): number {
+  npv(cashflows: number[], discountRate: number = this.opportunityCost): number {
     return cashflows.reduce((npv, cf, t) => npv + cf / Math.pow(1 + discountRate, t), 0);
   }
 

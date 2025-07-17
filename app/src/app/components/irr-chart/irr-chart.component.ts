@@ -41,10 +41,7 @@ Chart.register(
         <p>
           <span class="figure-label">Figure:</span> 
           The Internal Rate of Return (IRR) represents the annualized return rate of the buy vs rent investment 
-          over different holding periods. Higher IRR values indicate better investment performance. The IRR is 
-          undefined for short holding periods where the investment has not yet become profitable, but generally 
-          improves with longer holding periods as the benefits of property ownership compound over time. The red 
-          point highlights the maximum IRR achievable and its corresponding optimal holding period.
+          over different holding periods. Higher IRR values indicate better investment performance.
         </p>
       </div>
     </div>
@@ -100,8 +97,9 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
   private calculateData() {
     // Calculate IRR data using base service functions
     this.data = [];
+    const simulationYears = this.calculator.simumlationYears;
     
-    for (let year = 0; year <= 25; year++) {
+    for (let year = 0; year <= simulationYears; year++) {
       const rentCashFlow = this.calculator.getRentCashflow(year);
       const buyCashFlow = this.calculator.getBuyCashflow(year);
       const diffCashflows = [];
@@ -130,6 +128,14 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
     const maxIRR = Math.max(...irrValues);
     const maxIRRIndex = irrValues.indexOf(maxIRR);
     const maxIRRYear = validData[maxIRRIndex].year;
+
+    // Calculate reference lines
+    const opportunityCostPercent = this.calculator.opportunityCost * 100;
+    const annualRent = 430_000 * 12; // Monthly rent * 12
+    const buyPrice = 99_700_000;
+    const propertyTaxRate = 0.014;
+    const maintenanceCost = 0.01;
+    const rentalYieldPercent = ((annualRent / buyPrice) - ((propertyTaxRate * 0.7) + maintenanceCost)) * 100;
 
     // Create point colors array - highlight max IRR point
     const pointColors = irrValues.map((_, index) => 
@@ -184,6 +190,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 weight: 'bold'
               }
             },
+            min: 0,
             grid: {
               color: 'rgba(0, 0, 0, 0.1)'
             },
@@ -250,6 +257,48 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
                   },
                   padding: 4,
                   borderRadius: 4
+                }
+              },
+              opportunityCostLine: {
+                type: 'line',
+                yMin: opportunityCostPercent,
+                yMax: opportunityCostPercent,
+                borderColor: 'rgba(128, 128, 128, 0.4)',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                label: {
+                  display: true,
+                  content: `Opportunity Cost: ${opportunityCostPercent.toFixed(1)}%`,
+                  position: 'end',
+                  yAdjust: -15,
+                  backgroundColor: 'rgba(128, 128, 128, 0.1)',
+                  color: '#666666',
+                  font: {
+                    size: 10
+                  },
+                  padding: 2,
+                  borderRadius: 2
+                }
+              },
+              rentalYieldLine: {
+                type: 'line',
+                yMin: rentalYieldPercent,
+                yMax: rentalYieldPercent,
+                borderColor: 'rgba(128, 128, 128, 0.4)',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                label: {
+                  display: true,
+                  content: `Long Term Yield: ${rentalYieldPercent.toFixed(1)}%`,
+                  position: 'end',
+                  yAdjust: -15,
+                  backgroundColor: 'rgba(128, 128, 128, 0.1)',
+                  color: '#666666',
+                  font: {
+                    size: 10
+                  },
+                  padding: 2,
+                  borderRadius: 2
                 }
               }
             }
