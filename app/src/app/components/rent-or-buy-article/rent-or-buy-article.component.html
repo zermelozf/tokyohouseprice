@@ -124,7 +124,7 @@
     <h2 i18n="@@rentorbuy.tocTitle">Table of Contents</h2>
     <ul>
       <li><a href="#mindset" i18n="@@rentorbuy.tocMindset">A concrete example from SUUMO.jp</a></li>
-      <li><a href="#modeling" i18n="@@rentorbuy.tocModeling">A Decision Making Framework</a>
+      <li><a href="#modeling" i18n="@@rentorbuy.tocModeling">The Decision Making Framework</a>
         <ul>
           <li><a href="#model">Modeling a Property</a></li>
           <li><a href="#npv">Opportunity Cost and Net Present Value (NPV)</a></li>
@@ -192,7 +192,7 @@
 
   <section class="modeling-tools" id="modeling">
     <div class="section-header">
-      <h2 i18n="@@rentorbuy.modelingTitle">A Decision Making Framework</h2>
+      <h2 i18n="@@rentorbuy.modelingTitle">The Decision Making Framework</h2>
     </div>
 
     <p>While acknowledging the differences between the two properties, I recognize that either option could be suitable. 
@@ -201,6 +201,16 @@
       <li>Net Present Value (NPV)</li>
       <li>Internal Rate of Return (IRR)</li>
     </ul>
+
+    <p i18n="@@rentorbuy.technicalDisclaimer">I realize that some of you might not be interested in the mathematical details,
+      so by default the technical formulas are hidden. You can click on the button below to show them.</p>
+
+    <div class="toggle-container">
+      <button class="toggle-button" (click)="toggleTechnicalDetails()">
+        <span *ngIf="showTechnicalDetails" i18n="@@rentorbuy.hideDetails">Hide technical details</span>
+        <span *ngIf="!showTechnicalDetails" i18n="@@rentorbuy.showDetails">Show technical details</span>
+      </button>
+    </div>
 
     <p>
       But before we dive into the details, let's first formalize what we mean by a property from a financial standpoint.
@@ -215,9 +225,12 @@
       we'll do the accounting yearly below).
     </p>
 
-    <div class="formula-box">
-      <p>\[ CF_{{ '{' }}rent{{ '}' }}(t) = -R \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n \]</p>
-      <p>where \( R \) is the annual rent and \( n \) is the number of years.</p>
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>\[ CF_{{ '{' }}rent{{ '}' }}(t) = -R \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n \]</p>
+        <p>where \( R \) is the annual rent and \( n \) is the number of years.</p>
+      </div>
     </div>
 
     <p>
@@ -228,39 +241,46 @@
       <li>Positive: the proceeds from selling the property.</li>
     </ul>
 
-    <div class="formula-box">
-      <p>\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP - F \]</p>
-      <p>\[ CF_{{ '{' }}buy{{ '}' }}(t) = -M - C \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n-1 \]</p>
-      <p>\[ CF_{{ '{' }}buy{{ '}' }}(n) = S - M - C \]</p>
-      <p>where \( DP \) is the down payment required to buy the property, \( F \) is the transaction costs or fees paid
-        to a broker, \( M \) is the annual mortgage payment, \( C \) is the annual costs
-        (property taxes, maintenance, insurance, etc.), \( S \) is the sale proceeds when the property is
-        finally sold.
-      </p>
-
-      <p>
-        For example, let's compare the cash flows for the two housing options described above. I'll use {{ fees |
-        percent }} for the broker fees and {{ mortgageRate | percent }} for the mortgage rate paid over a period of {{
-        loanYears }} years. Let's also assume running costs (maintenance, taxes, etc.) of {{ costs | percent }} of the
-        property value. Finally, let's assume that we will resell the property (in case we buy) after {{ simulationYears
-        }} years.
-      </p>
-
-      <p>
-        Here's what our cash flow chart looks like:
-      </p>
-
-      <app-cashflow-chart></app-cashflow-chart>
-
-      <p>Now, these cashflows represent how much money we spend or gain each year. If we want to see how much we spent
-        overall, we can just sum them all together, this will give us an idea of how "expensive" each options is.
-      </p>
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP - F \]</p>
+        <p>\[ CF_{{ '{' }}buy{{ '}' }}(t) = -M - C \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n-1 \]</p>
+        <p>\[ CF_{{ '{' }}buy{{ '}' }}(n) = S - M - C \]</p>
+        <p>where \( DP \) is the down payment required to buy the property, \( F \) is the transaction costs or fees paid
+          to a broker, \( M \) is the annual mortgage payment, \( C \) is the annual costs
+          (property taxes, maintenance, insurance, etc.), \( S \) is the sale proceeds when the property is
+          finally sold.
+        </p>
+      </div>
     </div>
-    <div class="formula-box">
-      <p>\[ V_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}buy{{ '}' }}(t) \]
-      </p>
-      <p>\[ V_{{ '{' }}rent{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}rent{{ '}' }}(t) \]
-      </p>
+
+    <p>
+      For example, let's compare the cash flows for the two housing options described above. I'll use {{ fees |
+      percent }} for the broker fees and {{ mortgageRate | percent }} for the mortgage rate paid over a period of {{
+      loanYears }} years. Let's also assume running costs (maintenance, taxes, etc.) of {{ costs | percent }} of the
+      property value. Finally, let's assume that we will resell the property (in case we buy) after {{ simulationYears
+      }} years.
+    </p>
+
+    <p>
+      Here's what our cash flow chart looks like:
+    </p>
+
+    <app-cashflow-chart></app-cashflow-chart>
+
+    <p>Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent
+      overall, we can just sum them all together, this will give us an idea of how "expensive" each option is.
+    </p>
+
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>\[ V_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}buy{{ '}' }}(t) \]
+        </p>
+        <p>\[ V_{{ '{' }}rent{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}rent{{ '}' }}(t) \]
+        </p>
+      </div>
     </div>
 
     <p>
@@ -270,40 +290,52 @@
 
     <app-rent-vs-buy-chart></app-rent-vs-buy-chart>
 
-    <div class="formula-box">
-      <p>
-        Or in other words, it only makes sense to buy the property if we intend to live in it for more than {{
-        breakevenYear }} years
-        (after which \( V_{{ '{' }}buy{{ '}' }}(n) > V_{{ '{' }}rent{{ '}' }}(n) \)). And the longer we live in the
-        house, the more advantageous it is to buy.
-      </p>
+    <p>
+      Or in other words, it only makes sense to buy the property if we intend to live in it for more than {{
+      breakevenYear }} years. And the longer we live in the house, the more advantageous it is to buy.
+    </p>
 
-      <div class="insight-box">
-        <div class="insight-icon">
-          <i class="fas fa-lightbulb"></i>
-        </div>
-        <div class="insight-content">
-          <p>
-            To explain this, let's consider the two aspects of paying back the loan:
-          </p>
-          <ul>
-            <li>① We are investing money in the house.</li>
-            <li>② We are paying the bank interest for the use of our money.</li>
-          </ul>
-          <p>
-            Only ② is a real cost as everything we invest in the house is money we will get back when we sell it.
-            So, the real cost of the loan is not that of the monthly payment to the bank, but rather only the part that
-            is
-            lost in interests.
-          </p>
-        </div>
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>
+          Mathematically, buying becomes advantageous when \( V_{{ '{' }}buy{{ '}' }}(n) > V_{{ '{' }}rent{{ '}' }}(n) \).
+        </p>
       </div>
+    </div>
 
-      <p>
-        To make the comparison even easier, we can plot the difference between the two cumulative cash flows \(V_{{ '{'
-        }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \). Whenever it is positive, it means that buying is better
-        than renting.
-      </p>
+    <div class="insight-box">
+      <div class="insight-icon">
+        <i class="fas fa-lightbulb"></i>
+      </div>
+      <div class="insight-content">
+        <p>
+          To understand this graph, let's consider the two aspects of paying back the loan:
+        </p>
+        <ul>
+          <li>① We are investing money in the house.</li>
+          <li>② We are paying the bank interest for the use of our money.</li>
+        </ul>
+        <p>
+          Only ② is a real cost as everything we invest in the house is money we will get back when we sell it.
+          So, the real cost of the loan is not that of the monthly payment to the bank, but rather only the part that
+          is lost in interest.
+        </p>
+      </div>
+    </div>
+
+    <p>
+      To make the comparison even easier, we can plot the difference between the two cumulative cash flows. Whenever it is positive, it means that buying is better than renting.
+    </p>
+
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>
+          Specifically, we plot \(V_{{ '{' }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \).
+        </p>
+      </div>
+    </div>
 
       <div id="cashflowChart">
         <app-cumulative-difference-chart></app-cumulative-difference-chart>
@@ -327,63 +359,75 @@
         next section.
       </p>
 
-    </div>
-
-
     <h3 id="npv" i18n="@@rentorbuy.npvTitle">Opportunity Cost and Net Present Value (NPV)</h3>
 
-    <div class="formula-box">
-      <p>
-        There is another factor to consider: <a href="https://en.wikipedia.org/wiki/Opportunity_cost" target="_blank">the
-          Opportunity Cost</a> of buying vs renting.
-      </p>
-      <p>
-        For example, let's say that instead of making a big down payment and a small loan for the house, we instead rent
-        and invest the down payment in the stock market or in a remunerated account. Over time, that investment will
-        grow at some rate \(r\).
-      </p>
+    <p>
+      There is another factor to consider: <a href="https://en.wikipedia.org/wiki/Opportunity_cost" target="_blank">the
+        Opportunity Cost</a> of buying vs renting.
+    </p>
+    <p>
+      For example, let's say that instead of making a big down payment and a small loan for the house, we instead rent
+      and invest the down payment in the stock market or in a remunerated account. Over time, that investment will
+      grow at some rate.
+    </p>
 
-      <p>
-        Similarly, if the mortgage we pay is less than the rent we would have paid, then we could invest the difference
-        in the stock market.
-      </p>
+    <p>
+      Similarly, if the mortgage we pay is less than the rent we would have paid, then we could invest the difference
+      in the stock market.
+    </p>
 
-      <p>
-        Building on this idea, we can try to maximize the return of whatever money we have left over by investing it.
-        Let's look at the value of our investment in case we buy the house:
-      </p>
-      <p>\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
-        (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
-      </p>
+    <p>
+      Building on this idea, we can try to maximize the return of whatever money we have left over by investing it.
+    </p>
+
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
+          (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
+        </p>
+        <p>where \(r\) is the opportunity cost rate.</p>
+      </div>
     </div>
 
-    <div class="formula-box">
-      <p>\( FV_{{ '{' }}buy{{ '}' }}(n)\) is called the <a href="https://en.wikipedia.org/wiki/Future_value"
-          target="_blank">Future Value</a> of buying. It is the amount we will get in the future, if we invest the
-        cash flow
-        difference (compared to renting) each year for \(n\) years.
+    <p>
+      The Future Value represents the amount we will get in the future, if we invest the cash flow
+      difference (compared to renting) each year.
+    </p>
 
-      <p>
-        But \(FV\) will only be available in the future. So, how much is that amount worth today?
-      </p>
+    <p>
+      But this future value will only be available in the future. So, how much is that amount worth today?
+    </p>
 
-      <p>To answer that question we can imagine that someone gave us a one time lump sum today that we can invest
-        immediately with the same return \(r\). What sum would give us the same \(FV_{{'{' }}buy{{'}' }}(n)\) in the
-        future? Since the sum is invested for \(n\) years at a rate \(r\), the answer is simply:
-      <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{ '{' }}(1 + r)^n{{ '}'
-        }} \quad (2) \]</p>
-      <p>This is called the <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present Value</a> (PV)
-        of the buy option. We can also express this directly in terms of cash
-        flows:</p>
-      <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{ '{' }}CF_{{ '{'
-        }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t){{ '}' }}{{ '{' }}(1 + r)^t{{ '}' }} \quad (3) \]</p>
+    <p>To answer that question we can imagine that someone gave us a one-time lump sum today that we can invest
+      immediately with the same return. What sum would give us the same future value? This is called the 
+      <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present Value</a> (PV) of the buy option.
+    </p>
+
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>\( PV_{{ '{' }}buy{{ '}' }}(n)\) is called the Present Value of buying:</p>
+        <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{ '{' }}(1 + r)^n{{ '}'
+          }} \quad (2) \]</p>
+        <p>We can also express this directly in terms of cash flows:</p>
+        <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{ '{' }}CF_{{ '{'
+          }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t){{ '}' }}{{ '{' }}(1 + r)^t{{ '}' }} \quad (3) \]</p>
+      </div>
     </div>
 
-    <div class="formula-box">
-      <p>
-        Let's again compare the two options, but this time using the present value of buying a house and selling it
-        after \(n\) years at a {{ opportunityCost | percent: '1.1-1' }} rate.
-      </p>
+    <p>
+      Let's again compare the two options, but this time using the present value of buying a house and selling it
+      after a certain number of years at a {{ opportunityCost | percent: '1.1-1' }} rate.
+    </p>
+
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'" 
+         [style.display]="showTechnicalDetails ? 'block' : 'none'">
+      <div class="formula-box">
+        <p>
+          Mathematically, we compare using the present value after \(n\) years at a {{ opportunityCost | percent: '1.1-1' }} rate.
+        </p>
+      </div>
     </div>
 
     <app-pv-buy-chart></app-pv-buy-chart>

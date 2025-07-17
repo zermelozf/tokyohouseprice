@@ -1,6 +1,7 @@
 import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { RentVsBuyChartComponent } from '../rent-vs-buy-chart/rent-vs-buy-chart.component';
 import { PvBuyChartComponent } from '../pv-buy-chart/pv-buy-chart.component';
 import { CashflowChartComponent } from '../cashflow-chart/cashflow-chart.component';
@@ -33,7 +34,28 @@ declare const MathJax: any;
   standalone: true,
   imports: [CommonModule, FormsModule, RentVsBuyChartComponent, PvBuyChartComponent, CashflowChartComponent, CumulativeDifferenceChartComponent, IrrChartComponent],
   templateUrl: './rent-or-buy-article.component.html',
-  styleUrls: ['./rent-or-buy-article.component.scss']
+  styleUrls: ['./rent-or-buy-article.component.scss'],
+  animations: [
+    trigger('expandCollapse', [
+      state('collapsed', style({
+        height: '0',
+        opacity: '0',
+        overflow: 'hidden',
+        padding: '0',
+        margin: '0'
+      })),
+      state('expanded', style({
+        height: '*',
+        opacity: '1',
+        overflow: 'visible',
+        padding: '1rem 0',
+        margin: '1rem 0'
+      })),
+      transition('collapsed <=> expanded', [
+        animate('300ms ease-in-out')
+      ])
+    ])
+  ]
 })
 export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
   breakevenYear: number = 11; // Default fallback
@@ -46,6 +68,7 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
   opportunityCost: number = 0.045;
   rentYield: number = 0.01;
   isNewsletterClosed: boolean = false;
+  showTechnicalDetails: boolean = false;
   
   // Newsletter form properties
   newsletterEmail: string = '';
@@ -150,6 +173,16 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
 
   closeNewsletter() {
     this.isNewsletterClosed = true;
+  }
+
+  toggleTechnicalDetails() {
+    this.showTechnicalDetails = !this.showTechnicalDetails;
+    if (this.showTechnicalDetails) {
+      // Wait for the animation to complete before rendering MathJax
+      setTimeout(() => {
+        this.renderFormulas();
+      }, 300);
+    }
   }
 
   onNewsletterSubmit() {
