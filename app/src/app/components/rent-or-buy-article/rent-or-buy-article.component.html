@@ -310,34 +310,36 @@
           <li>② The other part is used to pay the bank interest.</li>
         </ul>
         <p>
-          Only ② is a real cost as everything we invest in the house is money we will get back when we sell it.
+          <strong>Only ② is a real cost as everything we invest in the house is money we will get back when we sell
+            it.</strong>
         </p>
         <br>
         <p>
-          Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①? A quick
-          back of the enveloppe calculation tells us that with brokerage fees of <span class="percentage-highlight">{{
-            fees / 2 | percent }}</span>
-          and a forced rent saving of <span class="percentage-highlight">{{ rentYield | percent: '1.1-1' }}</span>,
-          minus <span class="percentage-highlight">{{ costs | percent }}</span> in runnning costs
-          and <span class="percentage-highlight">{{
-            mortgageRate | percent }}</span> in interests, we are saving about <span class="percentage-highlight">{{
-            rentYield - costs - mortgageRate | percent }}</span>
-          every year. Thus it should take about <span class="percentage-highlight">{{ fees / (rentYield - costs -
-            mortgageRate) | number: '1.0-0' }}</span> years
-          to get the broker fees back.
+          Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①?
         </p>
+        <br>
+        <p>A quick back of the enveloppe calculation tells us that with brokerage fees of <span
+            class="percentage-highlight">{{ fees | percent }}</span> and a forced rent saving of <span
+            class="percentage-highlight">{{ rentYield | percent: '1.1-1' }}</span>,
+          minus <span class="percentage-highlight">{{ costs | percent }}</span> in runnning costs
+          and <span class="percentage-highlight">{{ mortgageRate | percent }}</span> in interests, we are saving about
+          <span class="percentage-highlight">{{ rentYield - costs - mortgageRate | percent }}</span>
+          every year. Thus it should take about <span class="percentage-highlight">{{ fees | percent }}</span> /
+          <span class="percentage-highlight">{{ rentYield - costs - mortgageRate | percent }}</span> = <span
+            class="percentage-highlight">{{ fees / (rentYield - costs - mortgageRate) | number: '1.0-0' }}</span>
+          years to get the broker fees back.
+        </p>
+        <br>
         <p>
           In reality, it takes a bit less because we are only paying <span class="percentage-highlight">{{ mortgageRate
-            | percent }}</span> interests on the
-          remaining loan balance and not the total property price.
+            | percent }}</span> interests on the remaining loan balance and not the total property price.
         </p>
       </div>
     </div>
 
     <p>
-      We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. The
-      will
-      be useful when comparing with the NPV analysis in the next section.
+      We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. This
+      will be useful when comparing with the NPV analysis in the next section.
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
