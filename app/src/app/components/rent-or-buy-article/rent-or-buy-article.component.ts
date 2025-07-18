@@ -1,6 +1,7 @@
 import { Component, OnInit, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Meta, Title } from '@angular/platform-browser';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { RentVsBuyChartComponent } from '../rent-vs-buy-chart/rent-vs-buy-chart.component';
 import { PvBuyChartComponent } from '../pv-buy-chart/pv-buy-chart.component';
@@ -78,7 +79,9 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
 
   constructor(
     private calculator: RentBuyCalculatorService,
-    private newsletterService: NewsletterService
+    private newsletterService: NewsletterService,
+    private meta: Meta,
+    private title: Title
   ) {
     this.simulationYears = this.calculator.simumlationYears;
     this.costs = this.calculator.maintenanceCost + this.calculator.propertyTaxRate * 0.7;
@@ -91,6 +94,9 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
+    // Set meta tags for social sharing
+    this.setupSocialMetaTags();
+    
     this.breakevenYear = this.calculateBreakevenYear();
     
     // Initialize MathJax
@@ -241,5 +247,39 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
         }
       }
     }
+  }
+
+  private setupSocialMetaTags() {
+    const title = 'Rent Or Buy: Approach Housing like a Venture Capitalist';
+    const description = 'A financial analysis of the rent vs buy decision using NPV and IRR. Learn when buying makes sense and how to time your property investments like a VC.';
+    const imageUrl = 'https://tokyohouseprice.web.app/buy-vs-rent.jpg';
+    const url = 'https://tokyohouseprice.web.app/rent-or-buy-analysis';
+
+    // Set page title
+    this.title.setTitle(title);
+
+    // Set meta description
+    this.meta.updateTag({ name: 'description', content: description });
+
+    // Open Graph tags
+    this.meta.updateTag({ property: 'og:title', content: title });
+    this.meta.updateTag({ property: 'og:description', content: description });
+    this.meta.updateTag({ property: 'og:image', content: imageUrl });
+    this.meta.updateTag({ property: 'og:url', content: url });
+    this.meta.updateTag({ property: 'og:type', content: 'article' });
+    this.meta.updateTag({ property: 'og:site_name', content: 'Tokyo House Price' });
+
+    // Twitter Card tags
+    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ name: 'twitter:title', content: title });
+    this.meta.updateTag({ name: 'twitter:description', content: description });
+    this.meta.updateTag({ name: 'twitter:image', content: imageUrl });
+    this.meta.updateTag({ name: 'twitter:site', content: '@zermelozf' });
+    this.meta.updateTag({ name: 'twitter:creator', content: '@zermelozf' });
+
+    // Additional meta tags
+    this.meta.updateTag({ name: 'author', content: 'Arnaud R.' });
+    this.meta.updateTag({ property: 'article:author', content: 'Arnaud R.' });
+    this.meta.updateTag({ property: 'article:published_time', content: '2025-07-01' });
   }
 } 
