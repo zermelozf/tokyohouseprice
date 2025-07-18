@@ -860,6 +860,31 @@
   color: #6c757d;
 }
 
+// Article intro styling
+.article-intro {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 1rem 0;
+  
+  .dashboard-intro {
+    font-size: 1.1rem;
+    color: #495057;
+    margin: 0;
+    font-style: italic;
+    
+    a {
+      color: #FF69B4;
+      text-decoration: none;
+      font-weight: 500;
+      
+      &:hover {
+        color: #FF1493;
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
 // Technical details toggle styling
 .toggle-container {
   text-align: center;
@@ -902,6 +927,36 @@
         margin-bottom: 0;
       }
     }
+    
+    // Target only equations 1, 2, and 3 for horizontal scrolling
+    .long-equation {
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
+}
+
+// Enhanced scrolling for long equations on small screens
+@media (max-width: 768px) {
+  .technical-content .formula-box {
+    .long-equation {
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
   }
 }
 
@@ -914,4 +969,54 @@
   border-radius: 3px;
   font-family: 'Courier New', monospace;
   font-size: 0.95em;
+}
+
+// Intro CTA styling
+.intro-cta {
+  margin: 2rem 0;
+  
+  .cta-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    text-align: center;
+    
+    h3 {
+      color: white;
+      margin-bottom: 0.75rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    
+    p {
+      margin-bottom: 1.25rem;
+      opacity: 0.9;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background-color: #FF69B4;
+      color: white;
+      padding: 0.6rem 1.5rem;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(255, 105, 180, 0.4);
+      font-size: 0.9rem;
+      
+      &:hover {
+        background-color: #FF1493;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(255, 105, 180, 0.4);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
 }

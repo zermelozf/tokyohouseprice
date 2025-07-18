@@ -265,6 +265,9 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
     this.meta.updateTag({ property: 'og:title', content: title });
     this.meta.updateTag({ property: 'og:description', content: description });
     this.meta.updateTag({ property: 'og:image', content: imageUrl });
+    this.meta.updateTag({ property: 'og:image:width', content: '1200' });
+    this.meta.updateTag({ property: 'og:image:height', content: '630' });
+    this.meta.updateTag({ property: 'og:image:alt', content: 'Financial analysis charts and graphs for rent vs buy decision' });
     this.meta.updateTag({ property: 'og:url', content: url });
     this.meta.updateTag({ property: 'og:type', content: 'article' });
     this.meta.updateTag({ property: 'og:site_name', content: 'Tokyo House Price' });
@@ -281,5 +284,11 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
     this.meta.updateTag({ name: 'author', content: 'Arnaud R.' });
     this.meta.updateTag({ property: 'article:author', content: 'Arnaud R.' });
     this.meta.updateTag({ property: 'article:published_time', content: '2025-07-01' });
+    
+    // Canonical URL
+    this.meta.updateTag({ rel: 'canonical', href: url });
+    
+    // Debug: Log the URLs to console for verification
+    console.log('Social sharing setup:', { imageUrl, url });
   }
 } 

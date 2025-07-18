@@ -30,6 +30,14 @@
     </div>
   </header>
 
+  <div class="article-intro">
+    <p class="dashboard-intro" i18n="@@rentorbuy.dashboardIntro">
+      <em>This article explains the methodology behind the <a href="/rentorbuy" target="_blank">Rent vs Buy
+          Dashboard</a>.
+        Try it if you haven't! 🚀🚀🚀</em>
+    </p>
+  </div>
+
   <section class="introduction">
     <h2 i18n="@@rentorbuy.introTitle">Introduction</h2>
     <p i18n="@@rentorbuy.introText">
@@ -51,61 +59,6 @@
     </p>
   </section>
 
-  <section class="newsletter-cta" *ngIf="!isNewsletterClosed">
-    <div class="newsletter-container">
-      <button class="close-btn" (click)="closeNewsletter()" aria-label="Close newsletter signup">
-        <i class="fas fa-times"></i>
-      </button>
-      <div class="newsletter-content">
-        <h3 i18n="@@rentorbuy.newsletterTitle">Newsletter for Tokyo House Price!</h3>
-        <p i18n="@@rentorbuy.newsletterDescription">
-          By the way, if you enjoy these articles, please subscribe! I'll send you an email whenever I publish new ones.
-        </p>
-        <div class="newsletter-form">
-          <form (ngSubmit)="onNewsletterSubmit()" #newsletterForm="ngForm">
-            <div class="form-group">
-              <input type="email" name="email" [(ngModel)]="newsletterEmail" placeholder="Enter your email address"
-                class="email-input" required email #emailInput="ngModel" [disabled]="isNewsletterSubmitting"
-                i18n-placeholder="@@rentorbuy.emailPlaceholder">
-              <button type="submit" class="subscribe-btn" [disabled]="!newsletterForm.valid || isNewsletterSubmitting"
-                i18n="@@rentorbuy.subscribeButton">
-                <span *ngIf="!isNewsletterSubmitting">Subscribe</span>
-                <span *ngIf="isNewsletterSubmitting">
-                  <i class="fas fa-spinner fa-spin"></i> Subscribing...
-                </span>
-              </button>
-            </div>
-
-            <!-- Validation errors -->
-            <div class="form-validation" *ngIf="emailInput.invalid && emailInput.touched">
-              <p class="error-message" *ngIf="emailInput.errors?.['required']">
-                Email address is required.
-              </p>
-              <p class="error-message" *ngIf="emailInput.errors?.['email']">
-                Please enter a valid email address.
-              </p>
-            </div>
-
-            <!-- Success/Error messages -->
-            <div class="form-feedback" *ngIf="newsletterMessage">
-              <p class="success-message" *ngIf="newsletterMessageType === 'success'">
-                <i class="fas fa-check-circle"></i> {{ newsletterMessage }}
-              </p>
-              <p class="error-message" *ngIf="newsletterMessageType === 'error'">
-                <i class="fas fa-exclamation-circle"></i> {{ newsletterMessage }}
-              </p>
-            </div>
-          </form>
-
-          <p class="newsletter-disclaimer" i18n="@@rentorbuy.newsletterDisclaimer">
-            Your email address will never be shared with anyone. Nor will it be used for anything else but
-            article notifications. You can unsubscribe at any time.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <section class="table-of-contents">
     <h2 i18n="@@rentorbuy.tocTitle">Table of Contents</h2>
     <ul>
@@ -118,7 +71,7 @@
         </ul>
       </li>
       <!-- <li><a href="#sensitivity" i18n="@@rentorbuy.tocSensitivity">Digression: Mortgages and Leveraged Buyouts</a></li> -->
-      <li><a href="#conclusion" i18n="@@rentorbuy.tocConclusion">Conclusion and Improvements</a></li>
+      <li><a href="#conclusion" i18n="@@rentorbuy.tocConclusion">In Conclusion</a></li>
     </ul>
   </section>
 
@@ -205,8 +158,8 @@
 
     <div class="toggle-container">
       <button class="toggle-button" (click)="toggleTechnicalDetails()">
-        <span *ngIf="showTechnicalDetails" i18n="@@rentorbuy.hideDetails">Hide technical details</span>
-        <span *ngIf="!showTechnicalDetails" i18n="@@rentorbuy.showDetails">Show technical details</span>
+        <span *ngIf="showTechnicalDetails" i18n="@@rentorbuy.hideDetails">Hide the Maths</span>
+        <span *ngIf="!showTechnicalDetails" i18n="@@rentorbuy.showDetails">Show the Maths</span>
       </button>
     </div>
 
@@ -389,7 +342,7 @@
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
       [style.display]="showTechnicalDetails ? 'block' : 'none'">
       <div class="formula-box">
-        <p>\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
+        <p class="long-equation">\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
           (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
         </p>
         <p>where \(r\) is the opportunity cost rate.</p>
@@ -410,10 +363,12 @@
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
       [style.display]="showTechnicalDetails ? 'block' : 'none'">
       <div class="formula-box">
-        <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{ '{' }}(1 + r)^n{{ '}'
+        <p class="long-equation">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{
+          '{' }}(1 + r)^n{{ '}'
           }} \quad (2) \]</p>
         <p>We can also express this directly in terms of cash flows:</p>
-        <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{ '{' }}CF_{{ '{'
+        <p class="long-equation">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{
+          '{' }}CF_{{ '{'
           }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t){{ '}' }}{{ '{' }}(1 + r)^t{{ '}' }} \quad (3) \]</p>
       </div>
     </div>
@@ -549,32 +504,84 @@
 
   <section class="conclusion" id="conclusion">
     <div class="section-header">
-      <h2 i18n="@@rentorbuy.conclusionTitle">Conclusion and Improvements</h2>
+      <h2 i18n="@@rentorbuy.conclusionTitle">In Conclusion</h2>
     </div>
     <p>
-      The rent-or-buy decision is fundamentally about optimizing your financial future while maintaining your desired
-      quality of life. By using NPV and IRR analysis, I believe one can make a more informed decision.
+      So, should you rent or buy 🤷? Well, it depends on a few factors. The immediate cost of rent 💸 vs buy 💰 is one
+      of
+      factor of course, but opportunity cost and timing is also critically important!
     </p>
     <p>
-      In the article above, I have used a very simple model to assess the rent-or-buy decision. In reality, there are
-      many more factors to consider like the appreciation of the land, the depreciation of the house, inflation,
-      interest rate fluctuations, etc. That why I spent a bit more time to create a more powerful dashboard to play
-      with! You can check it out at <a href="/rentorbuy" target="_blank">Tokyo House Price</a>.
+      As a rule of thumb, if you intend to stay in the house for less than 10 years, it might make more sense to rent.
+      However, there are factors outside of your control that play a big part in the final answer: the rate of your loan
+      if it is variable, the performance of the housing market 📈 and of the stock market 📉, etc.
+    </p>
+    <p>
+      So far, I have used a pretty simple model to illustrate the main concepts 🧑‍🎓. If you would like to go a
+      bit further I recommend this dashboard I initially created for myself: <a href="/rentorbuy" target="_blank">Rent
+        vs
+        Buy Dashboard</a>. The underlying model is similar but with a few more
+      parameters that you can tweak to see how they impact the final answer.
     </p>
 
     <p>
-      Another very important factor to consider is the risk of the investment. I'd like to cover this in a future
-      article by doing a more in depth sensitivity analysis.
+      Finally, you might wonder how things have turned out historically for people who have bought a house in
+        Tokyo. <strong>If so, please stay tuned as I am planning an article on that topic soon 👇.</strong>
     </p>
 
-    <p>
-      Until then, I hope you enjoyed this article and want to try the dashboard below!
-    </p>
+    <div class="newsletter-cta" *ngIf="!isNewsletterClosed">
+      <div class="newsletter-container">
+        <button class="close-btn" (click)="closeNewsletter()" aria-label="Close newsletter signup">
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="newsletter-content">
+          <h3 i18n="@@rentorbuy.newsletterTitle">Newsletter for Tokyo House Price</h3>
+          <p i18n="@@rentorbuy.newsletterDescription">
+            If you enjoy these articles, please subscribe! I'll send you an email whenever I publish new ones.
+          </p>
+          <div class="newsletter-form">
+            <form (ngSubmit)="onNewsletterSubmit()" #newsletterForm="ngForm">
+              <div class="form-group">
+                <input type="email" name="email" [(ngModel)]="newsletterEmail" placeholder="Enter your email address"
+                  class="email-input" required email #emailInput="ngModel" [disabled]="isNewsletterSubmitting"
+                  i18n-placeholder="@@rentorbuy.emailPlaceholder">
+                <button type="submit" class="subscribe-btn" [disabled]="!newsletterForm.valid || isNewsletterSubmitting"
+                  i18n="@@rentorbuy.subscribeButton">
+                  <span *ngIf="!isNewsletterSubmitting">Subscribe</span>
+                  <span *ngIf="isNewsletterSubmitting">
+                    <i class="fas fa-spinner fa-spin"></i> Subscribing...
+                  </span>
+                </button>
+              </div>
 
-    <div class="cta-section">
-      <h3 i18n="@@rentorbuy.ctaTitle">Ready to Run Your Own Analysis?</h3>
-      <p i18n="@@rentorbuy.ctaText">I've created a simple dashboard for you to play with. Have fun!</p>
-      <a href="/rentorbuy" class="cta-button" i18n="@@rentorbuy.ctaButton">Go to Rent vs Buy Calculator</a>
+              <!-- Validation errors -->
+              <div class="form-validation" *ngIf="emailInput.invalid && emailInput.touched">
+                <p class="error-message" *ngIf="emailInput.errors?.['required']">
+                  Email address is required.
+                </p>
+                <p class="error-message" *ngIf="emailInput.errors?.['email']">
+                  Please enter a valid email address.
+                </p>
+              </div>
+
+              <!-- Success/Error messages -->
+              <div class="form-feedback" *ngIf="newsletterMessage">
+                <p class="success-message" *ngIf="newsletterMessageType === 'success'">
+                  <i class="fas fa-check-circle"></i> {{ newsletterMessage }}
+                </p>
+                <p class="error-message" *ngIf="newsletterMessageType === 'error'">
+                  <i class="fas fa-exclamation-circle"></i> {{ newsletterMessage }}
+                </p>
+              </div>
+            </form>
+
+            <p class="newsletter-disclaimer" i18n="@@rentorbuy.newsletterDisclaimer">
+              Your email address will never be shared with anyone. Nor will it be used for anything else but
+              article notifications. You can unsubscribe at any time.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </article>
