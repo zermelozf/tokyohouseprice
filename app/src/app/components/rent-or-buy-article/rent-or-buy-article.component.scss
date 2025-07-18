@@ -904,3 +904,14 @@
     }
   }
 }
+
+// Percentage highlighting
+.percentage-highlight {
+  background-color: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+  font-weight: 600;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95em;
+}

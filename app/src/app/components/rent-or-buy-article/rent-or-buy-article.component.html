@@ -128,8 +128,9 @@
     </div>
     <p i18n="@@rentorbuy.suumoIntro">
       When it comes to housing, you usually have two options: renting or buying. This whole article is about making this
-      decision as informed as possible. And to make things a little bit more concrete, I went pulled a couple of
-      properties from <a href="https://suumo.jp/" target="_blank">SUUMO.jp</a> that we'll use as an example.
+      decision as informed as possible. And to make things a little bit more concrete, I pulled a couple of
+      properties from <a href="https://suumo.jp/" target="_blank">SUUMO.jp</a> that we'll use for calculations
+      throughout the article.
     </p>
     <div class="example-box">
       <h4 i18n="@@rentorbuy.suumoPropertyTitle">Example Properties</h4>
@@ -167,12 +168,12 @@
       </div>
     </div>
     <p i18n="@@rentorbuy.suumoAnalysis">
-      Let's be clear: the properties are different and not directly comparable. While they are located in the same
+      Let's be clear: the two properties are not perfectly comparable. While they are located in the same
       neighborhood, close to Meguro Station, the renting option is much bigger and has more floors.
     </p>
 
     <p>However, I'll assume they both are reasonable alternatives for, say, a young couple with
-      two kids. And thus, in the rest of the article, I'll compare them from a financial standpoint.
+      two kids. And thus, in the rest of the article, I'll focus on comparing them from a financial standpoint.
     </p>
 
   </section>
@@ -241,10 +242,13 @@
     </div>
 
     <p>
-      For example, let's compare the cash flows for the two housing options described above. I'll use {{ fees / 2 |
-      percent }} for the broker fees (both when buying and selling) and a {{ loanYears }} years mortgage with a {{
-      mortgageRate | percent }} interest rate. Let's also assume running costs (maintenance, taxes, etc.) of {{ costs |
-      percent }} of the property value.
+      For example, let's compare the cash flows for the two housing options described above. I'll use <span
+        class="percentage-highlight">{{ fees / 2 |
+        percent }}</span> for the broker fees (both when buying and selling) and a <span class=percentage-highlight>{{
+        loanYears }}</span> years mortgage with a <span class="percentage-highlight">{{
+        mortgageRate | percent }}</span> interest rate. Let's also assume running costs (maintenance, taxes, etc.) are
+      <span class="percentage-highlight">{{ costs |
+        percent }}</span> of the property value.
     </p>
 
     <p>
@@ -269,15 +273,16 @@
     </div>
 
     <p>
-      For example, if we compare the ¥420,000 monthly rent with the ¥99,700,000 buy option, we see
-      that the total costs cross in the {{ breakevenYear }}th year:
+      For example, if we compare the ¥420,000 monthly rent with the ¥99,700,000 buy with a mortgage option, we see
+      that the total costs cross in the <span class="percentage-highlight">{{ breakevenYear }}</span>th year:
     </p>
 
     <app-rent-vs-buy-chart></app-rent-vs-buy-chart>
 
     <p>
-      Or in other words, it only makes sense to buy the property if we intend to live in it for more than {{
-      breakevenYear }} years. Also, the longer we live in the house, the more advantageous it is to buy.
+      Or in other words, it only makes sense to buy the property if we intend to live in it for more than <span
+        class="percentage-highlight">{{ breakevenYear }}</span> years. Also, the longer we live in the house, the more
+      advantageous it is to buy.
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
@@ -296,7 +301,8 @@
       </div>
       <div class="insight-content">
         <p>
-          To better understand why we need {{ breakevenYear }} years to break even, let's consider the two aspects of
+          To better understand why we need <span class="percentage-highlight">{{ breakevenYear }}</span> years to break
+          even, let's consider the two aspects of
           paying back the loan:
         </p>
         <ul>
@@ -308,14 +314,29 @@
         </p>
         <br>
         <p>
-          Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①? And the
-          answer is of course {{ breakevenYear }} years.
+          Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①? A quick
+          back of the enveloppe calculation tells us that with brokerage fees of <span class="percentage-highlight">{{
+            fees / 2 | percent }}</span>
+          and a forced rent saving of <span class="percentage-highlight">{{ rentYield | percent: '1.1-1' }}</span>,
+          minus <span class="percentage-highlight">{{ costs | percent }}</span> in runnning costs
+          and <span class="percentage-highlight">{{
+            mortgageRate | percent }}</span> in interests, we are saving about <span class="percentage-highlight">{{
+            rentYield - costs - mortgageRate | percent }}</span>
+          every year. Thus it should take about <span class="percentage-highlight">{{ fees / (rentYield - costs -
+            mortgageRate) | number: '1.0-0' }}</span> years
+          to get the broker fees back.
+        </p>
+        <p>
+          In reality, it takes a bit less because we are only paying <span class="percentage-highlight">{{ mortgageRate
+            | percent }}</span> interests on the
+          remaining loan balance and not the total property price.
         </p>
       </div>
     </div>
 
     <p>
-      We can also plot the difference between the two cumulative cash flows t make it even easier to visualize. The will
+      We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. The
+      will
       be useful when comparing with the NPV analysis in the next section.
     </p>
 
@@ -332,22 +353,13 @@
       <app-cumulative-difference-chart></app-cumulative-difference-chart>
     </div>
 
-    <div class="insight-box">
-      <div class="insight-icon">
-        <i class="fas fa-lightbulb"></i>
-      </div>
-      <div class="insight-content">
-        <p>
-          The {{ breakevenYear }} years necessary to break even when buying a house corresponds to the time
-          needed to make up for the brokerage fees of {{ fees | percent }} with forced savings.
-        </p>
-      </div>
-    </div>
-
     <p>
-      Also note that the slope of the curve will be steeper if we pay less interest, so it might be tempting to make the
-      smallest loan possible at the best rate possible. However, this is not the entire story as we will see in the
-      next section.
+      Another important thing to note is that the slope of the curve is equal to the forced savings <span
+        class="percentage-highlight">{{ rentYield |
+        percent }}</span> minus the <span class="percentage-highlight">{{ costs | percent }}</span> running costs and
+      the interest. So it seems we have an incentive to
+      reduce our loan to maximize how fast we can break even. However, we will see in the next section that this is not
+      necessarily the best strategy.
     </p>
 
     <h3 id="npv" i18n="@@rentorbuy.npvTitle">Opportunity Cost and Net Present Value (NPV)</h3>
@@ -368,7 +380,8 @@
     </p>
 
     <p>
-      Building on this idea, we can try to maximize the return of whatever money we have left over by investing it.
+      Building on this idea, we can try to maximize the <a href="https://en.wikipedia.org/wiki/Future_value">Future
+        Value</a> (FV) of our bank account by investing whatever money we have left over each year.
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
@@ -378,27 +391,23 @@
           (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
         </p>
         <p>where \(r\) is the opportunity cost rate.</p>
+        <p>
+          But this future value will only be available in the future. So, how much is that amount worth today?
+        </p>
       </div>
     </div>
 
-    <p>
-      The Future Value represents the amount we will get in the future, if we invest the cash flow
-      difference (compared to renting) each year.
-    </p>
 
-    <p>
-      But this future value will only be available in the future. So, how much is that amount worth today?
-    </p>
 
-    <p>To answer that question we can imagine that someone gave us a one-time lump sum today that we can invest
-      immediately with the same return. What sum would give us the same future value? This is called the
-      <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present Value</a> (PV) of the buy option.
+    <p>Even better, we can convert that Future Value into a <a href="https://en.wikipedia.org/wiki/Present_value"
+        target="_blank">Present Value</a> (PV)! This is done by imagining that we receive a lump sum today (not
+      incrementally
+      and in the future) and invest it at a rate \(r\) for the same number of years \(n\).
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
       [style.display]="showTechnicalDetails ? 'block' : 'none'">
       <div class="formula-box">
-        <p>\( PV_{{ '{' }}buy{{ '}' }}(n)\) is called the Present Value of buying:</p>
         <p>\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{ '{' }}(1 + r)^n{{ '}'
           }} \quad (2) \]</p>
         <p>We can also express this directly in terms of cash flows:</p>
@@ -408,19 +417,10 @@
     </div>
 
     <p>
-      Let's again compare the two options, but this time using the present value of buying a house and selling it
-      after a certain number of years at a {{ opportunityCost | percent: '1.1-1' }} rate.
+      Let's again compare the two options, but using the Present Value of buying a house with a <span
+        class="percentage-highlight">{{ opportunityCost |
+        percent: '1.1-1' }}</span> opportunity cost this time.
     </p>
-
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
-      <div class="formula-box">
-        <p>
-          Mathematically, we compare using the present value after \(n\) years at a {{ opportunityCost | percent:
-          '1.1-1' }} rate.
-        </p>
-      </div>
-    </div>
 
     <app-pv-buy-chart></app-pv-buy-chart>
 
@@ -430,34 +430,52 @@
       </div>
       <div class="insight-content">
         <p>
-          Surprisingly, the buy vs. rent recommendation completely changes!
-          It now takes 9 years instead of 4 to break even, and the renting option looks much more attractive in the long
-          run. In fact, buying is only a good option during a specific 8-year window.
+          <strong>The buy vs. rent recommendation completely changes!</strong>
+        </p>
+        <br>
+        <p>
+          It now takes <span class="percentage-highlight">9</span> years instead of <span
+            class="percentage-highlight">4</span> to break even, and the renting option looks much more attractive in
+          the long
+          run. In fact, buying is only a good option during a specific <span class="percentage-highlight">8</span>-year
+          window.
         </p>
       </div>
     </div>
 
+    <p>
+      I personally find this result quite interesting! Before doing the analysis, I would have never
+      thought that timing the sale of your house actually mattered!
+    </p>
+
     <h3 id="irr" i18n="@@rentorbuy.irrTitle">Internal Rate of Return (IRR)</h3>
     <p>
-      Using NPV to assess the buy vs rent decision, we get a better sense of the optimal holding period compared to
-      just looking at undiscounted cash flows. However, this tells a story in terms of the absolute amount of money.
+      OK, so using NPV to assess the buy vs rent decision, we get a better sense of whether we should buy, and also when
+      we should sell. However, this tells a story in terms of absolute amounts of money, and if we really want to
+      optimize, we could sell one house at the right timing and immediately buy another one and so on so as to maximize
+      the slope of the NPV profile.
     </p>
     <p>
-      Since we are looking at buying a house through the lens of an investment, it makes sense to assess its
-      rate of return.
+      For that reason, it makes sense to assess the rate of return of the investment for each year. We know that
+      depending on the timing, the rate of return of our investment will be more or less than <span
+        class="percentage-highlight">{{ opportunityCost |
+        percent: '1.1-1' }}</span> thanks to the NPV profile. However, we don't know exactly the value of our rate of
+      return for
+      each year.
     </p>
 
     <p>
-      This is what the <a href="https://en.wikipedia.org/wiki/Internal_rate_of_return" target="_blank">Internal Rate
-        of Return</a> (IRR) does. There isn't a simple formula for the IRR, we can use a numerical method to compute it
-      from the undiscounted cash flows.
+      This is what the <a href="https://en.wikipedia.org/wiki/Internal_rate_of_return" target="_blank">Internal Rate of
+        Return</a> (IRR) is for. There isn't a simple closed formula for the IRR, but we can use a numerical method to
+      compute it from the undiscounted cash flows.
     </p>
 
     <app-irr-chart></app-irr-chart>
 
     <p>
-      Interestingly, we again get a slightly different advice. The IRR tops on year 11, while the NPV was maximized on
-      year 12.
+      Again a surprising result. To be optimal, we should sell at year <span class="percentage-highlight">11</span>
+      according to the IRR calculation. This is one
+      year earlier that what the NPV identifies as the optimal year to maximize the value of just one house investment.
     </p>
 
     <div class="insight-box">
@@ -475,16 +493,19 @@
         </p>
         <br>
         <p>
-          In the longer run, the rate of return is the rent we save ({{
-          rentYield | percent: '1.1-1' }} when expressed as a percentage of the buy price), minus the cost ratio of {{
-          costs | percent: '1.1-1' }}, which equals {{
-          rentYield - costs | percent: '1.1-1' }}. That is the return the house investment tends to the longer we hold
+          In the longer run, the rate of return is the rent we save (<span class="percentage-highlight">{{
+            rentYield | percent: '1.1-1' }}</span> when expressed as a percentage of the buy price), minus the cost
+          ratio of <span class="percentage-highlight">{{
+            costs | percent: '1.1-1' }}</span>, which equals <span class="percentage-highlight">{{
+            rentYield - costs | percent: '1.1-1' }}</span>. That is the return the house investment tends to the longer
+          we hold
           it for a very long time.
         </p>
         <br>
         <p>
           However, since we borrow money, in the beginning, we will only have invested a small fraction of the total
-          price of the house. But we will still get {{ rentYield - costs | percent: '1.1-1' }} of the total price of
+          price of the house. But we will still get <span class="percentage-highlight">{{ rentYield - costs | percent:
+            '1.1-1' }}</span> of the total price of
           the house. <strong>This is why the IRR is peaking higher than just the rent yield.</strong>
         </p>
       </div>
@@ -535,7 +556,8 @@
     <p>
       In the article above, I have used a very simple model to assess the rent-or-buy decision. In reality, there are
       many more factors to consider like the appreciation of the land, the depreciation of the house, inflation,
-      interest rate fluctuations, etc.
+      interest rate fluctuations, etc. That why I spent a bit more time to create a more powerful dashboard to play
+      with! You can check it out at <a href="/rentorbuy" target="_blank">Tokyo House Price</a>.
     </p>
 
     <p>
@@ -544,8 +566,7 @@
     </p>
 
     <p>
-      In the meantime, if you are interested in going a little bit deeper and playing with different scenarios, I
-      created a simple dashboard for you to play with. Have a look below!
+      Until then, I hope you enjoyed this article and want to try the dashboard below!
     </p>
 
     <div class="cta-section">
