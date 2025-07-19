@@ -35,7 +35,7 @@
     <p i18n="@@rentorbuy.introText">
       In a <a href="https://tokyohouseprice.web.app/article">previous post</a>, I presented an analysis of
       the factors influencing the price of real estate in Tokyo 🗼. This time, I focus on another model to study
-      the rent vs buy decision from a financial standpoint. My goal is not to convince you to either rent
+      the rent-vs-buy decision from a financial standpoint. My goal is not to convince you to either rent
       or buy, but to present interesting and sometimes counter-intuitive insights that can help make a better decision.
     </p>
     <p>
@@ -56,7 +56,7 @@
           <div class="cta-content">
             <h3 i18n="@@rentorbuy.ctaTitle">If you just want to get a quick answer</h3>
             <p i18n="@@rentorbuy.ctaDescription">
-              This article explains the methodology behind the rent or buy calculator.
+              This article explains the methodology behind the rent-vs-buy calculator.
               If you just want to get a quick answer, you can use the calculator below.
             </p>
           </div>
@@ -68,7 +68,7 @@
     </div>
 
     <p>
-      If you are interested in the details though, please read on.
+      If you are interested in the details, though, please read on.
     </p>
   </section>
 
@@ -141,8 +141,8 @@
       </div>
     </div>
     <p i18n="@@rentorbuy.suumoAnalysis">
-      Let's be clear: the two properties are not perfectly comparable. The renting option is bigger, more recent
-      and in a better location. You could argue that the renting option is a bit higher end, and thus might
+      Let's be clear: the two properties are not perfectly comparable. The renting option is bigger, more recent,
+      and in a better location. You could argue that the renting option is a bit higher-end, and thus might
       expect it to be more expensive.
     </p>
 
@@ -157,8 +157,8 @@
         <i class="fas fa-trophy"></i>
       </div>
       <div class="finding-content">
-        The rent option is bigger, has better location, and is newer. It also is a cheaper option from
-        a financial perspective!
+        <strong>The rental option is bigger, has a better location, and is newer. It is also a cheaper option from
+        a financial perspective!</strong>
       </div>
     </div>
 
@@ -179,7 +179,7 @@
     </div>
 
     <p>There are many factors at play when choosing the perfect house that suits your needs. From a financial
-      perspective however, we can compare any two options with the tools below:</p>
+      perspective, however, we can compare any two options with the tools below:</p>
     <ul>
       <li>Net Present Value (NPV)</li>
       <li>Internal Rate of Return (IRR)</li>
@@ -239,8 +239,8 @@
     <p>
       For example, let's compare the cash flows for the two housing options described above. I'll use <span
         class="percentage-highlight">{{ fees / 2 |
-        percent }}</span> for the broker fees (both when buying and selling) and a <span class=percentage-highlight>{{
-        loanYears }}</span> years mortgage with a <span class="percentage-highlight">{{
+        percent }}</span> for the broker fees (both when buying and selling) and a <span class="percentage-highlight">{{
+        loanYears }}</span>-year mortgage with a <span class="percentage-highlight">{{
         mortgageRate | percent }}</span> interest rate. Let's also assume running costs (maintenance, taxes, etc.) are
       <span class="percentage-highlight">{{ costs |
         percent }}</span> of the property value.
@@ -268,7 +268,7 @@
     </div>
 
     <p>
-      For example, if we compare the ¥420,000 monthly rent with the ¥99,700,000 buy with a mortgage option, we see
+      For example, if we compare the ¥420,000 monthly rent with the ¥99,700,000 buying with a mortgage option, we see
       that the total costs cross in the <span class="percentage-highlight">{{ breakevenYear }}</span>th year:
     </p>
 
@@ -429,26 +429,25 @@
         </p>
         <br>
         <p>
-          One very rough guide is to compare the <span class="percentage-highlight">8.7%</span> yearly return of the
-          SP500 in during the past <span class="percentage-highlight">25</span> years with the <span
-            class="percentage-highlight">~3.5%</span> price increase of real estate in Tokyo and <span
-            class="percentage-highlight">~0.7%</span> annulaized inflation rate.
+          A rough back of the envelope calculation is to compare the <span class="percentage-highlight">8.7%</span>
+          yearly return of the SP500 in during the past <span class="percentage-highlight">25</span> years with the
+          <span class="percentage-highlight">~3.5%</span> price increase of real estate in Tokyo and <span
+            class="percentage-highlight">~0.7%</span> annualized inflation rate.
         </p>
         <br>
         <p>
-          This give a very rough estimate of <span class="percentage-highlight">4.5%</span> for the opportunity cost
-          compared to the SP500 in the past 25 years.
+          This gives a <span class="percentage-highlight">4.5%</span> estimate for the opportunity cost
+          compared to the SP500.
         </p>
         <br>
         <p>
-          Of course, these estimate are based on past data and there is no guarantee at
-          all these numbers we will see similar numbers in the future.
+          Of course, this estimate are based on past data and is no guarantee of what will happen in the future.
         </p>
       </div>
     </div>
 
     <p>
-      Let's again compare the two options, but using the Present Value of buying a house with a <span
+      Nevertheless, let's again compare the two options, but using the Present Value of buying a house with a <span
         class="percentage-highlight">{{ opportunityCost |
         percent: '1.1-1' }}</span> opportunity cost.
     </p>
@@ -506,7 +505,7 @@
     <p>
       Again a surprising result. To be optimal, we should sell at year <span class="percentage-highlight">11</span>
       according to the IRR calculation. This is one
-      year earlier that what the NPV identifies as the optimal year to maximize the value of just one house investment.
+      year earlier than what the NPV identifies as the optimal year to maximize the value of just one house investment.
     </p>
 
     <div class="insight-box">
@@ -528,9 +527,8 @@
             rentYield | percent: '1.1-1' }}</span> when expressed as a percentage of the buy price), minus the cost
           ratio of <span class="percentage-highlight">{{
             costs | percent: '1.1-1' }}</span>, which equals <span class="percentage-highlight">{{
-            rentYield - costs | percent: '1.1-1' }}</span>. That is the return the house investment tends to the longer
-          we hold
-          it for a very long time.
+            rentYield - costs | percent: '1.1-1' }}</span>. That is the return the house investment tends toward the longer
+          we hold it.
         </p>
         <br>
         <p>
@@ -549,10 +547,10 @@
     </div>
     <p>
       So, should you rent or buy 🤷? Well, it depends on a few factors. The immediate cost of rent 💸 vs buy 💰 is one
-      of course, but opportunity cost and timing are also critically important!
+      factor, of course, but opportunity cost and timing are also critically important!
     </p>
     <p>
-      As a very rought rule of thumb, if you can keep the cost of renting below <span
+      As a very rough rule of thumb, if you can keep the cost of renting below <span
         class="percentage-highlight">5%</span> of the property value, then aiming to stay at least between <span
         class="percentage-highlight">8</span> to <span class="percentage-highlight">10</span> years should give you
       enough time to cover brokerage
@@ -560,9 +558,10 @@
     </p>
     <p>
       Recently, one could argue that, in Japan, access to the global stock market has created a really high opportunity
-      cost which makes it dificult to justify buying at all. But future returns may be quite different from the past!
+      cost which makes it difficult to justify buying at all. But future returns may be quite different from the past!
+    </p>
     <p>
-      In fact, buying a house and investing in the stock market have different risk profiles. So in a future article, I
+      In fact, buying a house and investing in the stock market have different risk profiles. So in a the next article, I
       would like to investigate this aspect with a focus on the Japanese housing market and international stock market.
       Stay tuned for more 👇!!!
     </p>
