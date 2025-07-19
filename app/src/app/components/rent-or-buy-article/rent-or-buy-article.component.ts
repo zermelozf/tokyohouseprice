@@ -49,8 +49,6 @@ declare const MathJax: any;
         height: '*',
         opacity: '1',
         overflow: 'visible',
-        padding: '1rem 0',
-        margin: '1rem 0'
       })),
       transition('collapsed <=> expanded', [
         animate('300ms ease-in-out')
@@ -69,7 +67,7 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
   opportunityCost: number = 0.045;
   rentYield: number = 0.01;
   isNewsletterClosed: boolean = false;
-  showTechnicalDetails: boolean = false;
+  showTechnicalDetails: boolean = true;
   
   // Newsletter form properties
   newsletterEmail: string = '';

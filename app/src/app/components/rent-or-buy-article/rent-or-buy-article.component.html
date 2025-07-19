@@ -57,7 +57,7 @@
             <h3 i18n="@@rentorbuy.ctaTitle">If you just want to get a quick answer</h3>
             <p i18n="@@rentorbuy.ctaDescription">
               This article explains the methodology behind the rent-vs-buy calculator.
-              If you just want to get a quick answer, you can use the calculator below.
+              If you just want to get a quick answer, feel free to try it out.
             </p>
           </div>
           <a href="/rentorbuy" target="_blank" class="cta-button" i18n="@@rentorbuy.ctaButton">
@@ -158,7 +158,7 @@
       </div>
       <div class="finding-content">
         <strong>The rental option is bigger, has a better location, and is newer. It is also a cheaper option from
-        a financial perspective!</strong>
+          a financial perspective!</strong>
       </div>
     </div>
 
@@ -194,9 +194,7 @@
       A property is a bundle of cash flows.
     </p>
 
-    <p>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity,
-      we'll do the accounting yearly below).
-    </p>
+    <app-cashflow-chart></app-cashflow-chart>
 
     <div class="toggle-container">
       <button class="toggle-button" (click)="toggleTechnicalDetails()">
@@ -205,8 +203,11 @@
       </button>
     </div>
 
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <p>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity,
+      we'll do the accounting yearly below).
+    </p>
+
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p>\[ CF_{{ '{' }}rent{{ '}' }}(t) = -R \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n \]</p>
         <p>where \( R \) is the annual rent and \( n \) is the number of years.</p>
@@ -221,8 +222,7 @@
       <li>Positive: the proceeds from selling the property.</li>
     </ul>
 
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p>\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP - F \]</p>
         <p>\[ CF_{{ '{' }}buy{{ '}' }}(t) = -M - C \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n-1 \]</p>
@@ -246,18 +246,11 @@
         percent }}</span> of the property value.
     </p>
 
-    <p>
-      Here's what our cash flow chart looks like if we sell the property after {{ simulationYears }} years:
-    </p>
-
-    <app-cashflow-chart></app-cashflow-chart>
-
     <p>Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent
       overall, we can just sum them all together to see how "expensive" each option is.
     </p>
 
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p>\[ V_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}buy{{ '}' }}(t) \]
         </p>
@@ -268,20 +261,13 @@
     </div>
 
     <p>
-      For example, if we compare the ¥420,000 monthly rent with the ¥99,700,000 buying with a mortgage option, we see
-      that the total costs cross in the <span class="percentage-highlight">{{ breakevenYear }}</span>th year:
+      For example, if we compare renting and buying (with a mortgage). We see
+      that the total costs cross in year <span class="percentage-highlight">{{ breakevenYear }}</span>:
     </p>
 
     <app-rent-vs-buy-chart></app-rent-vs-buy-chart>
 
-    <p>
-      Or in other words, it only makes sense to buy the property if we intend to live in it for more than <span
-        class="percentage-highlight">{{ breakevenYear }}</span> years. Also, the longer we live in the house, the more
-      advantageous it is to buy.
-    </p>
-
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p>
           Mathematically, buying becomes advantageous when \( V_{{ '{' }}buy{{ '}' }}(n) > V_{{ '{' }}rent{{ '}' }}(n)
@@ -289,6 +275,14 @@
         </p>
       </div>
     </div>
+
+    <p>
+      Or in other words, it only makes sense to buy the property if we intend to live in it for more than <span
+        class="percentage-highlight">{{ breakevenYear }}</span> years. Also, the longer we live in the house, the more
+      advantageous it is to buy.
+    </p>
+
+
 
     <div class="insight-box">
       <div class="insight-icon">
@@ -317,11 +311,12 @@
             class="percentage-highlight">{{ fees | percent }}</span> and a forced rent saving of <span
             class="percentage-highlight">{{ rentYield | percent: '1.1-1' }}</span>,
           minus <span class="percentage-highlight">{{ costs | percent }}</span> in runnning costs
-          and <span class="percentage-highlight">{{ mortgageRate | percent }}</span> in interests, we are saving about
+          and <span class="percentage-highlight">{{ mortgageRate | percent: '1.1-2' }}</span> in interests, we are
+          saving about
           <span class="percentage-highlight">{{ rentYield - costs - mortgageRate | percent }}</span>
           every year. Thus it should take about <span class="percentage-highlight">{{ fees | percent }}</span> /
           <span class="percentage-highlight">{{ rentYield - costs - mortgageRate | percent }}</span> = <span
-            class="percentage-highlight">{{ fees / (rentYield - costs - mortgageRate) | number: '1.0-0' }}</span>
+            class="percentage-highlight">{{ fees / (rentYield - costs - mortgageRate) | number : '1.0-0' }}</span>
           years to get the broker fees back.
         </p>
         <br>
@@ -337,8 +332,7 @@
       will be useful when comparing with the NPV analysis in the next section.
     </p>
 
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p>
           Specifically, we plot \(V_{{ '{' }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \).
@@ -349,15 +343,6 @@
     <div id="cashflowChart">
       <app-cumulative-difference-chart></app-cumulative-difference-chart>
     </div>
-
-    <p>
-      Another important thing to note is that the slope of the curve is equal to the forced savings <span
-        class="percentage-highlight">{{ rentYield |
-        percent }}</span> minus the <span class="percentage-highlight">{{ costs | percent }}</span> running costs and
-      the interest. So it seems we have an incentive to
-      reduce our loan to maximize how fast we can break even. However, we will see in the next section that this is not
-      necessarily the best strategy.
-    </p>
 
     <h3 id="npv" i18n="@@rentorbuy.npvTitle">Opportunity Cost and Net Present Value (NPV)</h3>
 
@@ -381,34 +366,28 @@
         Value</a> (FV) of our bank account by investing whatever money we have left over each year.
     </p>
 
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p class="long-equation">\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
           (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
         </p>
         <p>where \(r\) is the opportunity cost rate.</p>
-        <p>
-          But this future value will only be available in the future. So, how much is that amount worth today?
-        </p>
       </div>
     </div>
 
 
 
-    <p>Even better, we can convert that Future Value into a <a href="https://en.wikipedia.org/wiki/Present_value"
-        target="_blank">Present Value</a> (PV)! This is done by imagining that we receive a lump sum today (not
-      incrementally
-      and in the future) and invest it at a rate \(r\) for the same number of years \(n\).
+    <p>In fact, we can compute the <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present
+        Value</a> (PV) instead by by discounting FV using \(r\). PV is the value of the future cash flows in today's
+      money.
     </p>
 
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'"
-      [style.display]="showTechnicalDetails ? 'block' : 'none'">
+    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
         <p class="long-equation">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{
           '{' }}(1 + r)^n{{ '}'
           }} \quad (2) \]</p>
-        <p>We can also express this directly in terms of cash flows:</p>
+        <p>Or, expressed directly in terms of cash flows:</p>
         <p class="long-equation">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{
           '{' }}CF_{{ '{'
           }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t){{ '}' }}{{ '{' }}(1 + r)^t{{ '}' }} \quad (3) \]</p>
@@ -527,7 +506,8 @@
             rentYield | percent: '1.1-1' }}</span> when expressed as a percentage of the buy price), minus the cost
           ratio of <span class="percentage-highlight">{{
             costs | percent: '1.1-1' }}</span>, which equals <span class="percentage-highlight">{{
-            rentYield - costs | percent: '1.1-1' }}</span>. That is the return the house investment tends toward the longer
+            rentYield - costs | percent: '1.1-1' }}</span>. That is the return the house investment tends toward the
+          longer
           we hold it.
         </p>
         <br>
@@ -552,8 +532,7 @@
     <p>
       As a very rough rule of thumb, if you can keep the cost of renting below <span
         class="percentage-highlight">5%</span> of the property value, then aiming to stay at least between <span
-        class="percentage-highlight">8</span> to <span class="percentage-highlight">10</span> years should give you
-      enough time to cover brokerage
+        class="percentage-highlight">9</span> years should give you enough time to cover brokerage
       fees and use leverage to your advantage.
     </p>
     <p>
@@ -562,7 +541,8 @@
     </p>
     <p>
       In fact, buying a house and investing in the stock market have different risk profiles. So in a future article, I
-      would like to investigate this aspect with a focus on the Japanese housing market and international stock market.
+      would like to investigate this aspect using historical data for the Japanese housing market and the international
+      stock market.
       Stay tuned for more 👇!!!
     </p>
 
