@@ -30,14 +30,6 @@
     </div>
   </header>
 
-  <div class="article-intro">
-    <p class="dashboard-intro" i18n="@@rentorbuy.dashboardIntro">
-      <em>This article explains the methodology behind the <a href="/rentorbuy" target="_blank">Rent vs Buy
-          Dashboard</a>.
-        Try it if you haven't! 🚀🚀🚀</em>
-    </p>
-  </div>
-
   <section class="introduction">
     <h2 i18n="@@rentorbuy.introTitle">Introduction</h2>
     <p i18n="@@rentorbuy.introText">
@@ -57,12 +49,39 @@
       In any case, I hope you find it useful, or at least interesting. Also, please don't hesitate to share your
       thoughts and feedback 🤓.
     </p>
+
+    <div class="article-intro">
+      <div class="intro-cta">
+        <div class="cta-container">
+          <div class="cta-content">
+            <h3 i18n="@@rentorbuy.ctaTitle">If you just want to get a quick answer</h3>
+            <p i18n="@@rentorbuy.ctaDescription">
+              This article explains the methodology behind the rent or buy calculator.
+              If you just want to get a quick answer, you can use the calculator below.
+            </p>
+          </div>
+          <a href="/rentorbuy" target="_blank" class="cta-button" i18n="@@rentorbuy.ctaButton">
+            Try the Calculator →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      If you are interested in the details though, please read on.
+    </p>
   </section>
+
 
   <section class="table-of-contents">
     <h2 i18n="@@rentorbuy.tocTitle">Table of Contents</h2>
     <ul>
-      <li><a href="#mindset" i18n="@@rentorbuy.tocMindset">A concrete example from SUUMO.jp</a></li>
+      <li><a href="#mindset" i18n="@@rentorbuy.tocMindset">A concrete example from SUUMO.jp</a>
+        <ul>
+          <li><a href="#model">Example Properties</a></li>
+          <li><a href="#model">So, which is best?</a></li>
+        </ul>
+      </li>
       <li><a href="#modeling" i18n="@@rentorbuy.tocModeling">The Decision Making Framework</a>
         <ul>
           <li><a href="#model">Modeling a Property</a></li>
@@ -85,8 +104,9 @@
       properties from <a href="https://suumo.jp/" target="_blank">SUUMO.jp</a> that we'll use for calculations
       throughout the article.
     </p>
+    <h3 id="model" i18n="@@rentorbuy.npvTitle">Example Properties</h3>
     <div class="example-box">
-      <h4 i18n="@@rentorbuy.suumoPropertyTitle">Example Properties</h4>
+
       <div class="property-comparison">
         <div class="property-item">
           <div class="property-image">
@@ -121,13 +141,38 @@
       </div>
     </div>
     <p i18n="@@rentorbuy.suumoAnalysis">
-      Let's be clear: the two properties are not perfectly comparable. While they are located in the same
-      neighborhood, close to Meguro Station, the renting option is much bigger and has more floors.
+      Let's be clear: the two properties are not perfectly comparable. The renting option is much bigger, more recent
+      and is better located. and has more floors. You can reasonably argue that the renting option is is bit higher end.
     </p>
 
     <p>However, I'll assume they both are reasonable alternatives for, say, a young couple with
       two kids. And thus, in the rest of the article, I'll focus on comparing them from a financial standpoint.
     </p>
+
+    <h3 id="model" i18n="@@rentorbuy.npvTitle">So, which is best?</h3>
+
+    <p>
+      Let's start with the conclusion so you can skip the rest of the article 😉.
+    </p>
+
+    <div class="main-finding-highlight">
+      <div class="finding-icon">
+        <i class="fas fa-trophy"></i>
+      </div>
+      <div class="finding-content">
+        The rent option is bigger, has better location, and is newer. It also is a cheaper option from
+        a financial perspective!
+      </div>
+    </div>
+
+    <p>
+      You read that right! Despite the rent being quite high, it can actually be cheaper to rent than to buy
+      in the long run.
+    </p>
+    <p>
+      If you don't believe me, please read on. Be warned though: this is going to get quite nerdy 🤓.
+    </p>
+
 
   </section>
 
@@ -468,39 +513,6 @@
       </div>
     </div>
   </section>
-  <!-- <section class="sensitivity-analysis" id="sensitivity">
-    <div class="section-header">
-      <h2 i18n="@@rentorbuy.sensitivityTitle">Digression: Mortgages and Leveraged Buyouts</h2>
-    </div>
-    <p>
-      IRR is useful to assess pretty much any type of investment. In fact, some time ago I remember discussing the
-      concept of Leveraged Buyouts with a CEO whose company was acquired by a Japanese Venture Capital firm.
-    </p>
-    <p>
-      A Leveraged Buyout is a type of acquisition where a company is bought using a significant amount of debt and thus,
-      resembles the acquisition of a house through a mortgage. Often times, there is pressure on the investor to
-      improve the financials of the company and sell it for a profit within a few years.
-    </p>
-    <p>
-      At the time it sounded counter-intuitive to me that the investor would want to sell the company rapidly. If the
-      restructuring worked and the company prospects improved, then wouldn't it be a great long-term investment?
-    </p>
-    <p>
-      That may be so. However, leverage is also a powerful force that can greatly increase the return on investment of
-      someone who is willing to take on the associated risk (like a Venture Capitalist looking for above market
-      returns).
-    </p>
-    <p>
-      In fact, all things being equal, and even without improving the profitability of the
-      company, it might still make sense to buy it with debt just to be able to multiply the natural return of the
-      company using leverage. And you could imagine a group of VC firms buying and selling companies to each other
-      with the right timing just to maximize their IRR.
-    </p>
-    <p>
-      Of course, this is a gross oversimplification. And in the case of a Leveraged Buyout as well as a house mortgage,
-      the risk factor plays a big part in the decision.
-    </p>
-  </section> -->
 
   <section class="conclusion" id="conclusion">
     <div class="section-header">
@@ -508,25 +520,21 @@
     </div>
     <p>
       So, should you rent or buy 🤷? Well, it depends on a few factors. The immediate cost of rent 💸 vs buy 💰 is one
-      of
-      factor of course, but opportunity cost and timing is also critically important!
+      of course, but opportunity cost and timing are also critically important!
     </p>
     <p>
-      As a rule of thumb, if you intend to stay in the house for less than 10 years, it might make more sense to rent.
-      However, there are factors outside of your control that play a big part in the final answer: the rate of your loan
+      As a rule of thumb, if you intend to stay in the house for less than 10 years, it probably makes more sense to
+      rent. However, there are factors outside of your control that play a big part in the final answer: the rate of
+      your loan
       if it is variable, the performance of the housing market 📈 and of the stock market 📉, etc.
     </p>
     <p>
-      So far, I have used a pretty simple model to illustrate the main concepts 🧑‍🎓. If you would like to go a
-      bit further I recommend this dashboard I initially created for myself: <a href="/rentorbuy" target="_blank">Rent
-        vs
-        Buy Dashboard</a>. The underlying model is similar but with a few more
-      parameters that you can tweak to see how they impact the final answer.
-    </p>
-
+      Recently, one could argue that, in Japan, access to the global stock market has created a really high opportunity
+      cost which makes it dificult to justify buying at all. Who knows what the future holds though.
     <p>
-      Finally, you might wonder how things have turned out historically for people who have bought a house in
-        Tokyo. <strong>If so, please stay tuned as I am planning an article on that topic soon 👇.</strong>
+      Finally, buying a house and investing in the stock market have different risk profiles. In a future article, I
+      would like to investigate this aspect with a focus on the Japanese housing market and international stock market.
+      Stay tuned for more 👇!!!
     </p>
 
     <div class="newsletter-cta" *ngIf="!isNewsletterClosed">
