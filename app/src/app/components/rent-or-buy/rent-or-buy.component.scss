@@ -11,6 +11,8 @@
   }
 }
 
+
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 320px 1fr 320px;
@@ -71,7 +73,7 @@
   }
 
   @media (max-width: 768px) {
-    margin-bottom: 80px; // Space for FAB
+    grid-row: 2;
   }
 
   .charts-section {
@@ -162,7 +164,7 @@
       }
     }
 
-         .charts-container {
+    .charts-container {
        display: grid;
        grid-template-columns: 1fr;
        gap: 1.5rem;
@@ -285,7 +287,7 @@
   }
 
   @media (max-width: 768px) {
-    grid-row: 2;
+    grid-row: 3;
   }
 }
 

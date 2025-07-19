@@ -141,12 +141,9 @@
       </div>
     </div>
     <p i18n="@@rentorbuy.suumoAnalysis">
-      Let's be clear: the two properties are not perfectly comparable. The renting option is much bigger, more recent
-      and is better located. and has more floors. You can reasonably argue that the renting option is is bit higher end.
-    </p>
-
-    <p>However, I'll assume they both are reasonable alternatives for, say, a young couple with
-      two kids. And thus, in the rest of the article, I'll focus on comparing them from a financial standpoint.
+      Let's be clear: the two properties are not perfectly comparable. The renting option is bigger, more recent
+      and in a better location. You could argue that the renting option is a bit higher end, and thus might
+      expect it to be more expensive.
     </p>
 
     <h3 id="model" i18n="@@rentorbuy.npvTitle">So, which is best?</h3>
@@ -418,10 +415,42 @@
       </div>
     </div>
 
+    <div class="insight-box">
+      <div class="insight-icon">
+        <i class="fas fa-lightbulb"></i>
+      </div>
+      <div class="insight-content">
+        <p>
+          <strong>How do we know the opportunity cost rate?</strong>
+        </p>
+        <br>
+        <p>
+          There isn't a simple answer to this question unfortunately.
+        </p>
+        <br>
+        <p>
+          One very rough guide is to compare the <span class="percentage-highlight">8.7%</span> yearly return of the
+          SP500 in during the past <span class="percentage-highlight">25</span> years with the <span
+            class="percentage-highlight">~3.5%</span> price increase of real estate in Tokyo and <span
+            class="percentage-highlight">~0.7%</span> annulaized inflation rate.
+        </p>
+        <br>
+        <p>
+          This give a very rough estimate of <span class="percentage-highlight">4.5%</span> for the opportunity cost
+          compared to the SP500 in the past 25 years.
+        </p>
+        <br>
+        <p>
+          Of course, these estimate are based on past data and there is no guarantee at
+          all these numbers we will see similar numbers in the future.
+        </p>
+      </div>
+    </div>
+
     <p>
       Let's again compare the two options, but using the Present Value of buying a house with a <span
         class="percentage-highlight">{{ opportunityCost |
-        percent: '1.1-1' }}</span> opportunity cost this time.
+        percent: '1.1-1' }}</span> opportunity cost.
     </p>
 
     <app-pv-buy-chart></app-pv-buy-chart>
@@ -523,16 +552,17 @@
       of course, but opportunity cost and timing are also critically important!
     </p>
     <p>
-      As a rule of thumb, if you intend to stay in the house for less than 10 years, it probably makes more sense to
-      rent. However, there are factors outside of your control that play a big part in the final answer: the rate of
-      your loan
-      if it is variable, the performance of the housing market 📈 and of the stock market 📉, etc.
+      As a very rought rule of thumb, if you can keep the cost of renting below <span
+        class="percentage-highlight">5%</span> of the property value, then aiming to stay at least between <span
+        class="percentage-highlight">8</span> to <span class="percentage-highlight">10</span> years should give you
+      enough time to cover brokerage
+      fees and use leverage to your advantage.
     </p>
     <p>
       Recently, one could argue that, in Japan, access to the global stock market has created a really high opportunity
-      cost which makes it dificult to justify buying at all. Who knows what the future holds though.
+      cost which makes it dificult to justify buying at all. But future returns may be quite different from the past!
     <p>
-      Finally, buying a house and investing in the stock market have different risk profiles. In a future article, I
+      In fact, buying a house and investing in the stock market have different risk profiles. So in a future article, I
       would like to investigate this aspect with a focus on the Japanese housing market and international stock market.
       Stay tuned for more 👇!!!
     </p>

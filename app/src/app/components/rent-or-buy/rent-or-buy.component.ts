@@ -82,7 +82,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   hasUserMadeChanges = false;
   isInitializing = true;
   
-  // Mobile FAB system
+  // Mobile FAB system  
   isFabOpen = false;
   activeModal: string | null = null;
   
@@ -157,8 +157,13 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       console.log('ngAfterViewInit - attempting to calculate NPV');
       console.log('Chart refs available:', !!this.npvChartRef, !!this.irrChartRef, !!this.cashflowChartRef, !!this.houseVsStockChartRef);
       this.updateSliderStyles();
+      // Calculate NPV on initialization
       this.calculateNpv();
     }, 100);
+  }
+
+  isMobileView(): boolean {
+    return window.innerWidth <= 768;
   }
 
   ngOnDestroy(): void {
