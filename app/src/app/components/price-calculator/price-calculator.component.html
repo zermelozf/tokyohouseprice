@@ -191,6 +191,18 @@
       </div>
     </div>
 
+    <!-- Share Button -->
+    <div class="share-section" *ngIf="priceBreakdown">
+      <div class="share-content">
+        <h4 i18n="@@calculator.shareCalculation">Share Calculation</h4>
+        <p i18n="@@calculator.shareDescription">Share your property price estimate with all current settings.</p>
+        <button class="share-btn" (click)="shareCalculation()" title="Share this calculation with a link">
+          <span class="share-icon">🔗</span>
+          <span class="share-text" i18n="@@calculator.shareButton">Copy Share Link</span>
+        </button>
+      </div>
+    </div>
+
     @if(priceBreakdown && !priceBreakdown.found) {
     <div class="warning-message">
       <span class="emoji">⚠️</span>
@@ -203,6 +215,9 @@
 
   <div class="footer">
     <div class="footer-content">
+      <div class="footer-logo">
+        <img src="logo.svg" alt="Tokyo House Price" class="footer-logo-img" i18n-alt="@@article.logoAlt">
+      </div>
       <p class="ml-note" i18n="@@calculator.feedbackMessage">
         <span class="emoji">💡</span> Got suggestions? Want to chat about Data Science, Japan, or anything else?
         I'm all ears! Feel free to reach using the link below. <span class="emoji">📬</span>
@@ -217,6 +232,9 @@
         <a href="mailto:arnaud@linalgo.com" class="social-link">
           <i class="fas fa-envelope"></i> <span i18n="@@calculator.contact">Contact</span>
         </a>
+      </div>
+      <div class="footer-copyright">
+        <p>© 2025 Tokyo House Price | All Rights Reserved</p>
       </div>
     </div>
   </div>

@@ -8,7 +8,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { DialogComponent } from '../dialog/dialog.component';
 import { AnalyticsService } from '../../services/analytics.service';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 
 
 @Component({
@@ -43,7 +43,9 @@ export class PriceCalculatorComponent implements OnInit {
     private priceCalculatorService: PriceCalculatorService,
     private areaService: AreaService,
     private dialog: MatDialog,
-    private analyticsService: AnalyticsService
+    private analyticsService: AnalyticsService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.propertyForm = this.fb.group({
       propertyType: ['House & Land', Validators.required],
@@ -60,6 +62,9 @@ export class PriceCalculatorComponent implements OnInit {
       orientation: ['南', Validators.required],
       shape: ['正方形', Validators.required]
     });
+    
+    // Load parameters from URL on initialization
+    this.loadParametersFromUrl();
   }
 
   ngOnInit(): void {
@@ -173,5 +178,68 @@ export class PriceCalculatorComponent implements OnInit {
         message: msg
       }
     });
+  }
+
+  shareCalculation(): void {
+    this.analyticsService.logPriceCalculatorShare();
+    
+    // Generate URL with all current form parameters
+    const formValues = this.propertyForm.value;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const queryParams = new URLSearchParams();
+    
+    // Add all form parameters to URL
+    Object.keys(formValues).forEach(key => {
+      if (formValues[key] !== null && formValues[key] !== undefined) {
+        queryParams.set(key, formValues[key].toString());
+      }
+    });
+    
+    const shareUrl = `${baseUrl}?${queryParams.toString()}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      // Update button text temporarily
+      const shareBtn = document.querySelector('.share-btn .share-text') as HTMLElement;
+      if (shareBtn) {
+        const originalText = shareBtn.textContent;
+        shareBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          shareBtn.textContent = originalText;
+        }, 2000);
+      }
+    }).catch(err => {
+      console.error('Failed to copy to clipboard:', err);
+      // Fallback - show the URL in an alert
+      alert('Share URL: ' + shareUrl);
+    });
+  }
+
+  private loadParametersFromUrl(): void {
+    const params = this.route.snapshot.queryParams;
+    
+    // Load form parameters from URL if they exist
+    Object.keys(params).forEach(key => {
+      if (this.propertyForm.get(key)) {
+        const value = params[key];
+        // Convert to appropriate type based on form control
+        const control = this.propertyForm.get(key);
+        if (control) {
+          const numericFields = ['landArea', 'buildingArea', 'yearBuilt', 'nearest', 'houseRatio', 'landRatio', 'road'];
+          if (numericFields.includes(key)) {
+            control.setValue(+value);
+          } else {
+            control.setValue(value);
+          }
+        }
+      }
+    });
+    
+    // Trigger price calculation if we have URL parameters
+    if (Object.keys(params).length > 0) {
+      setTimeout(() => {
+        this.calculatePrice();
+      }, 100);
+    }
   }
 }

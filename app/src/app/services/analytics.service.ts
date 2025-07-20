@@ -26,4 +26,30 @@ export class AnalyticsService {
       page_name: pageName
     });
   }
+
+  logShareFromAdviceBox() {
+    logEvent(this.analytics, 'share_from_advice_box', {
+      source: 'optimal_strategy_header'
+    });
+  }
+
+  logShareFromShareBox() {
+    logEvent(this.analytics, 'share_from_share_box', {
+      source: 'dedicated_share_section'
+    });
+  }
+
+  logInputChange(inputName: string, inputValue: string | number) {
+    logEvent(this.analytics, 'input_changed', {
+      input_name: inputName,
+      input_value: inputValue.toString(),
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  logPriceCalculatorShare() {
+    logEvent(this.analytics, 'share_price_calculator', {
+      source: 'price_calculator_results'
+    });
+  }
 } 

@@ -2,10 +2,12 @@ import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Inject, LOC
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router, ActivatedRoute } from '@angular/router';
 import Chart from 'chart.js/auto';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { RentBuyCalculatorService } from '../../services/rent-buy-calculator.service';
+import { AnalyticsService } from '../../services/analytics.service';
 
 interface CashFlow {
   year: number;
@@ -65,6 +67,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   private houseVsStockChart: Chart | null = null;
   private destroy$ = new Subject<void>();
   private formChange$ = new Subject<void>();
+  private urlUpdate$ = new Subject<void>();
   private apiUrl = environment.apiUrl;
   
   expertModeBuy = true;
@@ -87,8 +90,11 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   activeModal: string | null = null;
   
   cashFlowData: CashFlow[] = [];
-  isLoading = false;
   error: string | null = null;
+  shareButtonText = 'Share';
+  showShareModal = false;
+  shareUrl = '';
+  copyButtonText = 'Copy Link';
   
   // Financial analysis results
   minYearsForAdvantage: number | null = null;
@@ -130,8 +136,15 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     upfrontAmount: 20.0,
   };
 
-  constructor(private http: HttpClient, @Inject(LOCALE_ID) private locale: string) {
+  constructor(
+    private http: HttpClient, 
+    private router: Router,
+    private route: ActivatedRoute,
+    private analytics: AnalyticsService,
+    @Inject(LOCALE_ID) private locale: string
+  ) {
     console.log('RentOrBuyComponent constructor - API URL:', this.apiUrl);
+    this.loadParametersFromUrl();
     this.onPropertyPriceChange(this.buy.propertyPrice);
     
     // Ensure gift money and guarantee are synced with monthly rent from start
@@ -147,8 +160,196 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       this.calculateNpv();
     });
     
+    // Set up debounced URL updates
+    this.urlUpdate$.pipe(
+      debounceTime(1000), // Wait 1 second after the last change for URL updates
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      console.log('Updating URL with current parameters');
+      this.updateUrlWithCurrentParameters();
+    });
+    
     // Mark initialization as complete
     this.isInitializing = false;
+  }
+
+  private loadParametersFromUrl(): void {
+    const params = this.route.snapshot.queryParams;
+    
+    // Load buy parameters
+    if (params['propertyPrice']) this.buy.propertyPrice = +params['propertyPrice'];
+    if (params['housePrice']) this.buy.housePrice = +params['housePrice'];
+    if (params['landPrice']) this.buy.landPrice = +params['landPrice'];
+    if (params['maintenance']) this.buy.maintenance = +params['maintenance'];
+    if (params['propertyTax']) this.buy.propertyTax = +params['propertyTax'];
+    if (params['buildingAge']) this.buy.buildingAge = +params['buildingAge'];
+    if (params['feeRate']) this.buy.feeRate = +params['feeRate'];
+    if (params['amortizationPeriod']) this.buy.amortizationPeriod = +params['amortizationPeriod'];
+    
+    // Load rent parameters
+    if (params['monthlyRent']) this.rent.monthlyRent = +params['monthlyRent'];
+    if (params['giftMoney']) this.rent.giftMoney = +params['giftMoney'];
+    if (params['guarantee']) this.rent.guarantee = +params['guarantee'];
+    if (params['renewal']) this.rent.renewal = +params['renewal'];
+    
+    // Load macro parameters
+    if (params['inflationRate']) this.macro.inflationRate = +params['inflationRate'];
+    if (params['landAppreciation']) this.macro.landAppreciation = +params['landAppreciation'];
+    if (params['opportunityCost']) this.macro.opportunityCost = +params['opportunityCost'];
+    if (params['simulationYears']) this.macro.simulationYears = +params['simulationYears'];
+    
+    // Load loan parameters
+    if (params['loanPeriod']) this.loan.loanPeriod = +params['loanPeriod'];
+    if (params['loanFee']) this.loan.loanFee = +params['loanFee'];
+    if (params['loanRate']) this.loan.loanRate = +params['loanRate'];
+    if (params['upfrontAmount']) this.loan.upfrontAmount = +params['upfrontAmount'];
+    
+    // Load UI state
+    if (params['expertBuy'] !== undefined) this.expertModeBuy = params['expertBuy'] === 'true';
+    if (params['expertRent'] !== undefined) this.expertModeRent = params['expertRent'] === 'true';
+  }
+
+  private updateUrlWithCurrentParameters(): void {
+    const queryParams = {
+      // Buy parameters
+      propertyPrice: this.buy.propertyPrice,
+      housePrice: this.buy.housePrice,
+      landPrice: this.buy.landPrice,
+      maintenance: this.buy.maintenance,
+      propertyTax: this.buy.propertyTax,
+      buildingAge: this.buy.buildingAge,
+      feeRate: this.buy.feeRate,
+      amortizationPeriod: this.buy.amortizationPeriod,
+      
+      // Rent parameters
+      monthlyRent: this.rent.monthlyRent,
+      giftMoney: this.rent.giftMoney,
+      guarantee: this.rent.guarantee,
+      renewal: this.rent.renewal,
+      
+      // Macro parameters
+      inflationRate: this.macro.inflationRate,
+      landAppreciation: this.macro.landAppreciation,
+      opportunityCost: this.macro.opportunityCost,
+      simulationYears: this.macro.simulationYears,
+      
+      // Loan parameters
+      loanPeriod: this.loan.loanPeriod,
+      loanFee: this.loan.loanFee,
+      loanRate: this.loan.loanRate,
+      upfrontAmount: this.loan.upfrontAmount,
+      
+      // UI state
+      expertBuy: this.expertModeBuy,
+      expertRent: this.expertModeRent
+    };
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryParams,
+      replaceUrl: true
+    });
+  }
+
+  copyShareUrl(): void {
+    this.analytics.logShareFromShareBox();
+    this.generateShareUrl();
+  }
+
+  copyShareUrlFromAdvice(): void {
+    this.analytics.logShareFromAdviceBox();
+    this.generateShareUrl();
+  }
+
+  private generateShareUrl(): void {
+    // Manually construct the share URL with all current parameters
+    const baseUrl = window.location.origin + window.location.pathname;
+    const queryParams = new URLSearchParams({
+      // Buy parameters
+      propertyPrice: this.buy.propertyPrice.toString(),
+      housePrice: this.buy.housePrice.toString(),
+      landPrice: this.buy.landPrice.toString(),
+      maintenance: this.buy.maintenance.toString(),
+      propertyTax: this.buy.propertyTax.toString(),
+      buildingAge: this.buy.buildingAge.toString(),
+      feeRate: this.buy.feeRate.toString(),
+      amortizationPeriod: this.buy.amortizationPeriod.toString(),
+      
+      // Rent parameters
+      monthlyRent: this.rent.monthlyRent.toString(),
+      giftMoney: this.rent.giftMoney.toString(),
+      guarantee: this.rent.guarantee.toString(),
+      renewal: this.rent.renewal.toString(),
+      
+      // Macro parameters
+      inflationRate: this.macro.inflationRate.toString(),
+      landAppreciation: this.macro.landAppreciation.toString(),
+      opportunityCost: this.macro.opportunityCost.toString(),
+      simulationYears: this.macro.simulationYears.toString(),
+      
+      // Loan parameters
+      loanPeriod: this.loan.loanPeriod.toString(),
+      loanFee: this.loan.loanFee.toString(),
+      loanRate: this.loan.loanRate.toString(),
+      upfrontAmount: this.loan.upfrontAmount.toString(),
+      
+      // UI state
+      expertBuy: this.expertModeBuy.toString(),
+      expertRent: this.expertModeRent.toString()
+    });
+    
+    this.shareUrl = `${baseUrl}?${queryParams.toString()}`;
+    this.showShareModal = true;
+  }
+
+  closeShareModal(): void {
+    this.showShareModal = false;
+    this.copyButtonText = 'Copy Link';
+  }
+
+  copyUrlFromModal(): void {
+    if (navigator.clipboard && window.isSecureContext) {
+      // Use modern clipboard API
+      navigator.clipboard.writeText(this.shareUrl).then(() => {
+        this.copyButtonText = 'Copied!';
+        setTimeout(() => {
+          this.copyButtonText = 'Copy Link';
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy URL: ', err);
+        this.fallbackCopyTextToClipboard(this.shareUrl);
+      });
+    } else {
+      // Fallback for older browsers
+      this.fallbackCopyTextToClipboard(this.shareUrl);
+    }
+  }
+
+  private fallbackCopyTextToClipboard(text: string): void {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      document.execCommand('copy');
+      this.copyButtonText = 'Copied!';
+      setTimeout(() => {
+        this.copyButtonText = 'Copy Link';
+      }, 2000);
+    } catch (err) {
+      console.error('Fallback: Could not copy text: ', err);
+      this.copyButtonText = 'Copy failed';
+      setTimeout(() => {
+        this.copyButtonText = 'Copy Link';
+      }, 2000);
+    }
+    
+    document.body.removeChild(textArea);
   }
 
   ngAfterViewInit(): void {
@@ -186,6 +387,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
 
   onPropertyPriceChange(newPrice: number): void {
     console.log('onPropertyPriceChange called with:', newPrice);
+    this.analytics.logInputChange('propertyPrice', newPrice);
     this.buy.propertyPrice = newPrice;
     this.triggerFormChange();
   }
@@ -204,9 +406,81 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
 
   onRentChange(): void {
     console.log('onRentChange called');
+    this.analytics.logInputChange('monthlyRent', this.rent.monthlyRent);
     // Automatically set gift money and guarantee to equal monthly rent
     this.rent.giftMoney = this.rent.monthlyRent;
     this.rent.guarantee = this.rent.monthlyRent;
+    this.onFormChange();
+  }
+
+  // Analytics-enabled input change handlers
+  onHousePriceChange(): void {
+    this.analytics.logInputChange('housePrice', this.buy.housePrice);
+    this.onExpertBuyChange();
+  }
+
+  onLandPriceChange(): void {
+    this.analytics.logInputChange('landPrice', this.buy.landPrice);
+    this.onExpertBuyChange();
+  }
+
+  onMaintenanceChange(): void {
+    this.analytics.logInputChange('maintenance', this.buy.maintenance);
+    this.onFormChange();
+  }
+
+  onPropertyTaxChange(): void {
+    this.analytics.logInputChange('propertyTax', this.buy.propertyTax);
+    this.onFormChange();
+  }
+
+  onBuildingAgeChange(): void {
+    this.analytics.logInputChange('buildingAge', this.buy.buildingAge);
+    this.onFormChange();
+  }
+
+  onAmortizationPeriodChange(): void {
+    this.analytics.logInputChange('amortizationPeriod', this.buy.amortizationPeriod);
+    this.onFormChange();
+  }
+
+  onAgentFeeChange(): void {
+    this.analytics.logInputChange('agentFee', this.buy.feeRate);
+    this.onFormChange();
+  }
+
+  onRentInflationChange(): void {
+    this.analytics.logInputChange('rentInflation', this.macro.inflationRate);
+    this.onFormChange();
+  }
+
+  onLoanPeriodChange(): void {
+    this.analytics.logInputChange('loanPeriod', this.loan.loanPeriod);
+    this.onFormChange();
+  }
+
+  onLoanFeeChange(): void {
+    this.analytics.logInputChange('loanFee', this.loan.loanFee);
+    this.onFormChange();
+  }
+
+  onLoanRateChange(): void {
+    this.analytics.logInputChange('loanRate', this.loan.loanRate);
+    this.onFormChange();
+  }
+
+  onDownPaymentChange(): void {
+    this.analytics.logInputChange('downPayment', this.loan.upfrontAmount);
+    this.onFormChange();
+  }
+
+  onHouseAppreciationChange(): void {
+    this.analytics.logInputChange('houseAppreciation', this.macro.landAppreciation);
+    this.onFormChange();
+  }
+
+  onOpportunityCostChange(): void {
+    this.analytics.logInputChange('opportunityCost', this.macro.opportunityCost);
     this.onFormChange();
   }
 
@@ -283,6 +557,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     }
     
     this.formChange$.next();
+    this.urlUpdate$.next();
   }
 
   private mapToNpvParams(): NpvParams {
@@ -329,7 +604,6 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   calculateNpv(): void {
-    this.isLoading = true;
     this.error = null;
     
     const params = this.mapToNpvParams();
@@ -341,7 +615,6 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       next: (data) => {
         console.log('NPV response received:', data);
         this.cashFlowData = data;
-        this.isLoading = false;
         // Try to create charts after a short delay to ensure DOM is ready
         setTimeout(() => {
           this.createCharts();
@@ -350,7 +623,6 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       error: (err) => {
         console.error('NPV calculation error:', err);
         this.error = `Failed to calculate NPV. Error: ${err.message || err.status || 'Unknown error'}. Please ensure the backend is running on ${this.apiUrl}`;
-        this.isLoading = false;
       }
     });
   }
@@ -554,12 +826,81 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   private createNpvChart(): void {
-    if (this.npvChart) {
-      this.npvChart.destroy();
-    }
-
     if (!this.npvChartRef) {
       console.error('NPV chart ref not available');
+      return;
+    }
+
+    const years = this.cashFlowData.map(d => d.year);
+    const npvData = this.cashFlowData.map(d => d.buy_npv / 10000); // Convert to man-yen
+
+    // Create separate datasets for positive and negative areas
+    const positiveData = npvData.map(val => val >= 0 ? val : null);
+    const negativeData = npvData.map(val => val < 0 ? val : null);
+
+    // If chart exists, carefully update data while preserving all styling
+    if (this.npvChart) {
+      this.npvChart.data.labels = years;
+      
+      // Ensure we have the right number of datasets
+      if (this.npvChart.data.datasets.length !== 3) {
+        // Recreate the chart if dataset structure is wrong
+        this.npvChart.destroy();
+        this.npvChart = null;
+        this.createNpvChart();
+        return;
+      }
+      
+      // Update data while explicitly preserving all styling properties
+             Object.assign(this.npvChart.data.datasets[0], {
+         data: positiveData,
+         label: 'Better to Buy',
+         borderColor: '#4ecdc4',
+         backgroundColor: 'rgba(78, 205, 196, 0.3)',
+         borderWidth: 2,
+         pointBackgroundColor: 'transparent',
+         pointBorderColor: '#4ecdc4',
+         pointBorderWidth: 2,
+         pointHoverBackgroundColor: '#4ecdc4',
+         pointRadius: 3,
+         pointHoverRadius: 5,
+         tension: 0.3,
+         fill: 'origin',
+         spanGaps: false
+       });
+       
+       Object.assign(this.npvChart.data.datasets[1], {
+         data: negativeData,
+         label: 'Better to Rent',
+         borderColor: '#ff6b6b',
+         backgroundColor: 'rgba(255, 107, 107, 0.3)',
+         borderWidth: 2,
+         pointBackgroundColor: 'transparent',
+         pointBorderColor: '#ff6b6b',
+         pointBorderWidth: 2,
+         pointHoverBackgroundColor: '#ff6b6b',
+         pointRadius: 3,
+         pointHoverRadius: 5,
+         tension: 0.3,
+         fill: 'origin',
+         spanGaps: false
+       });
+      
+      Object.assign(this.npvChart.data.datasets[2], {
+        data: npvData,
+        label: 'NPV Line',
+        borderColor: '#333',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointBackgroundColor: 'transparent',
+        pointBorderColor: 'transparent',
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        tension: 0.3,
+        fill: false
+      });
+      
+      this.npvChart.update('none');
       return;
     }
 
@@ -569,38 +910,96 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    const years = this.cashFlowData.map(d => d.year);
-    const npvData = this.cashFlowData.map(d => d.buy_npv / 10000); // Convert to man-yen
-
     console.log('Creating NPV chart with data:', { years, npvData });
 
     this.npvChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: years,
-        datasets: [{
-          label: 'NPV (Buy vs Rent)',
-          data: npvData,
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          tension: 0.1
-        }]
+        datasets: [
+          {
+            label: 'Better to Buy',
+            data: positiveData,
+            borderColor: '#4ecdc4',
+            backgroundColor: 'rgba(78, 205, 196, 0.3)',
+            borderWidth: 2,
+            pointBackgroundColor: 'transparent',
+            pointBorderColor: '#4ecdc4',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: '#4ecdc4',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            fill: 'origin',
+            spanGaps: false
+          },
+          {
+            label: 'Better to Rent',
+            data: negativeData,
+            borderColor: '#ff6b6b',
+            backgroundColor: 'rgba(255, 107, 107, 0.3)',
+            borderWidth: 2,
+            pointBackgroundColor: 'transparent',
+            pointBorderColor: '#ff6b6b',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: '#ff6b6b',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            fill: 'origin',
+            spanGaps: false
+          },
+          {
+            label: 'NPV Line',
+            data: npvData,
+            borderColor: '#333',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointBackgroundColor: 'transparent',
+            pointBorderColor: 'transparent',
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            tension: 0.3,
+            fill: false
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 750,
+          easing: 'easeInOutQuart'
+        },
+        transitions: {
+          active: {
+            animation: {
+              duration: 400
+            }
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
         scales: {
           y: {
             beginAtZero: true,
             title: {
               display: true,
               text: 'NPV (万円)'
+            },
+            grid: {
+              color: '#e0e0e0'
             }
           },
           x: {
             title: {
               display: true,
               text: 'Year'
+            },
+            grid: {
+              color: '#e0e0e0'
             }
           }
         },
@@ -610,12 +1009,26 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             text: 'Net Present Value: Buy vs Rent'
           },
           legend: {
-            display: true
+            display: true,
+            labels: {
+              filter: function(legendItem: any, chartData: any) {
+                return legendItem.text !== 'NPV Line';
+              }
+            }
           },
           tooltip: {
+            mode: 'index',
+            intersect: false,
             callbacks: {
+              title: function(context: any) {
+                return `Year ${context[0].label}`;
+              },
               label: function(context: any) {
-                return context.dataset.label + ': ' + Math.round(context.parsed.y) + '万円';
+                const value = Math.round(context.parsed.y);
+                if (context.datasetIndex === 2) { // NPV Line dataset
+                  return `NPV: ${value}万円`;
+                }
+                return `${context.dataset.label}: ${value}万円`;
               }
             }
           }
@@ -625,12 +1038,19 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   private createIrrChart(): void {
-    if (this.irrChart) {
-      this.irrChart.destroy();
-    }
-
     if (!this.irrChartRef) {
       console.error('IRR chart ref not available');
+      return;
+    }
+
+    const years = this.cashFlowData.map(d => d.year);
+    const irrData = this.cashFlowData.map(d => d.buy_irr ? d.buy_irr * 100 : null);
+
+    // If chart exists, update data with smooth animation
+    if (this.irrChart) {
+      this.irrChart.data.labels = years;
+      this.irrChart.data.datasets[0].data = irrData;
+      this.irrChart.update('none');
       return;
     }
 
@@ -639,9 +1059,6 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       console.error('Could not get IRR chart context');
       return;
     }
-
-    const years = this.cashFlowData.map(d => d.year);
-    const irrData = this.cashFlowData.map(d => d.buy_irr ? d.buy_irr * 100 : null);
 
     console.log('Creating IRR chart with data:', { years, irrData });
 
@@ -654,6 +1071,12 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
           data: irrData,
           borderColor: 'rgb(255, 99, 132)',
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          pointBackgroundColor: 'transparent',
+          pointBorderColor: 'rgb(255, 99, 132)',
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: 'rgb(255, 99, 132)',
+          pointRadius: 4,
+          pointHoverRadius: 6,
           tension: 0.1,
           spanGaps: false
         }]
@@ -661,8 +1084,20 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 750,
+          easing: 'easeInOutQuart'
+        },
+        transitions: {
+          active: {
+            animation: {
+              duration: 400
+            }
+          }
+        },
         scales: {
           y: {
+            min: 0,
             title: {
               display: true,
               text: 'IRR (%)'
@@ -697,12 +1132,21 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   private createCashflowChart(): void {
-    if (this.cashflowChart) {
-      this.cashflowChart.destroy();
-    }
-
     if (!this.cashflowChartRef) {
       console.error('Cashflow chart ref not available');
+      return;
+    }
+
+    const years = this.cashFlowData.map(d => d.year);
+    const rentCashflow = this.cashFlowData.map(d => d.rent_cost / 10000); // Convert to man-yen
+    const buyCashflow = this.cashFlowData.map(d => (d.house_cost + d.loan_cost) / 10000); // Convert to man-yen
+
+    // If chart exists, update data with smooth animation
+    if (this.cashflowChart) {
+      this.cashflowChart.data.labels = years;
+      this.cashflowChart.data.datasets[0].data = rentCashflow;
+      this.cashflowChart.data.datasets[1].data = buyCashflow;
+      this.cashflowChart.update('none');
       return;
     }
 
@@ -711,10 +1155,6 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       console.error('Could not get cashflow chart context');
       return;
     }
-
-    const years = this.cashFlowData.map(d => d.year);
-    const rentCashflow = this.cashFlowData.map(d => d.rent_cost / 10000); // Convert to man-yen
-    const buyCashflow = this.cashFlowData.map(d => (d.house_cost + d.loan_cost) / 10000); // Convert to man-yen
 
     console.log('Creating cashflow chart with data:', { years, rentCashflow, buyCashflow });
 
@@ -742,6 +1182,17 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 750,
+          easing: 'easeInOutQuart'
+        },
+        transitions: {
+          active: {
+            animation: {
+              duration: 400
+            }
+          }
+        },
         scales: {
           y: {
             beginAtZero: true,
@@ -778,12 +1229,21 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   }
 
   private createHouseVsStockChart(): void {
-    if (this.houseVsStockChart) {
-      this.houseVsStockChart.destroy();
-    }
-
     if (!this.houseVsStockChartRef) {
       console.error('House vs Stock chart ref not available');
+      return;
+    }
+
+    const years = this.cashFlowData.map(d => d.year);
+    const buyNetWorth = this.cashFlowData.map(d => d.sale_value / 10000); // Net worth = sale value after broker fees and loan payoff
+    const stockValue = this.cashFlowData.map(d => d.stock_value / 10000); // Convert to man-yen
+
+    // If chart exists, update data with smooth animation
+    if (this.houseVsStockChart) {
+      this.houseVsStockChart.data.labels = years;
+      this.houseVsStockChart.data.datasets[0].data = buyNetWorth;
+      this.houseVsStockChart.data.datasets[1].data = stockValue;
+      this.houseVsStockChart.update('none');
       return;
     }
 
@@ -792,10 +1252,6 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       console.error('Could not get House vs Stock chart context');
       return;
     }
-
-    const years = this.cashFlowData.map(d => d.year);
-    const buyNetWorth = this.cashFlowData.map(d => d.sale_value / 10000); // Net worth = sale value after broker fees and loan payoff
-    const stockValue = this.cashFlowData.map(d => d.stock_value / 10000); // Convert to man-yen
 
     console.log('Creating Buy Net Worth vs Stock chart with data:', { years, buyNetWorth, stockValue });
 
@@ -809,6 +1265,12 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             data: buyNetWorth,
             borderColor: 'rgb(255, 159, 64)',
             backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            pointBackgroundColor: 'transparent',
+            pointBorderColor: 'rgb(255, 159, 64)',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: 'rgb(255, 159, 64)',
+            pointRadius: 4,
+            pointHoverRadius: 6,
             tension: 0.1,
             fill: false
           },
@@ -817,6 +1279,12 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             data: stockValue,
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            pointBackgroundColor: 'transparent',
+            pointBorderColor: 'rgb(75, 192, 192)',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: 'rgb(75, 192, 192)',
+            pointRadius: 4,
+            pointHoverRadius: 6,
             tension: 0.1,
             fill: false
           }
@@ -825,6 +1293,17 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 750,
+          easing: 'easeInOutQuart'
+        },
+        transitions: {
+          active: {
+            animation: {
+              duration: 400
+            }
+          }
+        },
         interaction: {
           mode: 'index',
           intersect: false
@@ -923,6 +1402,27 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       case 'property': return $localize`:@@rentorbuy.propertyDetails:Property Details`;
       case 'loan': return $localize`:@@rentorbuy.loanDetails:Loan Details`;
       case 'economic': return $localize`:@@rentorbuy.economicFactors:Economic Factors`;
+      default: return '';
+    }
+  }
+
+  // Chart Info Modal
+  activeChartInfo: string | null = null;
+
+  openChartInfoModal(chartType: string): void {
+    this.activeChartInfo = chartType;
+  }
+
+  closeChartInfoModal(): void {
+    this.activeChartInfo = null;
+  }
+
+  getChartInfoTitle(): string {
+    switch (this.activeChartInfo) {
+      case 'npv': return $localize`:@@rentorbuy.npvChart:Net Present Value (NPV)`;
+      case 'networth': return $localize`:@@rentorbuy.buyNetWorthVsStockChart:Buy House vs Invest in Stock Net Worth`;
+      case 'cashflow': return $localize`:@@rentorbuy.annualCashflowChart:Annual Cashflow Comparison`;
+      case 'irr': return $localize`:@@rentorbuy.irrChart:Internal Rate of Return (IRR)`;
       default: return '';
     }
   }

@@ -8,7 +8,7 @@
 
 .footer {
   margin-top: 3rem;
-  padding: 2rem 0;
+  padding: 3rem 0 2rem 0;
   border-top: 1px solid #eee;
   background-color: #f8f9fa;
   grid-column: 1 / -1;
@@ -21,7 +21,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .footer-text {
@@ -52,10 +52,34 @@
   margin-top: 1rem;
 }
 
+.footer-logo {
+  margin: 0;
+}
+
+.footer-logo-img {
+  height: 50px;
+  width: auto;
+  opacity: 0.8;
+}
+
 .footer-links {
   display: flex;
   gap: 2rem;
-  margin-top: 1rem;
+  margin: 0;
+}
+
+.footer-copyright {
+  margin: 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  width: 100%;
+}
+
+.footer-copyright p {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0;
+  text-align: center;
 }
 
 .social-link {
@@ -224,6 +248,69 @@
   font-size: 1.2rem;
   padding: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.share-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.share-content h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.share-content p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #FF69B4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(255, 105, 180, 0.3);
+}
+
+.share-btn:hover {
+  background-color: #FF1493;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 105, 180, 0.4);
+}
+
+.share-btn:active {
+  transform: translateY(0);
+}
+
+.share-icon {
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .share-section {
+    margin-top: 1.5rem;
+    padding: 1rem;
+  }
+  
+  .share-btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
 }
 
 .price-item.total span:last-child {
@@ -446,4 +533,34 @@
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    margin-top: 2rem;
+    padding: 2rem 0 1.5rem 0;
+  }
+
+  .footer-content {
+    padding: 0 1rem;
+    gap: 1.5rem;
+  }
+
+  .footer-logo-img {
+    height: 40px;
+  }
+
+  .footer-links {
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-copyright {
+    padding-top: 1rem;
+  }
+
+  .footer-copyright p {
+    font-size: 0.8rem;
+  }
 } 
