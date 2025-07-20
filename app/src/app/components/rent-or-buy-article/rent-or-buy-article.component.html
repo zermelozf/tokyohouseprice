@@ -78,18 +78,18 @@
     <ul>
       <li><a href="#mindset" i18n="@@rentorbuy.tocMindset">A concrete example from SUUMO.jp</a>
         <ul>
-          <li><a href="#model">Example Properties</a></li>
-          <li><a href="#model">So, which is best?</a></li>
+          <li><a href="#examples">Example Properties</a></li>
+          <li><a href="#comparison">So, which is best?</a></li>
         </ul>
       </li>
       <li><a href="#modeling" i18n="@@rentorbuy.tocModeling">The Decision Making Framework</a>
         <ul>
-          <li><a href="#model">Modeling a Property</a></li>
+          <li><a href="#modeling-property">Modeling a Property</a></li>
+          <li><a href="#cumulative">Cumulative Cash Flows</a></li>
           <li><a href="#npv">Opportunity Cost and Net Present Value (NPV)</a></li>
           <li><a href="#irr">Internal Rate of Return (IRR)</a></li>
         </ul>
       </li>
-      <!-- <li><a href="#sensitivity" i18n="@@rentorbuy.tocSensitivity">Digression: Mortgages and Leveraged Buyouts</a></li> -->
       <li><a href="#conclusion" i18n="@@rentorbuy.tocConclusion">In Conclusion</a></li>
     </ul>
   </section>
@@ -104,7 +104,7 @@
       properties from <a href="https://suumo.jp/" target="_blank">SUUMO.jp</a> that we'll use for calculations
       throughout the article.
     </p>
-    <h3 id="model" i18n="@@rentorbuy.npvTitle">Example Properties</h3>
+    <h3 id="examples" i18n="@@rentorbuy.npvTitle">Example Properties</h3>
     <div class="example-box">
 
       <div class="property-comparison">
@@ -146,7 +146,7 @@
       expect it to be more expensive.
     </p>
 
-    <h3 id="model" i18n="@@rentorbuy.npvTitle">So, which is best?</h3>
+    <h3 id="comparison" i18n="@@rentorbuy.npvTitle">So, which is best?</h3>
 
     <p>
       Let's start with the conclusion so you can skip the rest of the article 😉.
@@ -157,17 +157,21 @@
         <i class="fas fa-trophy"></i>
       </div>
       <div class="finding-content">
-        <strong>The rental option is bigger, has a better location, and is newer. It is also a cheaper option from
-          a financial perspective!</strong>
+        <strong>With a 25 years horizon, the rental option is cheaper than the buying option.</strong>
       </div>
     </div>
 
     <p>
-      You read that right! Despite the rent being quite high, it can actually be cheaper to rent than to buy
+      You read that right! The 430,000 yen monthly rent is rather expensive, and you could argue that the rental
+      property is higher-end than the one for sale. However, it is cheaper to rent than to buy, even
       in the long run.
     </p>
     <p>
-      If you don't believe me, please read on. Be warned though: this is going to get quite nerdy 🤓.
+      And I don't mean that your rent will be less than your mortgage payment on a monthly basis. I mean that from a
+      total net worth perspective, 25 years from now, you will be richer if you decide to rent and not to buy.
+    </p>
+    <p>
+      In the rest of the article, I'll explain the assumptions and the calculations I used to reach this conclusion.
     </p>
 
 
@@ -189,9 +193,19 @@
       But before we dive into the details, let's first formalize what we mean by a property.
     </p>
 
-    <h3 id="model" i18n="@@rentorbuy.npvTitle">Modeling a Property</h3>
+    <h3 id="modeling-property" i18n="@@rentorbuy.npvTitle">Modeling a Property</h3>
     <p>
       A property is a bundle of cash flows.
+    </p>
+
+    <p>
+      For example, let's compare the cash flows for the two housing options described above. I'll use <span
+        class="percentage-highlight">{{ fees / 2 |
+        percent }}</span> for the broker fees (both when buying and selling) and a <span class="percentage-highlight">{{
+        loanYears }}</span>-year mortgage with a <span class="percentage-highlight">{{
+        mortgageRate | percent }}</span> interest rate. Let's also assume running costs (maintenance, taxes, etc.) are
+      <span class="percentage-highlight">{{ costs |
+        percent }}</span> of the property value.
     </p>
 
     <app-cashflow-chart></app-cashflow-chart>
@@ -235,16 +249,7 @@
         </p>
       </div>
     </div>
-
-    <p>
-      For example, let's compare the cash flows for the two housing options described above. I'll use <span
-        class="percentage-highlight">{{ fees / 2 |
-        percent }}</span> for the broker fees (both when buying and selling) and a <span class="percentage-highlight">{{
-        loanYears }}</span>-year mortgage with a <span class="percentage-highlight">{{
-        mortgageRate | percent }}</span> interest rate. Let's also assume running costs (maintenance, taxes, etc.) are
-      <span class="percentage-highlight">{{ costs |
-        percent }}</span> of the property value.
-    </p>
+    <h3 id="cumulative" i18n="@@rentorbuy.npvTitle">Cumulative Cash Flows</h3>
 
     <p>Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent
       overall, we can just sum them all together to see how "expensive" each option is.
