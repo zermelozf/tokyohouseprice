@@ -41,7 +41,7 @@ interface CashFlowData {
         <canvas #chartCanvas></canvas>
       </div>
       <div class="figure-caption">
-        <p>
+        <p i18n="@@chart.cashflowFigureCaption">
           <span class="figure-label">Figure:</span> 
           Annual cash flows show the yearly financial impact of each option. 
           The rent option shows consistent annual payments of ¥5.16M per year.
@@ -131,14 +131,14 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
         labels: labels,
         datasets: [
           {
-            label: 'Rent Cash Flow',
+            label: $localize`:@@chart.rentCashFlow:Rent Cash Flow`,
             data: rentData,
             backgroundColor: 'rgba(255, 107, 107, 0.7)',
             borderColor: '#ff6b6b',
             borderWidth: 1
           },
           {
-            label: 'Buy Cash Flow',
+            label: $localize`:@@chart.buyCashFlow:Buy Cash Flow`,
             data: buyData,
             backgroundColor: 'rgba(78, 205, 196, 0.7)',
             borderColor: '#4ecdc4',
@@ -156,7 +156,7 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
         plugins: {
           title: {
             display: true,
-            text: 'Annual Cash Flows: Rent vs Buy',
+            text: $localize`:@@chart.annualCashFlowsTitle:Annual Cash Flows: Rent vs Buy`,
             font: {
               size: 16
             }
@@ -177,10 +177,10 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
               title: (context: TooltipItem<'bar'>[]) => {
                 const year = context[0].label;
                 const yearNum = parseInt(year);
-                if (year === '0') return 'Initial Year';
-                if (year === '25') return 'Sale Year (25)';
-                if (yearNum === 20) return `Year ${year} (Last mortgage payment)`;
-                if (yearNum === 21) return `Year ${year} (Mortgage paid off)`;
+                if (year === '0') return $localize`:@@chart.initialYear:Initial Year`;
+                if (year === '25') return $localize`:@@chart.saleYear:Sale Year (25)`;
+                if (yearNum === 20) return `Year ${year} (${$localize`:@@chart.lastMortgagePayment:Last mortgage payment`})`;
+                if (yearNum === 21) return `Year ${year} (${$localize`:@@chart.mortgagePaidOffYear:Mortgage paid off`})`;
                 return `Year ${year}`;
               },
               label: (context: TooltipItem<'bar'>) => {
@@ -189,20 +189,20 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
                 const year = parseInt(context.label || '0');
                 
                 if (context.label === '25' && label?.includes('Buy')) {
-                  return `${label} (incl. sale): ¥${value.toFixed(1)}M`;
+                  return `${label} (${$localize`:@@chart.includingSale:incl. sale`}): ¥${value.toFixed(1)}M`;
                 }
                 if (label?.includes('Buy') && year > 20 && year < 25) {
-                  return `${label} (no mortgage): ¥${value.toFixed(1)}M`;
+                  return `${label} (${$localize`:@@chart.noMortgage:no mortgage`}): ¥${value.toFixed(1)}M`;
                 }
                 return `${label}: ¥${value.toFixed(1)}M`;
               },
               afterBody: (context: TooltipItem<'bar'>[]) => {
                 const year = parseInt(context[0].label || '0');
                 if (year === 20) {
-                  return 'Final mortgage payment made';
+                  return $localize`:@@chart.finalMortgagePaymentMade:Final mortgage payment made`;
                 }
                 if (year === 21) {
-                  return 'Only property tax & maintenance from now on';
+                  return $localize`:@@chart.onlyPropertyTaxMaintenance:Only property tax & maintenance from now on`;
                 }
                 return '';
               }
@@ -219,7 +219,7 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
                 borderDash: [6, 4],
                 label: {
                   display: true,
-                  content: 'Mortgage Paid Off',
+                  content: $localize`:@@chart.mortgagePaidOff:Mortgage Paid Off`,
                   position: 'center',
                   backgroundColor: 'rgba(136, 136, 136, 0.8)',
                   color: 'white',
@@ -239,7 +239,7 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
           x: {
             title: {
               display: true,
-              text: 'Year'
+              text: $localize`:@@chart.year:Year`
             },
             grid: {
               color: '#e0e0e0'
@@ -248,7 +248,7 @@ export class CashflowChartComponent implements OnInit, AfterViewInit, OnDestroy 
           y: {
             title: {
               display: true,
-              text: 'Cash Flow (¥ millions)'
+              text: $localize`:@@chart.cashflowYenMillions:Cash Flow (¥ millions)`
             },
             grid: {
               color: '#e0e0e0'

@@ -45,7 +45,7 @@ interface DataPoint {
         <canvas #chartCanvas></canvas>
       </div>
       <div class="figure-caption">
-        <p>
+        <p i18n="@@chart.pvBuyFigureCaption">
           <span class="figure-label">Figure:</span> 
           The present value advantage shows when buying becomes financially superior to renting
           in net present value terms. Positive values indicate buying is better, while negative 
@@ -143,7 +143,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Buying is Better',
+                        label: $localize`:@@chart.buyingIsBetter:Buying is Better`,
                         data: positiveData,
                         borderColor: '#4ecdc4',
                         backgroundColor: 'rgba(78, 205, 196, 0.3)',
@@ -157,7 +157,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                         spanGaps: false
                     },
                     {
-                        label: 'Renting is Better',
+                        label: $localize`:@@chart.rentingIsBetter:Renting is Better`,
                         data: negativeData,
                         borderColor: '#ff6b6b',
                         backgroundColor: 'rgba(255, 107, 107, 0.3)',
@@ -171,7 +171,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                         spanGaps: false
                     },
                     {
-                        label: 'PV Advantage',
+                        label: $localize`:@@chart.pvAdvantage:PV Advantage`,
                         data: differenceData,
                         borderColor: '#333',
                         borderWidth: 2,
@@ -183,7 +183,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                         fill: false
                     },
                     {
-                        label: 'Maximum Point',
+                        label: $localize`:@@chart.maximumPoint:Maximum Point`,
                         data: maxPointData,
                         borderColor: 'transparent',
                         backgroundColor: 'transparent',
@@ -205,7 +205,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 plugins: {
                     title: {
                         display: true,
-                        text: `Maximum PV Advantage: ¥${maxPV.toFixed(1)}M (Year ${maxPVYear})`,
+                        text: this.getPvTitle(maxPV, maxPVYear),
                         font: {
                             size: 16,
                             weight: 'bold'
@@ -221,7 +221,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                         position: 'top',
                         labels: {
                             filter: function (legendItem: any, chartData: any) {
-                                return legendItem.text !== 'PV Advantage' && legendItem.text !== 'Maximum Point';
+                                return legendItem.text !== $localize`:@@chart.pvAdvantage:PV Advantage` && legendItem.text !== $localize`:@@chart.maximumPoint:Maximum Point`;
                             }
                         }
                     },
@@ -235,14 +235,14 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                         borderWidth: 1,
                         callbacks: {
                             title: (context: TooltipItem<'line'>[]) => {
-                                return `Holding Period: ${context[0].label} years`;
+                                return `${$localize`:@@chart.holdingPeriodYears:Holding Period: years`} ${context[0].label}`;
                             },
                             label: (context: TooltipItem<'line'>) => {
                                 const value = context.parsed.y;
                                 const isMax = context.datasetIndex === 3; // Maximum Point dataset is now at index 3
                                 return isMax ?
-                                    `PV Advantage: ¥${value.toFixed(1)}M (Maximum)` :
-                                    `PV Advantage: ¥${value.toFixed(1)}M`;
+                                    `${$localize`:@@chart.pvAdvantage:PV Advantage`}: ¥${value.toFixed(1)}M (${$localize`:@@chart.pvAdvantageMaximum:PV Advantage (Maximum)`})` :
+                                    `${$localize`:@@chart.pvAdvantage:PV Advantage`}: ¥${value.toFixed(1)}M`;
                             }
                         }
                     },
@@ -256,19 +256,19 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                                 borderWidth: 2,
                                 borderDash: [5, 5],
                                 drawTime: 'beforeDatasetsDraw',
-                                label: {
-                                    display: true,
-                                    content: `Optimal: Year ${maxPVYear}`,
-                                    position: 'start',
-                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    color: '#777',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    },
-                                    padding: 4,
-                                    borderRadius: 4
-                                }
+                                                            label: {
+                                display: true,
+                                content: `${$localize`:@@chart.optimalYear:Optimal: Year`} ${maxPVYear}`,
+                                position: 'start',
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                color: '#777',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 4,
+                                borderRadius: 4
+                            }
                             }
                         }
                     }
@@ -277,7 +277,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                     x: {
                         title: {
                             display: true,
-                            text: 'Holding Period (years)'
+                            text: $localize`:@@chart.holdingPeriodYears:Holding Period (Years)`
                         },
                         grid: {
                             color: '#e0e0e0'
@@ -286,7 +286,7 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
                     y: {
                         title: {
                             display: true,
-                            text: 'Present Value (¥ millions)'
+                            text: $localize`:@@chart.presentValueYenMillions:Present Value (¥ millions)`
                         },
                         grid: {
                             color: '#e0e0e0'
@@ -308,5 +308,10 @@ export class PvBuyChartComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.chart) {
             this.chart.destroy();
         }
+    }
+
+    private getPvTitle(maxPV: number, maxPVYear: number): string {
+        const baseTitle = $localize`:@@chart.maximumPvAdvantageTitle:Maximum PV Advantage: ¥M (Year )`;
+        return baseTitle.replace('¥M', `¥${maxPV.toFixed(1)}M`).replace('Year ', `Year ${maxPVYear}`);
     }
 } 

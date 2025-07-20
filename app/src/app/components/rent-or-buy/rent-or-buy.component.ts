@@ -854,7 +854,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       // Update data while explicitly preserving all styling properties
              Object.assign(this.npvChart.data.datasets[0], {
          data: positiveData,
-         label: 'Better to Buy',
+         label: $localize`:@@chart.betterToBuy:Better to Buy`,
          borderColor: '#4ecdc4',
          backgroundColor: 'rgba(78, 205, 196, 0.3)',
          borderWidth: 2,
@@ -871,7 +871,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
        
        Object.assign(this.npvChart.data.datasets[1], {
          data: negativeData,
-         label: 'Better to Rent',
+         label: $localize`:@@chart.betterToRent:Better to Rent`,
          borderColor: '#ff6b6b',
          backgroundColor: 'rgba(255, 107, 107, 0.3)',
          borderWidth: 2,
@@ -888,7 +888,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       
       Object.assign(this.npvChart.data.datasets[2], {
         data: npvData,
-        label: 'NPV Line',
+                 label: $localize`:@@chart.npvLine:NPV Line`,
         borderColor: '#333',
         backgroundColor: 'transparent',
         borderWidth: 2,
@@ -918,7 +918,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
         labels: years,
         datasets: [
           {
-            label: 'Better to Buy',
+            label: $localize`:@@chart.betterToBuy:Better to Buy`,
             data: positiveData,
             borderColor: '#4ecdc4',
             backgroundColor: 'rgba(78, 205, 196, 0.3)',
@@ -934,7 +934,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             spanGaps: false
           },
           {
-            label: 'Better to Rent',
+            label: $localize`:@@chart.betterToRent:Better to Rent`,
             data: negativeData,
             borderColor: '#ff6b6b',
             backgroundColor: 'rgba(255, 107, 107, 0.3)',
@@ -950,7 +950,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             spanGaps: false
           },
           {
-            label: 'NPV Line',
+            label: $localize`:@@chart.npvLine:NPV Line`,
             data: npvData,
             borderColor: '#333',
             backgroundColor: 'transparent',
@@ -987,7 +987,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'NPV (万円)'
+              text: $localize`:@@chart.npvYenMan:NPV (万円)`
             },
             grid: {
               color: '#e0e0e0'
@@ -996,7 +996,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
           x: {
             title: {
               display: true,
-              text: 'Year'
+              text: $localize`:@@chart.year:Year`
             },
             grid: {
               color: '#e0e0e0'
@@ -1012,7 +1012,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             display: true,
             labels: {
               filter: function(legendItem: any, chartData: any) {
-                return legendItem.text !== 'NPV Line';
+                return legendItem.text !== $localize`:@@chart.npvLine:NPV Line`;
               }
             }
           },
@@ -1021,7 +1021,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             intersect: false,
             callbacks: {
               title: function(context: any) {
-                return `Year ${context[0].label}`;
+                return `${$localize`:@@chart.year:Year`} ${context[0].label}`;
               },
               label: function(context: any) {
                 const value = Math.round(context.parsed.y);
@@ -1067,7 +1067,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       data: {
         labels: years,
         datasets: [{
-          label: 'IRR (%)',
+          label: $localize`:@@chart.irrPercent:IRR (%)`,
           data: irrData,
           borderColor: 'rgb(255, 99, 132)',
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -1100,20 +1100,20 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             min: 0,
             title: {
               display: true,
-              text: 'IRR (%)'
+              text: $localize`:@@chart.irrPercent:IRR (%)`
             }
           },
           x: {
             title: {
               display: true,
-              text: 'Year'
+              text: $localize`:@@chart.year:Year`
             }
           }
         },
         plugins: {
           title: {
             display: true,
-            text: 'Internal Rate of Return: Buy vs Rent'
+            text: $localize`:@@chart.internalRateOfReturnTitle:Internal Rate of Return: Buy vs Rent`
           },
           legend: {
             display: true
@@ -1164,14 +1164,14 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
         labels: years,
         datasets: [
           {
-            label: 'Rent Cashflow',
+            label: $localize`:@@chart.rentCashflow:Rent Cashflow`,
             data: rentCashflow,
             backgroundColor: 'rgba(255, 99, 132, 0.7)',
             borderColor: 'rgb(255, 99, 132)',
             borderWidth: 1
           },
           {
-            label: 'Buy Cashflow',
+            label: $localize`:@@chart.buyCashflow:Buy Cashflow`,
             data: buyCashflow,
             backgroundColor: 'rgba(54, 162, 235, 0.7)',
             borderColor: 'rgb(54, 162, 235)',
@@ -1198,20 +1198,20 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'Cashflow (万円)'
+              text: $localize`:@@chart.cashflowYenMan:Cashflow (万円)`
             }
           },
           x: {
             title: {
               display: true,
-              text: 'Year'
+              text: $localize`:@@chart.year:Year`
             }
           }
         },
         plugins: {
           title: {
             display: true,
-            text: 'Annual Cashflow: Rent vs Buy'
+            text: $localize`:@@chart.annualCashflowTitle:Annual Cashflow: Rent vs Buy`
           },
           legend: {
             display: true
@@ -1261,7 +1261,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
         labels: years,
         datasets: [
           {
-            label: 'Buy House',
+            label: $localize`:@@chart.buyHouse:Buy House`,
             data: buyNetWorth,
             borderColor: 'rgb(255, 159, 64)',
             backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -1275,7 +1275,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             fill: false
           },
           {
-            label: 'Invest in Stocks',
+            label: $localize`:@@chart.investInStocks:Invest in Stocks`,
             data: stockValue,
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -1313,20 +1313,20 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'Value (万円)'
+              text: $localize`:@@chart.valueYenMan:Value (万円)`
             }
           },
           x: {
             title: {
               display: true,
-              text: 'Year'
+              text: $localize`:@@chart.year:Year`
             }
           }
         },
         plugins: {
           title: {
             display: true,
-            text: 'Buy House vs Stock Investment Net Worth'
+            text: $localize`:@@chart.buyHouseVsStockTitle:Buy House vs Stock Investment Net Worth`
           },
           legend: {
             display: true

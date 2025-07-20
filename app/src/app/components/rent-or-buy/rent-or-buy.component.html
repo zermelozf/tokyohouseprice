@@ -71,7 +71,7 @@
                   <span i18n="@@rentorbuy.rentInflation">Rent Inflation</span>:
                   <span class="info-icon" title="Annual rate at which rent is expected to increase over time">?</span>
                 </span>
-                <span class="label-value">{{macro.inflationRate}}%</span>
+                <span class="label-value">{{macro.inflationRate}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate"
                 (ngModelChange)="onRentInflationChange()" data-slider="rent-inflation">
@@ -95,7 +95,7 @@
                   <span class="info-icon"
                     title="Number of years over which the building's value will depreciate to zero">?</span>
                 </span>
-                <span class="label-value">{{buy.amortizationPeriod}} years</span>
+                <span class="label-value">{{buy.amortizationPeriod}} <ng-container i18n="@@rentorbuy.years">years</ng-container></span>
               </label>
               <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod"
                 (ngModelChange)="onAmortizationPeriodChange()" data-slider="amortization-period">
@@ -103,7 +103,7 @@
             <div class="form-group range-group">
               <label>
                 <span class="label-text"><span i18n="@@rentorbuy.buildingAge">Building Age</span>:</span>
-                <span class="label-value">{{buy.buildingAge}} years</span>
+                <span class="label-value">{{buy.buildingAge}} <ng-container i18n="@@rentorbuy.years">years</ng-container></span>
               </label>
               <input type="range" min="0" max="50" [(ngModel)]="buy.buildingAge" (ngModelChange)="onBuildingAgeChange()"
                 data-slider="building-age">
@@ -115,7 +115,7 @@
                   <span class="info-icon"
                     title="Annual maintenance cost as percentage of property value (repairs, renovations, etc.)">?</span>
                 </span>
-                <span class="label-value">{{buy.maintenance}}%</span>
+                <span class="label-value">{{buy.maintenance}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance"
                 (ngModelChange)="onMaintenanceChange()" data-slider="maintenance">
@@ -123,7 +123,7 @@
             <div class="form-group range-group">
               <label>
                 <span class="label-text"><span i18n="@@rentorbuy.propertyTax">Property Tax</span>:</span>
-                <span class="label-value">{{buy.propertyTax}}%</span>
+                <span class="label-value">{{buy.propertyTax}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="3" step="0.1" [(ngModel)]="buy.propertyTax"
                 (ngModelChange)="onFormChange()" data-slider="property-tax">
@@ -135,7 +135,7 @@
                   <span class="info-icon"
                     title="Real estate agent commission fee, typically 3-6% of purchase price">?</span>
                 </span>
-                <span class="label-value">{{buy.feeRate}}%</span>
+                <span class="label-value">{{buy.feeRate}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()"
                 data-slider="agent-fee">
@@ -147,7 +147,7 @@
             <div class="form-group range-group">
               <label>
                 <span class="label-text"><span i18n="@@rentorbuy.loanPeriod">Loan Period</span>:</span>
-                <span class="label-value">{{loan.loanPeriod}} years</span>
+                <span class="label-value">{{loan.loanPeriod}} <ng-container i18n="@@rentorbuy.years">years</ng-container></span>
               </label>
               <input type="range" min="1" max="50" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onFormChange()"
                 data-slider="loan-period">
@@ -159,7 +159,7 @@
                   <span class="info-icon"
                     title="One-time processing fee charged by the bank for mortgage origination">?</span>
                 </span>
-                <span class="label-value">{{loan.loanFee}}%</span>
+                <span class="label-value">{{loan.loanFee}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()"
                 data-slider="loan-fee">
@@ -170,7 +170,7 @@
                   <span i18n="@@rentorbuy.loanRate">Loan Rate</span>:
                   <span class="info-icon" title="Annual interest rate charged on the mortgage loan">?</span>
                 </span>
-                <span class="label-value">{{loan.loanRate}}%</span>
+                <span class="label-value">{{loan.loanRate}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate"
                 (ngModelChange)="onFormChange()" data-slider="loan-rate">
@@ -182,7 +182,7 @@
                   <span class="info-icon"
                     title="Percentage of property price paid upfront, not financed through mortgage">?</span>
                 </span>
-                <span class="label-value">{{loan.upfrontAmount}}%</span>
+                <span class="label-value">{{loan.upfrontAmount}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount"
                 (ngModelChange)="onFormChange()" data-slider="down-payment">
@@ -198,7 +198,7 @@
                   <span class="info-icon"
                     title="Annual rate at which property value is expected to increase (can be negative)">?</span>
                 </span>
-                <span class="label-value">{{macro.landAppreciation}}%</span>
+                <span class="label-value">{{macro.landAppreciation}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation"
                 (ngModelChange)="onFormChange()" data-slider="house-appreciation">
@@ -210,7 +210,7 @@
                   <span class="info-icon"
                     title="Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)">?</span>
                 </span>
-                <span class="label-value">{{macro.opportunityCost}}%</span>
+                <span class="label-value">{{macro.opportunityCost}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
               </label>
               <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost"
                 (ngModelChange)="onFormChange()" data-slider="opportunity-cost">
@@ -245,7 +245,7 @@
                 <span class="info-icon" title="Annual rate at which rent is expected to increase over time"
                   i18n-title="@@rentorbuy.rentInflationTooltip">?</span>
               </span>
-              <span class="label-value">{{macro.inflationRate}}%</span>
+              <span class="label-value">{{macro.inflationRate}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="10" step="0.1" [(ngModel)]="macro.inflationRate"
               (ngModelChange)="onFormChange()" data-slider="rent-inflation">
@@ -280,7 +280,7 @@
                 <span class="info-icon" title="Number of years over which the building's value will depreciate to zero"
                   i18n-title="@@rentorbuy.amortizationPeriodTooltip">?</span>
               </span>
-              <span class="label-value">{{buy.amortizationPeriod}} years</span>
+              <span class="label-value">{{buy.amortizationPeriod}} <ng-container i18n="@@rentorbuy.years">years</ng-container></span>
             </label>
             <input type="range" min="0" max="50" [(ngModel)]="buy.amortizationPeriod" (ngModelChange)="onFormChange()"
               data-slider="amortization-period">
@@ -288,7 +288,7 @@
           <div class="form-group range-group">
             <label>
               <span class="label-text"><span i18n="@@rentorbuy.buildingAge">Building Age</span>:</span>
-              <span class="label-value">{{buy.buildingAge}} years</span>
+              <span class="label-value">{{buy.buildingAge}} <ng-container i18n="@@rentorbuy.years">years</ng-container></span>
             </label>
             <input type="range" min="0" max="50" [(ngModel)]="buy.buildingAge" (ngModelChange)="onFormChange()"
               data-slider="building-age">
@@ -301,7 +301,7 @@
                   title="Annual maintenance cost as percentage of property value (repairs, renovations, etc.)"
                   i18n-title="@@rentorbuy.maintenanceTooltip">?</span>
               </span>
-              <span class="label-value">{{buy.maintenance}}%</span>
+              <span class="label-value">{{buy.maintenance}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="5" step="0.1" [(ngModel)]="buy.maintenance"
               (ngModelChange)="onFormChange()" data-slider="maintenance">
@@ -309,7 +309,7 @@
           <div class="form-group range-group">
             <label>
               <span class="label-text"><span i18n="@@rentorbuy.propertyTax">Property Tax</span>:</span>
-              <span class="label-value">{{buy.propertyTax}}%</span>
+              <span class="label-value">{{buy.propertyTax}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="3" step="0.1" [(ngModel)]="buy.propertyTax"
               (ngModelChange)="onFormChange()" data-slider="property-tax">
@@ -321,7 +321,7 @@
                 <span class="info-icon" title="Real estate agent commission fee, typically 3-6% of purchase price"
                   i18n-title="@@rentorbuy.agentFeeTooltip">?</span>
               </span>
-              <span class="label-value">{{buy.feeRate}}%</span>
+              <span class="label-value">{{buy.feeRate}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="10" step="0.1" [(ngModel)]="buy.feeRate" (ngModelChange)="onFormChange()"
               data-slider="agent-fee">
@@ -343,7 +343,7 @@
             *ngIf="isIntroVisible && !error && cashFlowData.length > 0 && financialRecommendation"
             (click)="closeIntroBox()" type="button" title="Close introduction">×</button>
           <p i18n="@@rentorbuy.toolDescription">Hey there! 👋 </p>
-          <p>Welcome to the rent vs buy calculator. Feel free to tweak everything from property depreciation curves to
+          <p i18n="@@rentorbuy.toolWelcome">Welcome to the rent vs buy calculator. Feel free to tweak everything from property depreciation curves to
             opportunity costs and see the real-time impact! 🚀</p>
           <p class="footnote-text" i18n="@@rentorbuy.toolLearnMore">Learn more about the underlying model in <a
               href="/rent-or-buy-analysis">this article</a> 🤓✨
@@ -478,7 +478,7 @@
           <div class="form-group range-group">
             <label>
               <span class="label-text"><span i18n="@@rentorbuy.loanPeriod">Loan Period</span>:</span>
-              <span class="label-value">{{loan.loanPeriod}} years</span>
+              <span class="label-value">{{loan.loanPeriod}} <ng-container i18n="@@rentorbuy.years">years</ng-container></span>
             </label>
             <input type="range" min="1" max="50" [(ngModel)]="loan.loanPeriod" (ngModelChange)="onLoanPeriodChange()"
               data-slider="loan-period">
@@ -490,7 +490,7 @@
                 <span class="info-icon" title="One-time processing fee charged by the bank for mortgage origination"
                   i18n-title="@@rentorbuy.loanFeeTooltip">?</span>
               </span>
-              <span class="label-value">{{loan.loanFee}}%</span>
+              <span class="label-value">{{loan.loanFee}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="5" step="0.1" [(ngModel)]="loan.loanFee" (ngModelChange)="onFormChange()"
               data-slider="loan-fee">
@@ -502,7 +502,7 @@
                 <span class="info-icon" title="Annual interest rate charged on the mortgage loan"
                   i18n-title="@@rentorbuy.loanRateTooltip">?</span>
               </span>
-              <span class="label-value">{{loan.loanRate}}%</span>
+              <span class="label-value">{{loan.loanRate}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="10" step="0.1" [(ngModel)]="loan.loanRate" (ngModelChange)="onFormChange()"
               data-slider="loan-rate">
@@ -514,7 +514,7 @@
                 <span class="info-icon" title="Percentage of property price paid upfront, not financed through mortgage"
                   i18n-title="@@rentorbuy.downPaymentTooltip">?</span>
               </span>
-              <span class="label-value">{{loan.upfrontAmount}}%</span>
+              <span class="label-value">{{loan.upfrontAmount}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="100" step="1" [(ngModel)]="loan.upfrontAmount"
               (ngModelChange)="onFormChange()" data-slider="down-payment">
@@ -542,7 +542,7 @@
                   title="Annual rate at which property value is expected to increase (can be negative)"
                   i18n-title="@@rentorbuy.houseAppreciationTooltip">?</span>
               </span>
-              <span class="label-value">{{macro.landAppreciation}}%</span>
+              <span class="label-value">{{macro.landAppreciation}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="-5" max="15" step="0.1" [(ngModel)]="macro.landAppreciation"
               (ngModelChange)="onFormChange()" data-slider="house-appreciation">
@@ -555,7 +555,7 @@
                   title="Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)"
                   i18n-title="@@rentorbuy.opportunityCostTooltip">?</span>
               </span>
-              <span class="label-value">{{macro.opportunityCost}}%</span>
+              <span class="label-value">{{macro.opportunityCost}}<ng-container i18n="@@rentorbuy.percent">%</ng-container></span>
             </label>
             <input type="range" min="0" max="15" step="0.1" [(ngModel)]="macro.opportunityCost"
               (ngModelChange)="onFormChange()" data-slider="opportunity-cost">

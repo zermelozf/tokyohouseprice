@@ -1553,12 +1553,14 @@
         <target>🤓 購入 vs 賃貸：究極の金融オタクツール 📊</target>
       </trans-unit>
       <trans-unit id="rentorbuy.toolDescription" datatype="html">
-        <source>Hey there, fellow number crunchers! 👋 This isn't your typical rent-vs-buy calculator. We're talking full-blown financial modeling here - complete with NPV calculations, IRR analysis, and Monte Carlo-style sensitivity testing. Tweak everything from property depreciation curves to opportunity costs and watch the math unfold in real-time! 🚀</source>
-        <target>こんにちは、数字マニアの仲間たち！👋 これは典型的な賃貸vs購入計算機ではありません。ここでは本格的な金融モデリングを行います - NPV計算、IRR分析、モンテカルロ式感度テストを完備！物件の減価償却曲線から機会費用まで、あらゆるパラメータを調整して、数学がリアルタイムで展開されるのを見てください！🚀</target>
+        <source>Hey there! 👋</source>
+        <target>こんにちは！👋</target>
       </trans-unit>
       <trans-unit id="rentorbuy.toolLearnMore" datatype="html">
-        <source>And if you think that isn't nerdy enough, please read the <a href="/rent-or-buy-analysis">detailed article</a> 🤓✨</source>
-        <target>そしてそれがまだ十分にオタクでない場合は、<a href="/rent-or-buy-analysis">詳細な記事</a>をお読みください。🤓✨</target>
+        <source>Learn more about the underlying model in <x id="START_LINK" ctype="x-a" equiv-text="&lt;a
+              href=&quot;/rent-or-buy-analysis&quot;&gt;"/>this article<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> 🤓✨ </source>
+        <target>基礎となるモデルについて詳しくは<x id="START_LINK" ctype="x-a" equiv-text="&lt;a
+              href=&quot;/rent-or-buy-analysis&quot;&gt;"/>この記事<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/>をご覧ください 🤓✨ </target>
       </trans-unit>
       
       <!-- Navbar -->
@@ -2020,6 +2022,746 @@
       <trans-unit id="rentorbuy.tocConclusion" datatype="html">
         <source>Conclusion</source>
         <target>結論</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.optimalStrategy" datatype="html">
+        <source>Optimal Strategy</source>
+        <target>最適戦略</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.saveShareStrategy" datatype="html">
+        <source>Save strategy</source>
+        <target>戦略を保存</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareAnalysis" datatype="html">
+        <source>Share Analysis</source>
+        <target>分析を共有</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareDescription" datatype="html">
+        <source>Share your rent vs buy analysis with others, or save it for later.</source>
+        <target>賃貸対購入の分析を他の人と共有するか、後で使用するために保存してください。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ctaDescription" datatype="html">
+        <source>Use our interactive calculator to get personalized results for your situation in Tokyo. Just input your preferences and financial details to see whether renting or buying makes more sense for you.</source>
+        <target>インタラクティブ計算機を使用して、東京でのあなたの状況に合わせたパーソナライズされた結果を取得してください。ご自身の好みと財務詳細を入力して、賃貸と購入のどちらがより適しているかを確認してください。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoIntro" datatype="html">
+        <source>When it comes to housing, you usually have two options: renting or buying. This whole article is about making this decision as informed as possible. And to make things a little bit more concrete, I pulled a couple of properties from SUUMO.jp that we'll use for calculations throughout the article.</source>
+        <target>住宅に関しては、通常2つの選択肢があります：賃貸または購入。この記事全体は、この決定を可能な限り情報に基づいて行うことについてです。そして、もう少し具体的にするために、記事全体の計算で使用するSUUMO.jpからいくつかの物件を取り上げました。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForSale" datatype="html">
+        <source>For Sale</source>
+        <target>売り物件</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForRent" datatype="html">
+        <source>For Rent</source>
+        <target>賃貸物件</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
+        <source>Looking at these two properties, the rental option is about twice as expensive on a per-square-meter basis and in a better location. You could argue that the renting option is a bit higher-end, and thus might expect it to be more expensive.</source>
+        <target>これら2つの物件を見ると、賃貸オプションは平方メートル当たりで約2倍高価で、より良い立地にあります。賃貸オプションは少し高級であり、したがってより高価であることが予想されると主張することができます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.modelingTitle" datatype="html">
+        <source>The Decision Making Framework</source>
+        <target>意思決定フレームワーク</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.hideDetails" datatype="html">
+        <source>Hide the Maths</source>
+        <target>数式を隠す</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.showDetails" datatype="html">
+        <source>Show the Maths</source>
+        <target>数式を表示</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.newsletterTitle" datatype="html">
+        <source>Newsletter for Tokyo House Price</source>
+        <target>東京住宅価格ニュースレター</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.newsletterDescription" datatype="html">
+        <source>Stay updated with the latest insights on Tokyo real estate market trends, property analysis, and investment strategies. Get exclusive tips and data-driven insights delivered to your inbox.</source>
+        <target>東京の不動産市場トレンド、物件分析、投資戦略に関する最新の洞察を常に入手してください。独占的なヒントとデータ駆動型の洞察をあなたの受信箱にお届けします。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.subscribeButton" datatype="html">
+        <source>Subscribe to Newsletter</source>
+        <target>ニュースレターを購読</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.newsletterDisclaimer" datatype="html">
+        <source>We respect your privacy. Unsubscribe at any time.</source>
+        <target>プライバシーを尊重します。いつでも配信停止できます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.introTitle" datatype="html">
+        <source>Introduction</source>
+        <target>はじめに</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.introText" datatype="html">
+        <source>The rent vs buy decision is one of the most significant financial choices you'll make in your lifetime. It's not just about monthly payments—it's about understanding opportunity costs, leverage, maintenance expenses, and long-term wealth building. This analysis provides a data-driven framework to help you make an informed decision based on your specific situation in Tokyo.</source>
+        <target>賃貸対購入の決定は、あなたの人生で最も重要な財務的選択の一つです。これは単に月々の支払いについてではありません。機会費用、レバレッジ、維持費用、そして長期的な資産形成を理解することです。この分析は、東京でのあなたの特定の状況に基づいて情報に基づいた決定を下すためのデータ駆動型フレームワークを提供します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ctaTitle" datatype="html">
+        <source>If you just want to get a quick answer</source>
+        <target>すぐに答えが欲しい場合</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ctaButton" datatype="html">
+        <source>Try the Interactive Calculator</source>
+        <target>インタラクティブ計算機を試す</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocMindset" datatype="html">
+        <source>A concrete example from SUUMO.jp</source>
+        <target>SUUMO.jpからの具体例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetTitle" datatype="html">
+        <source>A concrete example from SUUMO.jp</source>
+        <target>SUUMO.jpからの具体例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocModeling" datatype="html">
+        <source>The Decision Making Framework</source>
+        <target>意思決定フレームワーク</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.headerImageAlt" datatype="html">
+        <source>Rent vs Buy decision illustration</source>
+        <target>賃貸対購入の決定説明図</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareLinkedIn" datatype="html">
+        <source>Share on LinkedIn</source>
+        <target>LinkedInでシェア</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareTwitter" datatype="html">
+        <source>Share on Twitter</source>
+        <target>Twitterでシェア</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareFacebook" datatype="html">
+        <source>Share on Facebook</source>
+        <target>Facebookでシェア</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyImageAlt" datatype="html">
+        <source>Property for sale example</source>
+        <target>売り物件の例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentImageAlt" datatype="html">
+        <source>Property for rent example</source>
+        <target>賃貸物件の例</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.emailPlaceholder" datatype="html">
+        <source>Enter your email</source>
+        <target>メールアドレスを入力</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.financialPerspective" datatype="html">
+        <source>There are many factors at play when choosing the perfect house that suits your needs. From a financial perspective, however, we can compare any two options with the tools below:</source>
+        <target>あなたのニーズに合った完璧な家を選ぶ際には、多くの要因が関わります。しかし、財務的な観点から見ると、以下のツールを使用して任意の2つの選択肢を比較することができます：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.beforeDetails" datatype="html">
+        <source>But before we dive into the details, let's first formalize what we mean by a property.</source>
+        <target>詳細に入る前に、まず不動産とは何を意味するかを明確にしましょう。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyBundle" datatype="html">
+        <source>A property is a bundle of cash flows.</source>
+        <target>不動産はキャッシュフローの束です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowExample" datatype="html">
+        <source>For example, let's compare the cash flows for the two housing options described above. I'll use <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/> for the broker fees (both when buying and selling) and a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="s }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/>-year mortgage with a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="Rate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/> interest rate. Let's also assume running costs (maintenance, taxes, etc.) are <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_3" equiv-text="percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/> of the property value.</source>
+        <target>例えば、上記で説明した2つの住宅オプションのキャッシュフローを比較してみましょう。仲介手数料（購入時と売却時の両方）は<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/>、金利<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="Rate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/>の<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="s }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/>年住宅ローンを使用します。また、維持費（メンテナンス、税金など）は物件価値の<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_3" equiv-text="percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/>と仮定します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentCashflow" datatype="html">
+        <source>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity, we'll do the accounting yearly below).</source>
+        <target>物件を賃貸する場合、キャッシュフローは非常にシンプルです：月額家賃を支払うだけです（簡単にするため、以下では年次で会計処理します）。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentFormula" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) = -R \quad \text<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>for <x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> t = 1, 2, \ldots, n \]</source>
+        <target>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) = -R \quad \text<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>（<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> t = 1, 2, \ldots, n の場合） \]</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentFormulaExplanation" datatype="html">
+        <source>where R is the annual rent and n is the number of years.</source>
+        <target>ここで、Rは年間賃料、nは年数です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyCashflowIntro" datatype="html">
+        <source>In case we buy the property though, there are two types of cash flows:</source>
+        <target>一方、物件を購入する場合は、2種類のキャッシュフローがあります：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormula1" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(0) = -DP - F \]</source>
+        <target>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(0) = -DP - F \]</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormula2" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) = -M - C \quad \text<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>for <x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> t = 1, 2, \ldots, n-1 \]</source>
+        <target>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) = -M - C \quad \text<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>（<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> t = 1, 2, \ldots, n-1 の場合） \]</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormula3" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = S - M - C \]</source>
+        <target>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = S - M - C \]</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormulaExplanation" datatype="html">
+        <source>where DP is the down payment required to buy the property, F is the transaction costs or fees paid to a broker, M is the annual mortgage payment, C is the annual costs (property taxes, maintenance, insurance, etc.), S is the sale proceeds when the property is finally sold.</source>
+        <target>ここで、DPは物件購入に必要な頭金、Fは仲介業者に支払う取引費用または手数料、Mは年間住宅ローン支払い、Cは年間費用（固定資産税、メンテナンス、保険など）、Sは物件が最終的に売却される際の売却代金です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cumulativeExplanation" datatype="html">
+        <source>Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent overall, we can just sum them all together to see how "expensive" each option is.</source>
+        <target>これらのキャッシュフローは、毎年どれだけのお金を支出または獲得するかを表しています。全体でどれだけ支出したかを見たい場合は、それらをすべて合計して、各オプションがどれだけ「高額」かを確認できます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyTotalFormula" datatype="html">
+        <source>\[ V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \sum_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>t=0<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>^<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>n<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) \] </source>
+        <target>\[ V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \sum_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>t=0<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>^<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>n<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) \] </target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentTotalFormula" datatype="html">
+        <source>\[ V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \sum_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>t=0<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>^<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>n<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) \] </source>
+        <target>\[ V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \sum_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>t=0<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>^<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>n<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) \] </target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.breakevenExample" datatype="html">
+        <source>For example, if we compare renting and buying (with a mortgage). We see that the total costs cross in year <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text=":
+    &lt;/p&gt;"/>:</source>
+        <target>例えば、賃貸と購入（住宅ローン付き）を比較すると、総費用は<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text=":
+    &lt;/p&gt;"/>年目で交差することがわかります：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.expensiveRentConclusion" datatype="html">
+        <source>You read that right! The 430,000 yen monthly rent is rather expensive, and you could argue that the rental property is higher-end than the one for sale. However, it is cheaper to rent than to buy, even in the long run.</source>
+        <target>その通りです！月額43万円の家賃はかなり高額で、賃貸物件は売り物件よりも高級だと言えるかもしれません。しかし、長期的に見ても、購入するより賃貸の方が安いのです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.netWorthPerspective" datatype="html">
+        <source>And I don't mean that your rent will be less than your mortgage payment on a monthly basis. I mean that from a total net worth perspective, 25 years from now, you will be richer if you decide to rent and not to buy.</source>
+        <target>月々の家賃が住宅ローンの支払いより安いという意味ではありません。総資産価値の観点から見て、25年後には賃貸を選択した方が購入しなかった場合よりも富裕になるということです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.articleExplanation" datatype="html">
+        <source>In the rest of the article, I'll explain the assumptions and the calculations I used to reach this conclusion.</source>
+        <target>記事の残りの部分では、この結論に達するために使用した仮定と計算について説明します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.brokerFeesQuestion" datatype="html">
+        <source>Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①?</source>
+        <target>さて、問題は：①の節約により、仲介手数料を回収するのにどのくらいかかるかということです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.brokerFeesCalculation" datatype="html">
+        <source>A quick back of the enveloppe calculation tells us that with brokerage fees of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> and a forced rent saving of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="ent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>, minus <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="}}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> in runnning costs and <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_3" equiv-text="ercent: &apos;1.1-2&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> in interests, we are saving about <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_4" equiv-text="s - mortgageRate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> every year. Thus it should take about <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> / <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_4" equiv-text="s - mortgageRate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> = <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_5" equiv-text="d - costs - mortgageRate) | number : &apos;1.0-0&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> years to get the broker fees back.</source>
+        <target>簡単な概算計算によると、仲介手数料が<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>、強制的な家賃節約が<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="ent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>、運営費が<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="}}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>、利息が<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_3" equiv-text="ercent: &apos;1.1-2&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>を差し引くと、年間約<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_4" equiv-text="s - mortgageRate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>を節約できます。したがって、仲介手数料を回収するには約<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> / <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_4" equiv-text="s - mortgageRate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> = <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_5" equiv-text="d - costs - mortgageRate) | number : &apos;1.0-0&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>年かかるはずです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.realityAdjustment" datatype="html">
+        <source>In reality, it takes a bit less because we are only paying <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="| percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="interests"/> interests on the remaining loan balance and not the total property price.</source>
+        <target>実際には、残存ローン残高に対してのみ<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="| percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="interests"/>の利息を支払い、総物件価格に対してではないため、もう少し短くなります。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cumulativeDifferencePlot" datatype="html">
+        <source>We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. This will be useful when comparing with the NPV analysis in the next section.</source>
+        <target>2つの累積キャッシュフローの差をプロットして、より視覚化しやすくすることもできます。これは次のセクションのNPV分析と比較する際に役立ちます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostRate" datatype="html">
+        <source>where r is the opportunity cost rate.</source>
+        <target>ここで、rは機会費用率です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.presentValueExplanation" datatype="html">
+        <source>In fact, we can compute the Present Value (PV) instead by by discounting FV using r. PV is the value of the future cash flows in today's money.</source>
+        <target>実際には、rを使用してFVを割り引くことで、代わりに現在価値（PV）を計算できます。PVは将来のキャッシュフローの今日のお金での価値です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.pvFormula1" datatype="html">
+        <source>\[ PV_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \frac<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>FV_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n)<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/><x id="INTERPOLATION_2" equiv-text="("/>(1 + r)^n<x id="INTERPOLATION_3" equiv-text="{{ &apos;}&apos;
+          }}"/> \quad (2) \]</source>
+        <target>\[ PV_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \frac<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>FV_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n)<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/><x id="INTERPOLATION_2" equiv-text="("/>(1 + r)^n<x id="INTERPOLATION_3" equiv-text="{{ &apos;}&apos;
+          }}"/> \quad (2) \]</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowsExpression" datatype="html">
+        <source>Or, expressed directly in terms of cash flows:</source>
+        <target>または、キャッシュフローで直接表現すると：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mortgageComparison" datatype="html">
+        <source>Also, it turns out that a House Mortgage and a Leveraged Buyout are pretty similar. So if you are interested in financing your house like a Venture Capitalist 🕶️, I think this article might be for you.</source>
+        <target>また、住宅ローンとレバレッジド・バイアウトは非常に似ていることがわかります。ベンチャーキャピタリスト🕶️のように住宅を資金調達することに興味がある場合、この記事がお役に立つかもしれません。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.feedbackRequest" datatype="html">
+        <source>In any case, I hope you find it useful, or at least interesting. Also, please don't hesitate to share your thoughts and feedback 🤓.</source>
+        <target>いずれにしても、この記事が有用で、少なくとも興味深いものだと思っていただければ幸いです。また、ご意見やフィードバックをお聞かせください🤓。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.readOnEncouragement" datatype="html">
+        <source>If you are interested in the details, though, please read on.</source>
+        <target>詳細にご興味がおありの場合は、ぜひ続きをお読みください。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionUpfront" datatype="html">
+        <source>Let's start with the conclusion so you can skip the rest of the article 😉.</source>
+        <target>記事の残りをスキップできるよう、まず結論から始めましょう😉。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mathematicalAdvantage" datatype="html">
+        <source> Mathematically, buying becomes advantageous when \( V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) &gt; V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) \). </source>
+        <target>数学的には、\( V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) &gt; V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) \)のときに購入が有利になります。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.timeHorizonAdvice" datatype="html">
+        <source>Or in other words, it only makes sense to buy the property if we intend to live in it for more than <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="years. Als"/> years. Also, the longer we live in the house, the more advantageous it is to buy.</source>
+        <target>言い換えれば、<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="years. Als"/>年以上住む予定がある場合にのみ、物件を購入することに意味があります。また、家に住む期間が長いほど、購入の方が有利になります。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.breakevenExplanation" datatype="html">
+        <source>To better understand why we need <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="years to b"/> years to break even, let's consider the two aspects of paying back the loan:</source>
+        <target>なぜ損益分岐点に<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="years to b"/>年必要なのかをよりよく理解するために、ローン返済の2つの側面を考えてみましょう：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.realCostExplanation" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="Only ② is a real cost as eve"/>Only ② is a real cost as everything we invest in the house is money we will get back when we sell it.<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <target><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="Only ② is a real cost as eve"/>②のみが実際のコストです。なぜなら、家に投資したすべてのお金は、売却時に回収できるからです。<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.plotExplanation" datatype="html">
+        <source> Specifically, we plot \(V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) - V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) \). </source>
+        <target>具体的には、\(V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) - V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) \)をプロットします。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostIntro" datatype="html">
+        <source>There is another factor to consider: the Opportunity Cost of buying vs renting.</source>
+        <target>考慮すべきもう一つの要因があります：購入対賃貸の機会費用です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.downPaymentInvestment" datatype="html">
+        <source>For example, let's say that instead of making a big down payment and a small loan for the house, we instead rent and invest the down payment in the stock market or in a remunerated account. Over time, that investment will grow at some rate r.</source>
+        <target>例えば、住宅のために大きな頭金を支払って小額のローンを組む代わりに、賃貸をして頭金を株式市場や有利子口座に投資するとします。時間が経つにつれて、その投資は何らかのレートrで成長します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mortgageInvestment" datatype="html">
+        <source>Similarly, if the mortgage we pay is less than the rent we would have paid, then we could invest the difference in the stock market.</source>
+        <target>同様に、支払う住宅ローンが支払うであろう家賃より少ない場合、その差額を株式市場に投資することができます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.futureValueMaximization" datatype="html">
+        <source>Building on this idea, we can try to maximize the Future Value (FV) of our bank account by investing whatever money we have left over each year.</source>
+        <target>このアイデアを基に、毎年残ったお金を投資することで、銀行口座の将来価値（FV）を最大化することができます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostQuestion" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>How do we know the opportunity cost rate?<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <target><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>機会費用率をどのようにして知るのでしょうか？<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.noSimpleAnswer" datatype="html">
+        <source>There isn't a simple answer to this question unfortunately.</source>
+        <target>残念ながら、この質問に対する簡単な答えはありません。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sp500Comparison" datatype="html">
+        <source>A rough back of the envelope calculation is to compare the <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>8.7%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> yearly return of the SP500 in during the past <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>25<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> years with the <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>~3.5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> price increase of real estate in Tokyo and <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>~0.7%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> annualized inflation rate.</source>
+        <target>概算計算では、過去<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>25<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年間のS&P500の年間収益率<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>8.7%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>と、東京の不動産価格上昇率<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>約3.5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>、年率インフレ率<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>約0.7%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>を比較します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostEstimate" datatype="html">
+        <source>This gives a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>4.5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> estimate for the opportunity cost compared to the SP500.</source>
+        <target>これにより、S&P500と比較した機会費用は<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>4.5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>と推定されます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.pastDataWarning" datatype="html">
+        <source>Of course, this estimate are based on past data and is no guarantee of what will happen in the future.</source>
+        <target>もちろん、この推定は過去のデータに基づいており、将来何が起こるかを保証するものではありません。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.presentValueComparison" datatype="html">
+        <source>So, let's again compare the two options, but using the Present Value of buying a house with a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="|
+        percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="opportunit"/> opportunity cost.</source>
+        <target>では、<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="|
+        percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="opportunit"/>の機会費用で住宅を購入する現在価値を使用して、再び2つの選択肢を比較してみましょう。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.recommendationChanges" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>The buy vs. rent recommendation completely changes!<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <target><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>購入対賃貸の推奨が完全に変わります！<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.breakevenTimeChange" datatype="html">
+        <source>It now takes <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>9<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> years instead of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>4<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> to break even, and the renting option looks much more attractive in the long run. In fact, buying is only a good option during a specific <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>8<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>-year window.</source>
+        <target>損益分岐点に<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>4<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年ではなく<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>9<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年かかるようになり、長期的には賃貸オプションがはるかに魅力的に見えます。実際、購入は特定の<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>8<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年間のウィンドウでのみ良い選択肢です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.interestingResult" datatype="html">
+        <source>I personally find this result quite interesting! Before doing the analysis, I would have never thought that timing the sale of your house actually mattered!</source>
+        <target>個人的に、この結果は非常に興味深いと思います！分析を行う前は、住宅の売却時期が実際に重要だとは思いもしませんでした！</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvOptimization" datatype="html">
+        <source>OK, so using NPV to assess the buy vs rent decision, we get a better sense of whether we should buy, and also when we should sell. However, this tells a story in terms of absolute amounts of money, and if we really want to optimize, we could sell one house at the right timing and immediately buy another one and so on so as to maximize the slope of the NPV profile.</source>
+        <target>NPVを使用して購入対賃貸の決定を評価することで、購入すべきかどうか、またいつ売却すべきかをよりよく理解できます。しかし、これは絶対的な金額での話であり、本当に最適化したい場合は、適切なタイミングで一つの家を売却し、すぐに別の家を購入するなどして、NPVプロファイルの傾きを最大化することができます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rateOfReturnAssessment" datatype="html">
+        <source>For that reason, it makes sense to assess the rate of return of the investment for each year. We know that depending on the timing, the rate of return of our investment will be more or less than <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="|
+        percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="thanks to"/> thanks to the NPV profile. However, we don't know exactly the value of our rate of return for each year.</source>
+        <target>そのため、毎年の投資収益率を評価することが理にかなっています。NPVプロファイルのおかげで、タイミングによって投資収益率が<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="|
+        percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="thanks to"/>より多かったり少なかったりすることがわかります。しかし、各年の正確な収益率の値はわかりません。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrExplanation" datatype="html">
+        <source>This is what the Internal Rate of Return (IRR) is for. There isn't a simple closed formula for the IRR, but we can use a numerical method to compute it from the undiscounted cash flows.</source>
+        <target>これが内部収益率（IRR）の目的です。IRRには簡単な閉じた式はありませんが、割引されていないキャッシュフローから数値的手法を使用して計算することができます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrSurprisingResult" datatype="html">
+        <source>Again a surprising result. To be optimal, we should sell at year <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>11<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> according to the IRR calculation. This is one year earlier than what the NPV identifies as the optimal year to maximize the value of just one house investment.</source>
+        <target>これもまた驚くべき結果です。IRR計算によると、最適であるためには<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>11<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年目に売却すべきです。これは、NPVが一つの住宅投資の価値を最大化する最適年として特定する年より1年早いです。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageEffect" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>In that graph, we can see the leverage effect of borrowing!<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <target><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>そのグラフでは、借入のレバレッジ効果を見ることができます！<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.immediateSaleLoss" datatype="html">
+        <source>If we buy and sell the property immediately, we will lose the broker fees and get nothing. So the IRR is negative. But as we hold on to the property, the IRR will increase.</source>
+        <target>物件をすぐに購入して売却すると、仲介手数料を失い、何も得られません。そのため、IRRは負になります。しかし、物件を保有し続けるにつれて、IRRは増加します。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.longTermReturn" datatype="html">
+        <source>In the longer run, the rate of return is the rent we save (4.8% when expressed as a percentage of the buy price), minus the cost ratio of 1.0%, which equals 3.8%. That is the return the house investment tends toward the longer we hold it.</source>
+        <target>長期的には、収益率は私たちが節約する家賃（購入価格のパーセンテージで表すと4.8%）から、コスト比率1.0%を差し引いた3.8%です。これが、長期保有するほど住宅投資が向かう収益率です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageExplanation" datatype="html">
+        <source> However, since we borrow money, in the beginning, we will only have invested a small fraction of the total price of the house. But we will still get <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="s | percent:
+            &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the tot"/> of the total price of the house. <x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>This is why the IRR is peaking higher than just the rent yield.<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <target>しかし、お金を借りるため、最初は住宅の総価格のわずかな部分しか投資していません。それでも住宅の総価格の<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="s | percent:
+            &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the tot"/>を得ることができます。<x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>これがIRRが単なる賃料利回りよりも高くピークを迎える理由です。<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.finalQuestion" datatype="html">
+        <source>So, should you rent or buy 🤷? Well, it depends on a few factors. The immediate cost of rent 💸 vs buy 💰 is one factor, of course, but opportunity cost and timing are also critically important!</source>
+        <target>では、賃貸すべきか購入すべきか🤷？これはいくつかの要因によります。賃貸💸対購入💰の直接的なコストは確かに一つの要因ですが、機会費用とタイミングも極めて重要です！</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ruleOfThumb" datatype="html">
+        <source>As a very rough rule of thumb, if you can keep the cost of renting below <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> of the property value, then aiming to stay at least between <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>9<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> years should give you enough time to cover brokerage fees and use leverage to your advantage.</source>
+        <target>非常に大まかな経験則として、賃貸費用を物件価値の<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>以下に抑えることができれば、少なくとも<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>9<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年間は滞在することを目指すことで、仲介手数料をカバーし、レバレッジを有利に活用するのに十分な時間が得られます。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.japanOpportunityCost" datatype="html">
+        <source>Recently, one could argue that, in Japan, access to the global stock market has created a really high opportunity cost which makes it difficult to justify buying at all. But future returns may be quite different from the past!</source>
+        <target>最近では、日本において、グローバル株式市場へのアクセスが非常に高い機会費用を生み出し、購入を正当化することが困難になっていると言えるかもしれません。しかし、将来の収益は過去とは大きく異なる可能性があります！</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.futureResearch" datatype="html">
+        <source>In fact, buying a house and investing in the stock market have different risk profiles. So in a future article, I would like to investigate this aspect using historical data for the Japanese housing market and the international stock market.</source>
+        <target>実際、住宅の購入と株式市場への投資は異なるリスクプロファイルを持っています。そこで将来の記事では、日本の住宅市場と国際株式市場の過去のデータを使用して、この側面を調査したいと思います。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocExamples" datatype="html">
+        <source>Example Properties</source>
+        <target>例物件</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocComparison" datatype="html">
+        <source>So, which is best?</source>
+        <target>では、どちらが良いのでしょうか？</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocModelingProperty" datatype="html">
+        <source>Modeling a Property</source>
+        <target>物件のモデル化</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocCumulative" datatype="html">
+        <source>Cumulative Cash Flows</source>
+        <target>累積キャッシュフロー</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocNpv" datatype="html">
+        <source>Opportunity Cost and Net Present Value (NPV)</source>
+        <target>機会費用と正味現在価値（NPV）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocIrr" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <target>内部収益率（IRR）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyLocation" datatype="html">
+        <source>Location:</source>
+        <target>場所：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyLayout" datatype="html">
+        <source>Layout:</source>
+        <target>間取り：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyFloors" datatype="html">
+        <source>Number of floors:</source>
+        <target>階数：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyArea" datatype="html">
+        <source>Floor Area:</source>
+        <target>床面積：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyAge" datatype="html">
+        <source>Age:</source>
+        <target>築年数：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyPrice" datatype="html">
+        <source>Price:</source>
+        <target>価格：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyRent" datatype="html">
+        <source>Rent:</source>
+        <target>家賃：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyStation" datatype="html">
+        <source>Station:</source>
+        <target>駅：</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolNpv" datatype="html">
+        <source>Net Present Value (NPV)</source>
+        <target>正味現在価値（NPV）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolIrr" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <target>内部収益率（IRR）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.negativeCashflows" datatype="html">
+        <source>Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</source>
+        <target>負のキャッシュフロー：頭金、住宅ローン、固定資産税、メンテナンス、保険など</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.positiveCashflows" datatype="html">
+        <source>Positive: the proceeds from selling the property.</source>
+        <target>正のキャッシュフロー：物件売却による収益</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.forcedSavings" datatype="html">
+        <source>① Part of the monthly payment are forced savings we make instead of paying a rent.</source>
+        <target>①月額支払いの一部は、家賃を支払う代わりに行う強制貯蓄です。</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.bankInterest" datatype="html">
+        <source>② The other part is used to pay the bank interest.</source>
+        <target>②残りの部分は銀行への利息支払いに使用されます。</target>
+      </trans-unit>
+      <trans-unit id="chart.holdingPeriodYears" datatype="html">
+        <source>Holding Period (Years)</source>
+        <target>保有期間（年）</target>
+      </trans-unit>
+      <trans-unit id="chart.irrPercent" datatype="html">
+        <source>Internal Rate of Return (%)</source>
+        <target>内部収益率（%）</target>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeCashflowsTitle" datatype="html">
+        <source>Cumulative Cash Flows: Value of Rent vs Buy</source>
+        <target>累積キャッシュフロー：賃貸対購入の価値</target>
+      </trans-unit>
+      <trans-unit id="chart.years" datatype="html">
+        <source>Years</source>
+        <target>年</target>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeValueYenMillions" datatype="html">
+        <source>Cumulative Value (¥ millions)</source>
+        <target>累積価値（百万円）</target>
+      </trans-unit>
+      <trans-unit id="chart.presentValueYenMillions" datatype="html">
+        <source>Present Value (¥ millions)</source>
+        <target>現在価値（百万円）</target>
+      </trans-unit>
+      <trans-unit id="chart.year" datatype="html">
+        <source>Year</source>
+        <target>年</target>
+      </trans-unit>
+      <trans-unit id="chart.cashflowYenMillions" datatype="html">
+        <source>Cash Flow (¥ millions)</source>
+        <target>キャッシュフロー（百万円）</target>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeDifferenceYenMillions" datatype="html">
+        <source>Cumulative Difference (¥ millions)</source>
+        <target>累積差額（百万円）</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mainFinding" datatype="html">
+        <source>With a 25 years horizon, the rental option is cheaper than the buying option.</source>
+        <target>25年のタイムホライズンでは、賃貸オプションが購入オプションよりも安くなります。</target>
+      </trans-unit>
+      <trans-unit id="chart.irrFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> The Internal Rate of Return (IRR) represents the annualized return rate of the buy vs rent investment over different holding periods. Higher IRR values indicate better investment performance.</source>
+        <target><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>図：<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>内部収益率（IRR）は、異なる保有期間における購入対賃貸投資の年率収益率を表します。IRR値が高いほど、投資パフォーマンスが良いことを示します。</target>
+      </trans-unit>
+      <trans-unit id="chart.rentVsBuyFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> Cumulative cash flows show the total amount spent over time for each option. The rent option follows a linear path with constant monthly payments, while the buy option shows higher initial costs due to the down payment, followed by a slighly curved path of as the mortgage is paid off on year 35. After that, the slope improves just slighly and stays constant.</source>
+        <target><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>図：<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>累積キャッシュフローは、各選択肢の時間経過による総支出額を示します。賃貸オプションは一定の月額支払いで線形の経路をたどり、購入オプションは頭金による初期コストが高く、35年目に住宅ローンが完済されるまでわずかに曲がった経路をたどります。その後、傾きはわずかに改善され、一定に保たれます。</target>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeDifferenceFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> The difference between cumulative cash flows clearly shows the breakeven point where buying becomes financially advantageous over renting. Positive values indicate that buying results in better financial outcomes, while negative values favor renting. The steeper positive slope after year 35 reflects the elimination of mortgage payments.</source>
+        <target><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>図：<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>累積キャッシュフローの差額は、購入が賃貸よりも経済的に有利になる損益分岐点を明確に示しています。正の値は購入がより良い経済的結果をもたらすことを示し、負の値は賃貸を支持します。35年後のより急な正の傾きは、住宅ローンの完済を反映しています。</target>
+      </trans-unit>
+      <trans-unit id="chart.pvBuyFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> The present value advantage shows when buying becomes financially superior to renting in net present value terms. Positive values indicate buying is better, while negative values favor renting. The analysis accounts for the time value of money at a 5% discount rate, revealing the optimal holding periods for real estate investment. The blue point and grey vertical line highlight the maximum present value advantage and its corresponding optimal holding period.</source>
+        <target><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>図：<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>現在価値の優位性は、正味現在価値の観点から購入が賃貸よりも経済的に優位になる時期を示しています。正の値は購入が良いことを示し、負の値は賃貸を支持します。この分析は5%の割引率での貨幣の時間価値を考慮し、不動産投資の最適保有期間を明らかにしています。青い点とグレーの垂直線は、最大現在価値優位性とその対応する最適保有期間を強調しています。</target>
+      </trans-unit>
+      <trans-unit id="chart.cashflowFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> Annual cash flows show the yearly financial impact of each option. The rent option shows consistent annual payments of ¥5.16M per year. The buy option shows higher initial costs due to the down payment (year 0), annual operating costs including mortgage payments (years 1-20), then reduced costs after mortgage payoff (years 21-24), and positive cash flow in year 25 from property sale proceeds. The grey dashed line indicates when the mortgage is fully paid off.</source>
+        <target><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>図：<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>年間キャッシュフローは各選択肢の年間の経済的影響を示しています。賃貸オプションは年間516万円の一定の支払いを示しています。購入オプションは頭金による初期コスト（0年目）、住宅ローン支払いを含む年間運営コスト（1-20年目）、住宅ローン完済後の削減されたコスト（21-24年目）、物件売却収益による25年目の正のキャッシュフローを示しています。グレーの破線は住宅ローンが完全に完済される時期を示しています。</target>
+      </trans-unit>
+      <trans-unit id="chart.buyingIsBetter" datatype="html">
+        <source>Buying is Better</source>
+        <target>購入が有利</target>
+      </trans-unit>
+      <trans-unit id="chart.rentingIsBetter" datatype="html">
+        <source>Renting is Better</source>
+        <target>賃貸が有利</target>
+      </trans-unit>
+      <trans-unit id="chart.buyRentDifference" datatype="html">
+        <source>Buy - Rent Difference</source>
+        <target>購入 - 賃貸差額</target>
+      </trans-unit>
+      <trans-unit id="chart.pvAdvantage" datatype="html">
+        <source>PV Advantage</source>
+        <target>現在価値優位性</target>
+      </trans-unit>
+      <trans-unit id="chart.maximumPoint" datatype="html">
+        <source>Maximum Point</source>
+        <target>最大ポイント</target>
+      </trans-unit>
+      <trans-unit id="chart.rentCashFlow" datatype="html">
+        <source>Rent Cash Flow</source>
+        <target>賃貸キャッシュフロー</target>
+      </trans-unit>
+      <trans-unit id="chart.buyCashFlow" datatype="html">
+        <source>Buy Cash Flow</source>
+        <target>購入キャッシュフロー</target>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeCashFlowDifferenceTitle" datatype="html">
+        <source>Cumulative Cash Flow Difference: Buy vs Rent</source>
+        <target>累積キャッシュフロー差額：購入対賃貸</target>
+      </trans-unit>
+      <trans-unit id="chart.annualCashFlowsTitle" datatype="html">
+        <source>Annual Cash Flows: Rent vs Buy</source>
+        <target>年間キャッシュフロー：賃貸対購入</target>
+      </trans-unit>
+      <trans-unit id="chart.mortgagePaidOff" datatype="html">
+        <source>Mortgage Paid Off</source>
+        <target>住宅ローン完済</target>
+      </trans-unit>
+      <trans-unit id="chart.optimalYear" datatype="html">
+        <source>Optimal: Year</source>
+        <target>最適：</target>
+      </trans-unit>
+      <trans-unit id="chart.initialYear" datatype="html">
+        <source>Initial Year</source>
+        <target>初年度</target>
+      </trans-unit>
+      <trans-unit id="chart.saleYear" datatype="html">
+        <source>Sale Year (25)</source>
+        <target>売却年（25年目）</target>
+      </trans-unit>
+      <trans-unit id="chart.lastMortgagePayment" datatype="html">
+        <source>Last mortgage payment</source>
+        <target>最終住宅ローン支払い</target>
+      </trans-unit>
+      <trans-unit id="chart.mortgagePaidOffYear" datatype="html">
+        <source>Mortgage paid off</source>
+        <target>住宅ローン完済</target>
+      </trans-unit>
+      <trans-unit id="chart.includingSale" datatype="html">
+        <source>incl. sale</source>
+        <target>売却含む</target>
+      </trans-unit>
+      <trans-unit id="chart.noMortgage" datatype="html">
+        <source>no mortgage</source>
+        <target>住宅ローンなし</target>
+      </trans-unit>
+      <trans-unit id="chart.finalMortgagePaymentMade" datatype="html">
+        <source>Final mortgage payment made</source>
+        <target>最終住宅ローン支払い完了</target>
+      </trans-unit>
+      <trans-unit id="chart.onlyPropertyTaxMaintenance" datatype="html">
+        <source>Only property tax &amp; maintenance from now on</source>
+        <target>今後は固定資産税とメンテナンスのみ</target>
+      </trans-unit>
+      <trans-unit id="chart.holdingPeriodYears" datatype="html">
+        <source>Holding Period: years</source>
+        <target>保有期間：年</target>
+      </trans-unit>
+      <trans-unit id="chart.pvAdvantageMaximum" datatype="html">
+        <source>PV Advantage (Maximum)</source>
+        <target>現在価値優位性（最大）</target>
+      </trans-unit>
+      <trans-unit id="chart.differenceInterpretation" datatype="html">
+        <source>Difference: ¥M (Buying is better)</source>
+        <target>差額：¥M（購入が有利）</target>
+      </trans-unit>
+      <trans-unit id="chart.differenceInterpretationRent" datatype="html">
+        <source>Difference: ¥M (Renting is better)</source>
+        <target>差額：¥M（賃貸が有利）</target>
+      </trans-unit>
+      <trans-unit id="chart.rentValue" datatype="html">
+        <source>Rent Value</source>
+        <target>賃貸価値</target>
+      </trans-unit>
+      <trans-unit id="chart.buyValue" datatype="html">
+        <source>Buy Value</source>
+        <target>購入価値</target>
+      </trans-unit>
+      <trans-unit id="chart.difference" datatype="html">
+        <source>Difference: ¥M</source>
+        <target>差額：¥M</target>
+      </trans-unit>
+      <trans-unit id="chart.maximumIrrTitle" datatype="html">
+        <source>Maximum IRR: % (Year )</source>
+        <target>最大IRR：%（年目）</target>
+      </trans-unit>
+      <trans-unit id="chart.irrMaximum" datatype="html">
+        <source>IRR: % (Maximum)</source>
+        <target>IRR：%（最大）</target>
+      </trans-unit>
+      <trans-unit id="chart.irrPercent" datatype="html">
+        <source>IRR: %</source>
+        <target>IRR：%</target>
+      </trans-unit>
+      <trans-unit id="chart.opportunityCost" datatype="html">
+        <source>Opportunity Cost: %</source>
+        <target>機会費用：%</target>
+      </trans-unit>
+      <trans-unit id="chart.longTermYield" datatype="html">
+        <source>Long Term Yield: %</source>
+        <target>長期利回り：%</target>
+      </trans-unit>
+      <trans-unit id="chart.irrLabel" datatype="html">
+        <source>IRR (%)</source>
+        <target>IRR (%)</target>
+      </trans-unit>
+      <trans-unit id="chart.maximumPvAdvantageTitle" datatype="html">
+        <source>Maximum PV Advantage: ¥M (Year )</source>
+        <target>最大現在価値優位性：¥M（年目）</target>
+      </trans-unit>
+      <trans-unit id="chart.betterToBuy" datatype="html">
+        <source>Better to Buy</source>
+        <target>購入が有利</target>
+      </trans-unit>
+      <trans-unit id="chart.betterToRent" datatype="html">
+        <source>Better to Rent</source>
+        <target>賃貸が有利</target>
+      </trans-unit>
+      <trans-unit id="chart.npvLine" datatype="html">
+        <source>NPV Line</source>
+        <target>NPV線</target>
+      </trans-unit>
+      <trans-unit id="chart.npvYenMan" datatype="html">
+        <source>NPV (万円)</source>
+        <target>NPV（万円）</target>
+      </trans-unit>
+      <trans-unit id="chart.year" datatype="html">
+        <source>Year</source>
+        <target>年</target>
+      </trans-unit>
+      <trans-unit id="chart.irrPercent" datatype="html">
+        <source>IRR (%)</source>
+        <target>IRR (%)</target>
+      </trans-unit>
+      <trans-unit id="chart.internalRateOfReturnTitle" datatype="html">
+        <source>Internal Rate of Return: Buy vs Rent</source>
+        <target>内部収益率：購入対賃貸</target>
+      </trans-unit>
+      <trans-unit id="chart.rentCashflow" datatype="html">
+        <source>Rent Cashflow</source>
+        <target>賃貸キャッシュフロー</target>
+      </trans-unit>
+      <trans-unit id="chart.buyCashflow" datatype="html">
+        <source>Buy Cashflow</source>
+        <target>購入キャッシュフロー</target>
+      </trans-unit>
+      <trans-unit id="chart.cashflowYenMan" datatype="html">
+        <source>Cashflow (万円)</source>
+        <target>キャッシュフロー（万円）</target>
+      </trans-unit>
+      <trans-unit id="chart.annualCashflowTitle" datatype="html">
+        <source>Annual Cashflow: Rent vs Buy</source>
+        <target>年間キャッシュフロー：賃貸対購入</target>
+      </trans-unit>
+      <trans-unit id="chart.buyHouse" datatype="html">
+        <source>Buy House</source>
+        <target>住宅購入</target>
+      </trans-unit>
+      <trans-unit id="chart.investInStocks" datatype="html">
+        <source>Invest in Stocks</source>
+        <target>株式投資</target>
+      </trans-unit>
+      <trans-unit id="chart.valueYenMan" datatype="html">
+        <source>Value (万円)</source>
+        <target>価値（万円）</target>
+      </trans-unit>
+      <trans-unit id="chart.buyHouseVsStockTitle" datatype="html">
+        <source>Buy House vs Stock Investment Net Worth</source>
+        <target>住宅購入対株式投資純資産</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolWelcome" datatype="html">
+        <source>Welcome to the rent vs buy calculator. Feel free to tweak everything from property depreciation curves to opportunity costs and see the real-time impact! 🚀</source>
+        <target>賃貸対購入計算機へようこそ。物件の減価償却曲線から機会費用まで、すべてを調整してリアルタイムの影響を確認してください！🚀</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.years" datatype="html">
+        <source>years</source>
+        <target>年</target>
+      </trans-unit>
+      <trans-unit id="rentorbuy.percent" datatype="html">
+        <source>%</source>
+        <target>%</target>
       </trans-unit>
     </body>
   </file>

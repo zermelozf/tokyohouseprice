@@ -36,7 +36,7 @@ Chart.register(
         <canvas #chartCanvas></canvas>
       </div>
       <div class="figure-caption">
-        <p>
+        <p i18n="@@chart.rentVsBuyFigureCaption">
           <span class="figure-label">Figure:</span> 
           Cumulative cash flows show the total amount spent over time for each option. 
           The rent option follows a linear path with constant monthly payments, while the buy option 
@@ -119,7 +119,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
         labels: labels,
         datasets: [
           {
-            label: 'Rent Value',
+            label: $localize`:@@chart.rentValue:Rent Value`,
             data: rentData,
             borderColor: '#ff6b6b',
             borderWidth: 3,
@@ -131,7 +131,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
             fill: false
           },
           {
-            label: 'Buy Value',
+            label: $localize`:@@chart.buyValue:Buy Value`,
             data: buyData,
             borderColor: '#4ecdc4',
             borderWidth: 3,
@@ -154,7 +154,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
         plugins: {
           title: {
             display: true,
-            text: 'Cumulative Cash Flows: Value of Rent vs Buy',
+            text: $localize`:@@chart.cumulativeCashflowsTitle:Cumulative Cash Flows: Value of Rent vs Buy`,
             font: {
               size: 16
             }
@@ -185,7 +185,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
                   const buyValue = context.find(c => c.dataset.label?.includes('Buy'))?.parsed.y || 0;
                   const rentValue = context.find(c => c.dataset.label?.includes('Rent'))?.parsed.y || 0;
                   const difference = buyValue - rentValue;
-                  return [`Difference: ¥${difference.toFixed(1)}M`];
+                  return [`${$localize`:@@chart.difference:Difference: ¥M`}`.replace('¥M', `¥${difference.toFixed(1)}M`)];
                 }
                 return [];
               }
@@ -196,7 +196,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
           x: {
             title: {
               display: true,
-              text: 'Years'
+              text: $localize`:@@chart.years:Years`
             },
             grid: {
               color: '#e0e0e0'
@@ -205,7 +205,7 @@ export class RentVsBuyChartComponent implements OnInit, AfterViewInit, OnDestroy
           y: {
             title: {
               display: true,
-              text: 'Cumulative Value (¥ millions)'
+              text: $localize`:@@chart.cumulativeValueYenMillions:Cumulative Value (¥ millions)`
             },
             grid: {
               color: '#e0e0e0'

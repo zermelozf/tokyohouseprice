@@ -38,7 +38,7 @@ Chart.register(
         <canvas #chartCanvas></canvas>
       </div>
       <div class="figure-caption">
-        <p>
+        <p i18n="@@chart.irrFigureCaption">
           <span class="figure-label">Figure:</span> 
           The Internal Rate of Return (IRR) represents the annualized return rate of the buy vs rent investment 
           over different holding periods. Higher IRR values indicate better investment performance.
@@ -151,7 +151,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: labels,
         datasets: [
           {
-            label: 'IRR (%)',
+            label: $localize`:@@chart.irrLabel:IRR (%)`,
             data: irrValues,
             borderColor: '#9b59b6',
             borderWidth: 3,
@@ -171,7 +171,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
           x: {
             title: {
               display: true,
-              text: 'Holding Period (Years)',
+              text: $localize`:@@chart.holdingPeriodYears:Holding Period (Years)`,
               font: {
                 size: 14,
                 weight: 'bold'
@@ -184,7 +184,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
           y: {
             title: {
               display: true,
-              text: 'Internal Rate of Return (%)',
+              text: $localize`:@@chart.irrPercent:Internal Rate of Return (%)`,
               font: {
                 size: 14,
                 weight: 'bold'
@@ -207,7 +207,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
           },
           title: {
             display: true,
-            text: `Maximum IRR: ${maxIRR.toFixed(2)}% (Year ${maxIRRYear})`,
+            text: `${$localize`:@@chart.maximumIrrTitle:Maximum IRR: % (Year )`}`.replace('%', `${maxIRR.toFixed(2)}%`).replace('Year ', `Year ${maxIRRYear}`),
             font: {
               size: 16,
               weight: 'bold'
@@ -231,8 +231,8 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 const value = context.parsed.y;
                 const isMax = context.dataIndex === maxIRRIndex;
                 return isMax ? 
-                  `IRR: ${value.toFixed(2)}% (Maximum)` : 
-                  `IRR: ${value.toFixed(2)}%`;
+                  `${$localize`:@@chart.irrMaximum:IRR: % (Maximum)`}`.replace('%', `${value.toFixed(2)}%`) : 
+                  `${$localize`:@@chart.irrPercent:IRR: %`}`.replace('%', `${value.toFixed(2)}%`);
               }
             }
           },
@@ -247,7 +247,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 borderDash: [5, 5],
                 label: {
                   display: true,
-                  content: `Optimal: Year ${maxIRRYear}`,
+                  content: `${$localize`:@@chart.optimalYear:Optimal: Year`} ${maxIRRYear}`,
                   position: 'start',
                   backgroundColor: 'rgba(231, 76, 60, 0.8)',
                   color: 'white',
@@ -268,7 +268,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 borderDash: [4, 4],
                 label: {
                   display: true,
-                  content: `Opportunity Cost: ${opportunityCostPercent.toFixed(1)}%`,
+                  content: `${$localize`:@@chart.opportunityCost:Opportunity Cost: %`}`.replace('%', `${opportunityCostPercent.toFixed(1)}%`),
                   position: 'end',
                   yAdjust: -15,
                   backgroundColor: 'rgba(128, 128, 128, 0.1)',
@@ -289,7 +289,7 @@ export class IrrChartComponent implements OnInit, AfterViewInit, OnDestroy {
                 borderDash: [4, 4],
                 label: {
                   display: true,
-                  content: `Long Term Yield: ${rentalYieldPercent.toFixed(1)}%`,
+                  content: `${$localize`:@@chart.longTermYield:Long Term Yield: %`}`.replace('%', `${rentalYieldPercent.toFixed(1)}%`),
                   position: 'end',
                   yAdjust: -15,
                   backgroundColor: 'rgba(128, 128, 128, 0.1)',

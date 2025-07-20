@@ -42,7 +42,7 @@ interface DifferenceData {
         <canvas #chartCanvas></canvas>
       </div>
       <div class="figure-caption">
-        <p>
+        <p i18n="@@chart.cumulativeDifferenceFigureCaption">
           <span class="figure-label">Figure:</span> 
           The difference between cumulative cash flows clearly shows the breakeven point where buying 
           becomes financially advantageous over renting. Positive values indicate that buying results 
@@ -132,7 +132,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
         labels: labels,
         datasets: [
           {
-            label: 'Buying is Better',
+            label: $localize`:@@chart.buyingIsBetter:Buying is Better`,
             data: positiveData,
             borderColor: '#4ecdc4',
             backgroundColor: 'rgba(78, 205, 196, 0.3)',
@@ -146,7 +146,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
             spanGaps: false
           },
           {
-            label: 'Renting is Better',
+            label: $localize`:@@chart.rentingIsBetter:Renting is Better`,
             data: negativeData,
             borderColor: '#ff6b6b',
             backgroundColor: 'rgba(255, 107, 107, 0.3)',
@@ -160,7 +160,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
             spanGaps: false
           },
           {
-            label: 'Buy - Rent Difference',
+            label: $localize`:@@chart.buyRentDifference:Buy - Rent Difference`,
             data: differenceData,
             borderColor: '#333',
             borderWidth: 2,
@@ -183,7 +183,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
         plugins: {
           title: {
             display: true,
-            text: 'Cumulative Cash Flow Difference: Buy vs Rent',
+            text: $localize`:@@chart.cumulativeCashFlowDifferenceTitle:Cumulative Cash Flow Difference: Buy vs Rent`,
             font: {
               size: 16
             }
@@ -193,7 +193,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
             position: 'top',
             labels: {
               filter: function (legendItem: any, chartData: any) {
-                return legendItem.text !== 'Buy - Rent Difference';
+                return legendItem.text !== $localize`:@@chart.buyRentDifference:Buy - Rent Difference`;
               }
             }
           },
@@ -211,8 +211,10 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
               },
               label: (context: TooltipItem<'line'>) => {
                 const value = context.parsed.y;
-                const interpretation = value > 0 ? 'Buying is better' : 'Renting is better';
-                return `Difference: ¥${value.toFixed(1)}M (${interpretation})`;
+                const interpretation = value > 0 ? 
+                  $localize`:@@chart.differenceInterpretation:Difference: ¥M (Buying is better)` :
+                  $localize`:@@chart.differenceInterpretationRent:Difference: ¥M (Renting is better)`;
+                return interpretation.replace('¥M', `¥${value.toFixed(1)}M`);
               }
             }
           }
@@ -221,7 +223,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
           x: {
             title: {
               display: true,
-              text: 'Years'
+              text: $localize`:@@chart.years:Years`
             },
             grid: {
               color: '#e0e0e0'
@@ -230,7 +232,7 @@ export class CumulativeDifferenceChartComponent implements OnInit, AfterViewInit
           y: {
             title: {
               display: true,
-              text: 'Cumulative Difference (¥ millions)'
+              text: $localize`:@@chart.cumulativeDifferenceYenMillions:Cumulative Difference (¥ millions)`
             },
             grid: {
               color: '#e0e0e0'

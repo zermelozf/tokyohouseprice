@@ -2,6 +2,38 @@
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="en-US" datatype="plaintext" original="ng2.template">
     <body>
+      <trans-unit id="chart.year" datatype="html">
+        <source>Year</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/cashflow-chart/cashflow-chart.component.ts</context>
+          <context context-type="linenumber">242</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.cashflowYenMillions" datatype="html">
+        <source>Cash Flow (¥ millions)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/cashflow-chart/cashflow-chart.component.ts</context>
+          <context context-type="linenumber">251</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.years" datatype="html">
+        <source>Years</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/cumulative-difference-chart/cumulative-difference-chart.component.ts</context>
+          <context context-type="linenumber">224</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-vs-buy-chart/rent-vs-buy-chart.component.ts</context>
+          <context context-type="linenumber">199</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeDifferenceYenMillions" datatype="html">
+        <source>Cumulative Difference (¥ millions)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/cumulative-difference-chart/cumulative-difference-chart.component.ts</context>
+          <context context-type="linenumber">233</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="article.cityscape" datatype="html">
         <source>Tokyo cityscape</source>
         <context-group purpose="location">
@@ -641,12 +673,28 @@
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">417</context>
         </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">219</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">614</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">659</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="article.tryApp" datatype="html">
         <source>Try the App!</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">421</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">618</context>
         </context-group>
       </trans-unit>
       <trans-unit id="article.github" datatype="html">
@@ -655,12 +703,20 @@
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">422</context>
         </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">619</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="article.contact" datatype="html">
         <source>Contact</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">423</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">620</context>
         </context-group>
       </trans-unit>
       <trans-unit id="article.twitter" datatype="html">
@@ -669,12 +725,20 @@
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">428</context>
         </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">625</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="article.linkedin" datatype="html">
         <source>LinkedIn</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">432</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">629</context>
         </context-group>
       </trans-unit>
       <trans-unit id="article.disclaimer" datatype="html">
@@ -683,12 +747,45 @@
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">438,442</context>
         </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">635,639</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="article.copyright" datatype="html">
-        <source>© 2024 Tokyo House Price | All Rights Reserved</source>
+        <source>© 2025 Tokyo House Price | All Rights Reserved</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/house-price-article/house-price-article.component.html</context>
           <context context-type="linenumber">446</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">643</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.irrFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> The Internal Rate of Return (IRR) represents the annualized return rate of the buy vs rent investment over different holding periods. Higher IRR values indicate better investment performance. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/irr-chart/irr-chart.component.ts</context>
+          <context context-type="linenumber">42,45</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.holdingPeriodYears" datatype="html">
+        <source>Holding Period (Years)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/irr-chart/irr-chart.component.ts</context>
+          <context context-type="linenumber">174</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/pv-buy-chart/pv-buy-chart.component.ts</context>
+          <context context-type="linenumber">280</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.irrPercent" datatype="html">
+        <source>Internal Rate of Return (%)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/irr-chart/irr-chart.component.ts</context>
+          <context context-type="linenumber">187</context>
         </context-group>
       </trans-unit>
       <trans-unit id="language.english" datatype="html">
@@ -705,151 +802,291 @@
           <context context-type="linenumber">25</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="nav.calculator" datatype="html">
-        <source> Calculator </source>
+      <trans-unit id="nav.house-pricer" datatype="html">
+        <source> House Pricer </source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
           <context context-type="linenumber">32,34</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="nav.nakano" datatype="html">
-        <source> Nakano Map </source>
+      <trans-unit id="nav.rentorbuy" datatype="html">
+        <source> Rent vs Buy </source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
-          <context context-type="linenumber">40,42</context>
+          <context context-type="linenumber">41,43</context>
         </context-group>
       </trans-unit>
       <trans-unit id="nav.article" datatype="html">
-        <source> Article </source>
+        <source> Market Analysis </source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
-          <context context-type="linenumber">48,50</context>
+          <context context-type="linenumber">55,57</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="nav.rentOrBuyAnalysis" datatype="html">
+        <source> Rent or Buy Analysis </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/navbar/navbar.component.ts</context>
+          <context context-type="linenumber">63,65</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.welcome" datatype="html">
-        <source>Hey there! I hope you&apos;re finding this calculator useful!</source>
+        <source>Hey there! You can use the calculator below to estimate the price of properties in Tokyo. I hope you find it useful!</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">4</context>
+          <context context-type="linenumber">4,5</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.learnMore" datatype="html">
+        <source>Read more about how it works here.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">8</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.disclaimer" datatype="html">
         <source>Disclaimer:</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">8</context>
+          <context context-type="linenumber">12</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.disclaimerText" datatype="html">
         <source>This is not investment advice. These estimates are for educational purposes only and may not be accurate.</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">8,9</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="calculator.learnMore" datatype="html">
-        <source>Learn more about the calculations here</source>
-        <context-group purpose="location">
-          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">12</context>
+          <context context-type="linenumber">12,14</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.propertyType" datatype="html">
         <source>Property Type</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">21</context>
+          <context context-type="linenumber">23</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.ward" datatype="html">
         <source>Ward</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">30</context>
+          <context context-type="linenumber">32</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.nearestStation" datatype="html">
         <source>Nearest Station</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">37</context>
+          <context context-type="linenumber">39</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.landArea" datatype="html">
         <source>Land Area (m²)</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">46</context>
+          <context context-type="linenumber">48</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.buildingArea" datatype="html">
         <source>Building Area (m²)</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">51</context>
+          <context context-type="linenumber">53</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.yearBuilt" datatype="html">
         <source>Year Built</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">58</context>
+          <context context-type="linenumber">60</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.buildingType" datatype="html">
         <source>Building Type</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">63</context>
+          <context context-type="linenumber">65</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.distanceToStation" datatype="html">
         <source>Distance to Station (mn)</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">72</context>
+          <context context-type="linenumber">74</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.buildingToLandRatio" datatype="html">
         <source>Building to Land Ratio (%)</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">77</context>
+          <context context-type="linenumber">79</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.floorToLandRatio" datatype="html">
         <source>Floor to Land Ratio (%)</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">86</context>
+          <context context-type="linenumber">88</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.roadWidth" datatype="html">
         <source>Road Width (m)</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">93</context>
+          <context context-type="linenumber">95</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.orientation" datatype="html">
         <source>Orientation</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">100</context>
+          <context context-type="linenumber">102</context>
         </context-group>
       </trans-unit>
       <trans-unit id="calculator.landShape" datatype="html">
         <source>Land Shape</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
-          <context context-type="linenumber">107</context>
+          <context context-type="linenumber">109</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.toolLearnMore" datatype="html">
-        <source>And if you think that isn't nerdy enough, please read the <a href="/rent-or-buy-analysis">detailed article</a> 🤓✨</source>
+      <trans-unit id="calculator.totalPrice" datatype="html">
+        <source>Total Price</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">121</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.landPriceBreakdown" datatype="html">
+        <source>Land Price Breakdown</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">128</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.basePrice" datatype="html">
+        <source>Base Price</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">131</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">164</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.location" datatype="html">
+        <source>Location</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">140</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.landTotal" datatype="html">
+        <source>Land Total</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">149</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.buildingPriceBreakdown" datatype="html">
+        <source>Building Price Breakdown</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">161</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.depreciation" datatype="html">
+        <source>Depreciation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">173</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.buildingTotal" datatype="html">
+        <source>Building Total</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">182</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.shareCalculation" datatype="html">
+        <source>Share Calculation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">197</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.shareDescription" datatype="html">
+        <source>Share your property price estimate with all current settings.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">198</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.shareButton" datatype="html">
+        <source>Copy Share Link</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">201</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.insufficientDataWarning" datatype="html">
+        <source>It looks like there isn&apos;t any data in the training set for <x id="INTERPOLATION" equiv-text="{{
+        propertyForm.get(&apos;city&apos;)?.value }}"/> and predictions will be off. This usually happens in expensive neighborhoods with few transactions. I&apos;ll try to address the problem in a future release.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">209,211</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.feedbackMessage" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;emoji&quot;&gt;"/>💡<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> Got suggestions? Want to chat about Data Science, Japan, or anything else? I&apos;m all ears! Feel free to reach using the link below. <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;emoji&quot;&gt;"/>📬<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">222,223</context>
+        </context-group>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
-          <context context-type="linenumber">312</context>
+          <context context-type="linenumber">655,656</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.linkedin" datatype="html">
+        <source>LinkedIn</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">227</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">663</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.twitter" datatype="html">
+        <source>Twitter</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">230</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">666</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="calculator.contact" datatype="html">
+        <source>Contact</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/price-calculator/price-calculator.component.html</context>
+          <context context-type="linenumber">233</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">669</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.presentValueYenMillions" datatype="html">
+        <source>Present Value (¥ millions)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/pv-buy-chart/pv-buy-chart.component.ts</context>
+          <context context-type="linenumber">289</context>
         </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.headerImageAlt" datatype="html">
@@ -859,241 +1096,1368 @@
           <context context-type="linenumber">4</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.byline" datatype="html">
-        <source>By <a href="https://www.linkedin.com/in/arachez/" target="_blank">Arnaud R.</a> • March 2025</source>
+      <trans-unit id="rentorbuy.articleTitle" datatype="html">
+        <source>Rent Or Buy</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
-          <context context-type="linenumber">10</context>
+          <context context-type="linenumber">7</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.articleSubtitle" datatype="html">
+        <source>Approach Housing like a Venture Capitalist</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">9</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.byline" datatype="html">
+        <source>By <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://www.linkedin.com/in/arachez/&quot; target=&quot;_blank&quot;&gt;"/>Arnaud R.<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> • July 2025</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">11,12</context>
         </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.shareLinkedIn" datatype="html">
         <source>Share on LinkedIn</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
-          <context context-type="linenumber">14</context>
+          <context context-type="linenumber">17</context>
         </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.shareTwitter" datatype="html">
         <source>Share on Twitter</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
-          <context context-type="linenumber">18</context>
+          <context context-type="linenumber">21</context>
         </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.shareFacebook" datatype="html">
         <source>Share on Facebook</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
-          <context context-type="linenumber">22</context>
+          <context context-type="linenumber">26</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.mindsetTitle" datatype="html">
-        <source>The Decision-Making Mindset</source>
+      <trans-unit id="rentorbuy.introTitle" datatype="html">
+        <source>Introduction</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">34</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.mindsetText" datatype="html">
-        <source>When comparing rent versus buy, we're essentially evaluating two options that should provide the same fundamental value: a place to live. The key insight is to find comparable properties - a house or apartment for sale and another for rent with similar characteristics in terms of location, size, amenities, and quality of life.</source>
+      <trans-unit id="rentorbuy.introText" datatype="html">
+        <source> In a <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://tokyohouseprice.web.app/article&quot;&gt;"/>previous post<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/>, I presented an analysis of the factors influencing the price of real estate in Tokyo 🗼. This time, I focus on another model to study the rent-vs-buy decision from a financial standpoint. My goal is not to convince you to either rent or buy, but to present interesting and sometimes counter-intuitive insights that can help make a better decision. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">35,40</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.mindsetApproach" datatype="html">
-        <source>Once we've identified comparable properties, the decision becomes purely financial: which option maximizes our long-term wealth? This approach removes emotional bias and focuses on the numbers, allowing us to make a data-driven decision based on our personal financial situation and market conditions.</source>
+      <trans-unit id="rentorbuy.mortgageComparison" datatype="html">
+        <source> Also, it turns out that a <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://en.wikipedia.org/wiki/Mortgage&quot;&gt;"/>House Mortgage<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> and a <x id="START_LINK_1" equiv-text="&lt;a
+        href=&quot;https://investopedia.com/terms/l/leveragedbuyout.asp&quot;&gt;"/>Leveraged Buyout<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> are pretty similar. So if you are interested in financing your house like a <x id="START_LINK_2" equiv-text="&lt;a
+        href=&quot;https://en.wikipedia.org/wiki/Venture_capital&quot; target=&quot;_blank&quot;&gt;"/>Venture Capitalist<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> 🕶️, I think this article might be for you. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">41,47</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.mindsetInsight" datatype="html">
-        <source>Key Insight</source>
+      <trans-unit id="rentorbuy.feedbackRequest" datatype="html">
+        <source> In any case, I hope you find it useful, or at least interesting. Also, please don&apos;t hesitate to share your thoughts and feedback 🤓. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">48,51</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.mindsetInsightText" datatype="html">
-        <source>We're not just choosing between two properties - we're choosing between two different financial strategies that will impact our net worth over decades.</source>
+      <trans-unit id="rentorbuy.ctaTitle" datatype="html">
+        <source>If you just want to get a quick answer</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">57</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.modelingTitle" datatype="html">
-        <source>Modeling and Financial Tools</source>
+      <trans-unit id="rentorbuy.ctaDescription" datatype="html">
+        <source> This article explains the methodology behind the rent-vs-buy calculator. If you just want to get a quick answer, feel free to try it out. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">58,61</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.modelingIntro" datatype="html">
-        <source>Our goal is to make the financial decision that maximizes our future net worth. Since we need to make this decision now based on projected future outcomes, we use two primary financial tools:</source>
+      <trans-unit id="rentorbuy.ctaButton" datatype="html">
+        <source> Try the Calculator → </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">63,65</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.irrOptimalTiming" datatype="html">
-        <source>By analyzing IRR over different time horizons, we can identify not just whether to buy, but when to potentially sell to maximize our returns. This is crucial because the optimal holding period depends on factors like property appreciation, maintenance costs, and alternative investment opportunities.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoTitle" datatype="html">
-        <source>A Real Example from SUUMO.jp</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoIntro" datatype="html">
-        <source>Let's examine a concrete example using properties from SUUMO.jp to illustrate how this analysis works in practice.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoPropertyTitle" datatype="html">
-        <source>Example Properties</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.suumoForSale" datatype="html">
-        <source>For Sale</source>
-      </trans-unit>
-          <trans-unit id="rentorbuy.suumoSaleLocation" datatype="html">
-      <source><strong style="color: #FF69B4">Location:</strong> Shimomeguro 4, Meguro-ku, Tokyo</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoSaleLayout" datatype="html">
-      <source><strong style="color: #FF69B4">Layout:</strong> 3LDK</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoSaleFloors" datatype="html">
-      <source><strong style="color: #FF69B4">Number of floors:</strong> 2</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoSaleSize" datatype="html">
-      <source><strong style="color: #FF69B4">Floor Area:</strong> 78.53m², <strong style="color: #FF69B4">Land:</strong> 73.86m²</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoSaleAge" datatype="html">
-      <source><strong style="color: #FF69B4">Built:</strong> February 2004</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoSalePrice" datatype="html">
-      <source><strong style="color: #FF69B4">Price:</strong> ¥99,700,000</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoSaleStation" datatype="html">
-      <source><strong style="color: #FF69B4">Station:</strong> 16min walk to JR Meguro</source>
-    </trans-unit>
-      <trans-unit id="rentorbuy.suumoForRent" datatype="html">
-        <source>For Rent</source>
-      </trans-unit>
-          <trans-unit id="rentorbuy.suumoRentLocation" datatype="html">
-      <source><strong style="color: #FF69B4">Location:</strong> Meguro 4, Meguro-ku, Tokyo</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoRentLayout" datatype="html">
-      <source><strong style="color: #FF69B4">Layout:</strong> 3LDK</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoRentFloors" datatype="html">
-      <source><strong style="color: #FF69B4">Number of floors:</strong> 3</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoRentSize" datatype="html">
-      <source><strong style="color: #FF69B4">Floor Area:</strong> 99.4m²</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoRentAge" datatype="html">
-      <source><strong style="color: #FF69B4">Age:</strong> 15 years old</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoRentPrice" datatype="html">
-      <source><strong style="color: #FF69B4">Rent:</strong> ¥350,000/month</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoRentStation" datatype="html">
-      <source><strong style="color: #FF69B4">Station:</strong> 15min walk to JR Meguro</source>
-    </trans-unit>
-          <trans-unit id="rentorbuy.comparisonNote" datatype="html">
-      <source>Important Note on Property Comparison</source>
-    </trans-unit>
-    <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
-      <source>Note that these properties are not really comparable. I chose to restrict them to the same neighborhood - close to Meguro Station, but the renting option is much bigger and has more floors. Comparing these two options still makes sense though insofar as they are viable alternatives, and in a sense both should be good enough for a young couple with kids. So, rather than making sure each attribute of the properties match exactly, I would prefer to compare two options that fulfill whatever requirements you have even though one seems to be higher end than the other.</source>
-    </trans-unit>
-      <trans-unit id="rentorbuy.buyImageAlt" datatype="html">
-        <source>Property for sale example</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.rentImageAlt" datatype="html">
-        <source>Property for rent example</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.qualitativeTitle" datatype="html">
-        <source>Qualitative Analysis: Understanding the Mechanics</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.qualitativeIntro" datatype="html">
-        <source>Before diving into numbers, let's understand the fundamental mechanics of the rent vs buy decision.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.savingRentTitle" datatype="html">
-        <source>Buying as Saving Rent</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.savingRentText" datatype="html">
-        <source>When you buy a house, you're essentially "saving" the rent you would otherwise pay. However, this saving comes with additional costs and responsibilities that renters don't face.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.additionalCostsTitle" datatype="html">
-        <source>Additional Costs of Ownership</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.additionalCost1" datatype="html">
-        <source>Property taxes (typically 1-2% of property value annually)</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.additionalCost2" datatype="html">
-        <source>Maintenance and repairs (2-3% of property value annually)</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.additionalCost3" datatype="html">
-        <source>Insurance premiums</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.additionalCost4" datatype="html">
-        <source>Transaction costs (agent fees, legal fees)</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.leverageTitle" datatype="html">
-        <source>The Leverage Factor</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.leverageText" datatype="html">
-        <source>Most buyers use mortgage financing, which introduces leverage. This amplifies both gains and losses: if property values rise, your returns are magnified, but if they fall, your losses are also amplified. The loan also creates a fixed obligation regardless of market conditions.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.edgeCasesTitle" datatype="html">
-        <source>Edge Cases and Long-term Considerations</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.edgeCasesText" datatype="html">
-        <source>Several scenarios can significantly impact the rent vs buy decision:</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.edgeCase1" datatype="html">
-        <source><strong>Short holding periods:</strong> Transaction costs can outweigh benefits if you move within 3-5 years</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.edgeCase2" datatype="html">
-        <source><strong>Market downturns:</strong> Leverage can lead to negative equity situations</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.edgeCase3" datatype="html">
-        <source><strong>Interest rate changes:</strong> Rising rates increase borrowing costs and can affect property values</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.edgeCase4" datatype="html">
-        <source><strong>Maintenance surprises:</strong> Major repairs can significantly impact total cost of ownership</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.quantitativeTitle" datatype="html">
-        <source>Quantitative Analysis: NPV of Cash Flow Differences</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.quantitativeIntro" datatype="html">
-        <source>The quantitative analysis boils down to comparing the Net Present Value of cash flow differences between buying and renting.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.cashflowDifferenceTitle" datatype="html">
-        <source>Cash Flow Difference Calculation</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.cashflowDifferenceText" datatype="html">
-        <source>For each year, we calculate: (Cost of Buying) - (Cost of Renting). A positive NPV indicates that buying is financially advantageous.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.cashflowFormula" datatype="html">
-        <source>Annual Cash Flow Difference</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.cashflowFormulaExplanation" datatype="html">
-        <source>Plus end-of-period considerations like property appreciation and down payment opportunity cost.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.sensitivityIntro" datatype="html">
-        <source>Real estate markets are inherently uncertain. Our calculator uses Monte Carlo-style sensitivity analysis to help you understand how different scenarios might affect your decision.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.monteCarloTitle" datatype="html">
-        <source>Monte Carlo Approach</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.monteCarloText" datatype="html">
-        <source>By adjusting key parameters and observing how they affect the NPV and IRR, you can stress-test your decision against various market conditions and personal circumstances.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.factor6" datatype="html">
-        <source>Economic downturns and market volatility</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.sensitivityInsight" datatype="html">
-        <source>Sensitivity Insight</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.sensitivityInsightText" datatype="html">
-        <source>If your decision remains consistent across a wide range of scenarios, you can be more confident in your choice. If small changes in assumptions flip your decision, you may want to gather more data or consider the risks more carefully.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.conclusionReminder" datatype="html">
-        <source>Remember that financial models are tools to inform your decision, not make it for you. Consider your personal circumstances, risk tolerance, career stability, and long-term goals. The "right" decision varies for each person and depends on both financial and non-financial factors.</source>
-      </trans-unit>
-      <trans-unit id="rentorbuy.conclusionFinal" datatype="html">
-        <source>Our calculator provides the analytical framework, but the final decision remains yours. Use these tools to understand the trade-offs, but don't forget to consider the intangible benefits of homeownership or the flexibility that renting provides.</source>
+      <trans-unit id="rentorbuy.readOnEncouragement" datatype="html">
+        <source> If you are interested in the details, though, please read on. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">70,72</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.tocTitle" datatype="html">
         <source>Table of Contents</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">77</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.tocMindset" datatype="html">
-        <source>The Decision-Making Mindset</source>
+        <source>A concrete example from SUUMO.jp</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">79</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocExamples" datatype="html">
+        <source>Example Properties</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">81</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocComparison" datatype="html">
+        <source>So, which is best?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">82</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.tocModeling" datatype="html">
-        <source>Modeling and Financial Tools</source>
+        <source>The Decision Making Framework</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">85</context>
+        </context-group>
       </trans-unit>
-      
-      <trans-unit id="rentorbuy.tocQualitative" datatype="html">
-        <source>Qualitative Analysis</source>
+      <trans-unit id="rentorbuy.tocModelingProperty" datatype="html">
+        <source>Modeling a Property</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">87</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.tocQuantitative" datatype="html">
-        <source>Quantitative Analysis</source>
+      <trans-unit id="rentorbuy.tocCumulative" datatype="html">
+        <source>Cumulative Cash Flows</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">88</context>
+        </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.tocSensitivity" datatype="html">
-        <source>Sensitivity Analysis</source>
+      <trans-unit id="rentorbuy.tocNpv" datatype="html">
+        <source>Opportunity Cost and Net Present Value (NPV)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">89</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tocIrr" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">90</context>
+        </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.tocConclusion" datatype="html">
-        <source>Conclusion</source>
+        <source>In Conclusion</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">93</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mindsetTitle" datatype="html">
+        <source>A concrete example from SUUMO.jp</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">99</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoIntro" datatype="html">
+        <source> When it comes to housing, you usually have two options: renting or buying. This whole article is about making this decision as informed as possible. And to make things a little bit more concrete, I pulled a couple of properties from <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://suumo.jp/&quot; target=&quot;_blank&quot;&gt;"/>SUUMO.jp<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> that we&apos;ll use for calculations throughout the article. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">101,106</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvTitle" datatype="html">
+        <source>Example Properties</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">107</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">149</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">196</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">252</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">352</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyImageAlt" datatype="html">
+        <source>Property for sale example</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">113</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForSale" datatype="html">
+        <source>For Sale</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">115</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyLocation" datatype="html">
+        <source>Location:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">117</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">132</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyLayout" datatype="html">
+        <source>Layout:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">118</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">133</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyFloors" datatype="html">
+        <source>Number of floors:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">119</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">134</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyArea" datatype="html">
+        <source>Floor Area:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">120</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">135</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyAge" datatype="html">
+        <source>Age:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">121</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">136</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyPrice" datatype="html">
+        <source>Price:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">122</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyStation" datatype="html">
+        <source>Station:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">123</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">138</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentImageAlt" datatype="html">
+        <source>Property for rent example</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">128</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoForRent" datatype="html">
+        <source>For Rent</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">130</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyRent" datatype="html">
+        <source>Rent:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">137</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.suumoAnalysis" datatype="html">
+        <source> Let&apos;s be clear: the two properties are not perfectly comparable. The renting option is bigger, more recent, and in a better location. You could argue that the renting option is a bit higher-end, and thus might expect it to be more expensive. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">143,147</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionUpfront" datatype="html">
+        <source> Let&apos;s start with the conclusion so you can skip the rest of the article 😉. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">151,153</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mainFinding" datatype="html">
+        <source>With a 25 years horizon, the rental option is cheaper than the buying option.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">160</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.expensiveRentConclusion" datatype="html">
+        <source> You read that right! The 430,000 yen monthly rent is rather expensive, and you could argue that the rental property is higher-end than the one for sale. However, it is cheaper to rent than to buy, even in the long run. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">164,168</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.netWorthPerspective" datatype="html">
+        <source> And I don&apos;t mean that your rent will be less than your mortgage payment on a monthly basis. I mean that from a total net worth perspective, 25 years from now, you will be richer if you decide to rent and not to buy. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">169,172</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.articleExplanation" datatype="html">
+        <source> In the rest of the article, I&apos;ll explain the assumptions and the calculations I used to reach this conclusion. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">173,175</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.modelingTitle" datatype="html">
+        <source>The Decision Making Framework</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">182</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.financialPerspective" datatype="html">
+        <source>There are many factors at play when choosing the perfect house that suits your needs. From a financial perspective, however, we can compare any two options with the tools below:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">185,186</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolNpv" datatype="html">
+        <source>Net Present Value (NPV)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">188</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolIrr" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">189</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.beforeDetails" datatype="html">
+        <source> But before we dive into the details, let&apos;s first formalize what we mean by a property. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">192,194</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyBundle" datatype="html">
+        <source> A property is a bundle of cash flows. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">197,199</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowExample" datatype="html">
+        <source> For example, let&apos;s compare the cash flows for the two housing options described above. I&apos;ll use <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/> for the broker fees (both when buying and selling) and a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="s }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/>-year mortgage with a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="Rate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/> interest rate. Let&apos;s also assume running costs (maintenance, taxes, etc.) are <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_3" equiv-text="percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the prope"/> of the property value. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">201,209</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.hideDetails" datatype="html">
+        <source>Hide the Maths</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">215</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.showDetails" datatype="html">
+        <source>Show the Maths</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">216</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentCashflow" datatype="html">
+        <source>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity, we&apos;ll do the accounting yearly below). </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">220,222</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentFormula" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) = -R \quad \text<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>for <x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> t = 1, 2, \ldots, n \]</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">226</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentFormulaExplanation" datatype="html">
+        <source>where \( R \) is the annual rent and \( n \) is the number of years.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">227</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyCashflowIntro" datatype="html">
+        <source> In case we buy the property though, there are two types of cash flows: </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">231,233</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.negativeCashflows" datatype="html">
+        <source>Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">235</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.positiveCashflows" datatype="html">
+        <source>Positive: the proceeds from selling the property.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">236</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormula1" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(0) = -DP - F \]</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">241</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormula2" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) = -M - C \quad \text<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>for <x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> t = 1, 2, \ldots, n-1 \]</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">242</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormula3" datatype="html">
+        <source>\[ CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = S - M - C \]</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">243</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyFormulaExplanation" datatype="html">
+        <source>where \( DP \) is the down payment required to buy the property, \( F \) is the transaction costs or fees paid to a broker, \( M \) is the annual mortgage payment, \( C \) is the annual costs (property taxes, maintenance, insurance, etc.), \( S \) is the sale proceeds when the property is finally sold. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">244,249</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cumulativeExplanation" datatype="html">
+        <source>Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent overall, we can just sum them all together to see how &quot;expensive&quot; each option is. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">254,256</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyTotalFormula" datatype="html">
+        <source>\[ V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \sum_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>t=0<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>^<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>n<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) \] </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">260,261</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentTotalFormula" datatype="html">
+        <source>\[ V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \sum_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>t=0<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>^<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>n<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/> CF_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(t) \] </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">262,264</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.breakevenExample" datatype="html">
+        <source> For example, if we compare renting and buying (with a mortgage). We see that the total costs cross in year <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text=":
+    &lt;/p&gt;"/>: </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">268,271</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mathematicalAdvantage" datatype="html">
+        <source> Mathematically, buying becomes advantageous when \( V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) &gt; V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) \). </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">277,280</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.timeHorizonAdvice" datatype="html">
+        <source> Or in other words, it only makes sense to buy the property if we intend to live in it for more than <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="years. Als"/> years. Also, the longer we live in the house, the more advantageous it is to buy. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">284,288</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.breakevenExplanation" datatype="html">
+        <source> To better understand why we need <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="years to b"/> years to break even, let&apos;s consider the two aspects of paying back the loan: </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">297,301</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.forcedSavings" datatype="html">
+        <source>① Part of the monthly payment are forced savings we make instead of paying a rent.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">303</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.bankInterest" datatype="html">
+        <source>② The other part is used to pay the bank interest.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">304</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.realCostExplanation" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="Only ② is a real cost as eve"/>Only ② is a real cost as everything we invest in the house is money we will get back when we sell it.<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">307,310</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.brokerFeesQuestion" datatype="html">
+        <source> Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①? </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">311,313</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.brokerFeesCalculation" datatype="html">
+        <source>A quick back of the enveloppe calculation tells us that with brokerage fees of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> and a forced rent saving of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="ent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/>, minus <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="}}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> in runnning costs and <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_3" equiv-text="ercent: &apos;1.1-2&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> in interests, we are saving about <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_4" equiv-text="s - mortgageRate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> every year. Thus it should take about <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> / <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_4" equiv-text="s - mortgageRate | percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> = <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_5" equiv-text="d - costs - mortgageRate) | number : &apos;1.0-0&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="ye"/> years to get the broker fees back. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">315,326</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.realityAdjustment" datatype="html">
+        <source> In reality, it takes a bit less because we are only paying <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="| percent }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="interests"/> interests on the remaining loan balance and not the total property price. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">328,331</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cumulativeDifferencePlot" datatype="html">
+        <source> We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. This will be useful when comparing with the NPV analysis in the next section. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">335,338</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.plotExplanation" datatype="html">
+        <source> Specifically, we plot \(V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) - V_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>rent<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) \). </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">342,344</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostIntro" datatype="html">
+        <source> There is another factor to consider: <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://en.wikipedia.org/wiki/Opportunity_cost&quot; target=&quot;_blank&quot;&gt;"/>the Opportunity Cost<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> of buying vs renting. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">354,357</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.downPaymentInvestment" datatype="html">
+        <source> For example, let&apos;s say that instead of making a big down payment and a small loan for the house, we instead rent and invest the down payment in the stock market or in a remunerated account. Over time, that investment will grow at some rate \(r\). </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">358,362</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.mortgageInvestment" datatype="html">
+        <source> Similarly, if the mortgage we pay is less than the rent we would have paid, then we could invest the difference in the stock market. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">364,367</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.futureValueMaximization" datatype="html">
+        <source> Building on this idea, we can try to maximize the <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://en.wikipedia.org/wiki/Future_value&quot;&gt;"/>Future Value<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> (FV) of our bank account by investing whatever money we have left over each year. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">369,372</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostRate" datatype="html">
+        <source>where \(r\) is the opportunity cost rate.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">379</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.presentValueExplanation" datatype="html">
+        <source>In fact, we can compute the <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://en.wikipedia.org/wiki/Present_value&quot; target=&quot;_blank&quot;&gt;"/>Present Value<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> (PV) instead by by discounting FV using \(r\). PV is the value of the future cash flows in today&apos;s money. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">385,388</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.pvFormula1" datatype="html">
+        <source>\[ PV_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n) = \frac<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>FV_<x id="INTERPOLATION" equiv-text="{{ &apos;{&apos; }}"/>buy<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/>(n)<x id="INTERPOLATION_1" equiv-text="{{ &apos;}&apos; }}"/><x id="INTERPOLATION_2" equiv-text="("/>(1 + r)^n<x id="INTERPOLATION_3" equiv-text="{{ &apos;}&apos;
+          }}"/> \quad (2) \]</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">392,394</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowsExpression" datatype="html">
+        <source>Or, expressed directly in terms of cash flows:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">395</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostQuestion" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="How do we know the opportunity c"/>How do we know the opportunity cost rate?<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">408,410</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.noSimpleAnswer" datatype="html">
+        <source> There isn&apos;t a simple answer to this question unfortunately. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">411,413</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.sp500Comparison" datatype="html">
+        <source> A rough back of the envelope calculation is to compare the <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/>8.7%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> yearly return of the SP500 in during the past <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/>25<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> years with the <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/>~3.5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> price increase of real estate in Tokyo and <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+            class=&quot;percentage-highlight&quot;&gt;"/>~0.7%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> annualized inflation rate. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">415,420</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostEstimate" datatype="html">
+        <source> This gives a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>4.5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> estimate for the opportunity cost compared to the SP500. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">422,425</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.pastDataWarning" datatype="html">
+        <source> Of course, this estimate are based on past data and is no guarantee of what will happen in the future. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">427,429</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.presentValueComparison" datatype="html">
+        <source> So, let&apos;s again compare the two options, but using the Present Value of buying a house with a <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="|
+        percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="opportunit"/> opportunity cost. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">433,437</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.recommendationChanges" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="The buy vs. rent recommendatio"/>The buy vs. rent recommendation completely changes!<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">447,449</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.breakevenTimeChange" datatype="html">
+        <source> It now takes <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>9<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> years instead of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>4<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> to break even, and the renting option looks much more attractive in the long run. In fact, buying is only a good option during a specific <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>8<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/>-year window. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">450,456</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.interestingResult" datatype="html">
+        <source> I personally find this result quite interesting! Before doing the analysis, I would have never thought that timing the sale of your house actually mattered! </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">460,463</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrTitle" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">465</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvOptimization" datatype="html">
+        <source> OK, so using NPV to assess the buy vs rent decision, we get a better sense of whether we should buy, and also when we should sell. However, this tells a story in terms of absolute amounts of money, and if we really want to optimize, we could sell one house at the right timing and immediately buy another one and so on so as to maximize the slope of the NPV profile. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">466,471</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rateOfReturnAssessment" datatype="html">
+        <source> For that reason, it makes sense to assess the rate of return of the investment for each year. We know that depending on the timing, the rate of return of our investment will be more or less than <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="|
+        percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="thanks to"/> thanks to the NPV profile. However, we don&apos;t know exactly the value of our rate of return for each year. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">472,479</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrExplanation" datatype="html">
+        <source> This is what the <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;https://en.wikipedia.org/wiki/Internal_rate_of_return&quot; target=&quot;_blank&quot;&gt;"/>Internal Rate of Return<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> (IRR) is for. There isn&apos;t a simple closed formula for the IRR, but we can use a numerical method to compute it from the undiscounted cash flows. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">481,485</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">606,608</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrSurprisingResult" datatype="html">
+        <source> Again a surprising result. To be optimal, we should sell at year <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/>11<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> according to the IRR calculation. This is one year earlier than what the NPV identifies as the optimal year to maximize the value of just one house investment. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">489,493</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageEffect" datatype="html">
+        <source><x id="START_TAG_STRONG" ctype="x-strong" equiv-text="In that graph, we can s"/>In that graph, we can see the leverage effect of borrowing!<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">501,503</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.immediateSaleLoss" datatype="html">
+        <source> If we buy and sell the property immediately, we will lose the broker fees and get nothing. So the IRR is negative. But as we hold on to the property, the IRR will increase. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">504,507</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.longTermReturn" datatype="html">
+        <source> In the longer run, the rate of return is the rent we save (<x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="Yield | percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text=". That is the"/> when expressed as a percentage of the buy price), minus the cost ratio of <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_1" equiv-text="s | percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text=". That is the"/>, which equals <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION_2" equiv-text="Yield - costs | percent: &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text=". That is the"/>. That is the return the house investment tends toward the longer we hold it. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">509,517</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.leverageExplanation" datatype="html">
+        <source> However, since we borrow money, in the beginning, we will only have invested a small fraction of the total price of the house. But we will still get <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;percentage-highlight&quot;&gt;"/><x id="INTERPOLATION" equiv-text="s | percent:
+            &apos;1.1-1&apos; }}"/><x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="of the tot"/> of the total price of the house. <x id="START_TAG_STRONG" ctype="x-strong" equiv-text="&lt;strong&gt;"/>This is why the IRR is peaking higher than just the rent yield.<x id="CLOSE_TAG_STRONG" ctype="x-strong" equiv-text="&lt;/strong&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">519,525</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.conclusionTitle" datatype="html">
+        <source>In Conclusion</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">531</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.finalQuestion" datatype="html">
+        <source> So, should you rent or buy 🤷? Well, it depends on a few factors. The immediate cost of rent 💸 vs buy 💰 is one factor, of course, but opportunity cost and timing are also critically important! </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">533,536</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.ruleOfThumb" datatype="html">
+        <source> As a very rough rule of thumb, if you can keep the cost of renting below <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/>5%<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> of the property value, then aiming to stay at least between <x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span
+        class=&quot;percentage-highlight&quot;&gt;"/>9<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> years should give you enough time to cover brokerage fees and use leverage to your advantage. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">537,542</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.japanOpportunityCost" datatype="html">
+        <source> Recently, one could argue that, in Japan, access to the global stock market has created a really high opportunity cost which makes it difficult to justify buying at all. But future returns may be quite different from the past! </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">543,546</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.futureResearch" datatype="html">
+        <source> In fact, buying a house and investing in the stock market have different risk profiles. So in a future article, I would like to investigate this aspect using historical data for the Japanese housing market and the international stock market. Stay tuned for more 👇!!! </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">547,552</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.newsletterTitle" datatype="html">
+        <source>Newsletter for Tokyo House Price</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">560</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.newsletterDescription" datatype="html">
+        <source> If you enjoy these articles, please subscribe! I&apos;ll send you an email whenever I publish new ones. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">561,563</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.emailPlaceholder" datatype="html">
+        <source>Enter your email address</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">567</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.subscribeButton" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="ting&quot;&gt;"/>Subscribe<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/><x id="START_TAG_SPAN_1" ctype="x-span_1" equiv-text="&lt;span *ngIf=&quot;isNewsletterSubmitting&quot;&gt;"/><x id="START_ITALIC_TEXT" ctype="x-i" equiv-text="&lt;i class=&quot;fas fa-spinner fa-spin&quot;&gt;"/><x id="CLOSE_ITALIC_TEXT" ctype="x-i" equiv-text="Subscribing..."/> Subscribing... <x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">572,576</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.newsletterDisclaimer" datatype="html">
+        <source> Your email address will never be shared with anyone. Nor will it be used for anything else but article notifications. You can unsubscribe at any time. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy-article/rent-or-buy-article.component.html</context>
+          <context context-type="linenumber">600,603</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rental" datatype="html">
+        <source>Rental</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.property" datatype="html">
+        <source>Property</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">25</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loan" datatype="html">
+        <source>Loan</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">34</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.economic" datatype="html">
+        <source>Economic</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">43</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.monthlyRent" datatype="html">
+        <source>Monthly Rent (万円)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">65</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">238</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentInflation" datatype="html">
+        <source>Rent Inflation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">71</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">244</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.housePrice" datatype="html">
+        <source>House Price (万円)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">84</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">269</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.landPrice" datatype="html">
+        <source>Land Price (万円)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">88</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">273</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.amortizationPeriod" datatype="html">
+        <source>Amortization Period</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">94</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">279</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buildingAge" datatype="html">
+        <source>Building Age</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">105</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">290</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.maintenance" datatype="html">
+        <source>Maintenance</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">114</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">299</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyTax" datatype="html">
+        <source>Property Tax</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">125</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">311</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.agentFee" datatype="html">
+        <source>Agent Fee</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">134</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">320</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanPeriod" datatype="html">
+        <source>Loan Period</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">149</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">480</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanFee" datatype="html">
+        <source>Loan Fee</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">158</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">489</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanRate" datatype="html">
+        <source>Loan Rate</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">170</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">501</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.downPayment" datatype="html">
+        <source>Down Payment</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">181</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">513</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseAppreciation" datatype="html">
+        <source>House Appreciation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">197</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">540</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCost" datatype="html">
+        <source>Opportunity Cost</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">209</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">553</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentalOption" datatype="html">
+        <source>Rental Option</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">229</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1401</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.rentInflationTooltip" datatype="html">
+        <source>Annual rate at which rent is expected to increase over time</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">245</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyToBuy" datatype="html">
+        <source>Property to Buy</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">260</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.amortizationPeriodTooltip" datatype="html">
+        <source>Number of years over which the building&apos;s value will depreciate to zero</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">280</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.maintenanceTooltip" datatype="html">
+        <source>Annual maintenance cost as percentage of property value (repairs, renovations, etc.)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">301</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.agentFeeTooltip" datatype="html">
+        <source>Real estate agent commission fee, typically 3-6% of purchase price</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">321</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolDescription" datatype="html">
+        <source>Hey there! 👋 </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">345</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolLearnMore" datatype="html">
+        <source>Learn more about the underlying model in <x id="START_LINK" ctype="x-a" equiv-text="&lt;a
+              href=&quot;/rent-or-buy-analysis&quot;&gt;"/>this article<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/> 🤓✨ </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">348,350</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.optimalStrategy" datatype="html">
+        <source>Optimal Strategy</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">357</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.saveShareStrategy" datatype="html">
+        <source>Save strategy</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">359</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareAnalysis" datatype="html">
+        <source>Share Analysis</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">375</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">459</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.shareDescription" datatype="html">
+        <source>Share your rent vs buy analysis with others, or save it for later. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">376,377</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">460</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvChart" datatype="html">
+        <source>Net Present Value (NPV)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">394</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1422</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvChartPlaceholder" datatype="html">
+        <source>NPV chart will appear here after calculation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">402</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.buyNetWorthVsStockChart" datatype="html">
+        <source>Buy House vs Invest in Stock Net Worth</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">408</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1423</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseVsStockChartPlaceholder" datatype="html">
+        <source>Buy Net Worth vs Stock chart will appear here after calculation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">416,417</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.annualCashflowChart" datatype="html">
+        <source>Annual Cashflow Comparison</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">423</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1424</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowChartPlaceholder" datatype="html">
+        <source>Cashflow chart will appear here after calculation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">431,432</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrChart" datatype="html">
+        <source>Internal Rate of Return (IRR)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">438</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1425</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.irrChartPlaceholder" datatype="html">
+        <source>IRR chart will appear here after calculation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">446</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanDetails" datatype="html">
+        <source>Loan Details</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">470</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1403</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanFeeTooltip" datatype="html">
+        <source>One-time processing fee charged by the bank for mortgage origination</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">490</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.loanRateTooltip" datatype="html">
+        <source>Annual interest rate charged on the mortgage loan</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">502</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.downPaymentTooltip" datatype="html">
+        <source>Percentage of property price paid upfront, not financed through mortgage</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">514</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.economicFactors" datatype="html">
+        <source>Economic Factors</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">529</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1404</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseAppreciationTooltip" datatype="html">
+        <source>Annual rate at which property value is expected to increase (can be negative)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">542</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.opportunityCostTooltip" datatype="html">
+        <source>Expected return rate if down payment was invested elsewhere (stocks, bonds, etc.)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">555</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvExplanationTitle" datatype="html">
+        <source>What is NPV?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">580</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.npvExplanationText" datatype="html">
+        <source>Net Present Value shows how much money you save or gain by buying instead of renting. The chart uses colored areas to make this clear:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">581,582</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.chartExplanationTitle" datatype="html">
+        <source>What does this show?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">593</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">599</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">605</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.houseVsStockExplanation" datatype="html">
+        <source>This compares your total wealth if you buy a house versus investing your down payment in stocks while renting. The higher line shows which option makes you richer over time.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">594,596</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.cashflowExplanation" datatype="html">
+        <source>This shows how much money you spend each year on housing. Red bars show yearly rent costs, blue bars show yearly costs of buying (mortgage, maintenance, taxes). Lower bars mean less money spent per year.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">600,602</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.propertyDetails" datatype="html">
+        <source>Property Details</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.ts</context>
+          <context context-type="linenumber">1402</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.rentVsBuyFigureCaption" datatype="html">
+        <source><x id="START_TAG_SPAN" ctype="x-span" equiv-text="&lt;span class=&quot;figure-label&quot;&gt;"/>Figure:<x id="CLOSE_TAG_SPAN" ctype="x-span" equiv-text="&lt;/span&gt;"/> Cumulative cash flows show the total amount spent over time for each option. The rent option follows a linear path with constant monthly payments, while the buy option shows higher initial costs due to the down payment, followed by a slighly curved path of as the mortgage is paid off on year 35. After that, the slope improves just slighly and stays constant. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-vs-buy-chart/rent-vs-buy-chart.component.ts</context>
+          <context context-type="linenumber">40,46</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeCashflowsTitle" datatype="html">
+        <source>Cumulative Cash Flows: Value of Rent vs Buy</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-vs-buy-chart/rent-vs-buy-chart.component.ts</context>
+          <context context-type="linenumber">157</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="chart.cumulativeValueYenMillions" datatype="html">
+        <source>Cumulative Value (¥ millions)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-vs-buy-chart/rent-vs-buy-chart.component.ts</context>
+          <context context-type="linenumber">208</context>
+        </context-group>
       </trans-unit>
     </body>
   </file>

@@ -38,14 +38,14 @@
       the rent-vs-buy decision from a financial standpoint. My goal is not to convince you to either rent
       or buy, but to present interesting and sometimes counter-intuitive insights that can help make a better decision.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.mortgageComparison">
       Also, it turns out that a <a href="https://en.wikipedia.org/wiki/Mortgage">House Mortgage</a> and a <a
         href="https://investopedia.com/terms/l/leveragedbuyout.asp">Leveraged
         Buyout</a> are pretty similar. So if you are interested in financing your house like a <a
         href="https://en.wikipedia.org/wiki/Venture_capital" target="_blank">Venture Capitalist</a> 🕶️, I think this
       article might be for you.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.feedbackRequest">
       In any case, I hope you find it useful, or at least interesting. Also, please don't hesitate to share your
       thoughts and feedback 🤓.
     </p>
@@ -67,7 +67,7 @@
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.readOnEncouragement">
       If you are interested in the details, though, please read on.
     </p>
   </section>
@@ -78,16 +78,16 @@
     <ul>
       <li><a href="#mindset" i18n="@@rentorbuy.tocMindset">A concrete example from SUUMO.jp</a>
         <ul>
-          <li><a href="#examples">Example Properties</a></li>
-          <li><a href="#comparison">So, which is best?</a></li>
+          <li><a href="#examples" i18n="@@rentorbuy.tocExamples">Example Properties</a></li>
+          <li><a href="#comparison" i18n="@@rentorbuy.tocComparison">So, which is best?</a></li>
         </ul>
       </li>
       <li><a href="#modeling" i18n="@@rentorbuy.tocModeling">The Decision Making Framework</a>
         <ul>
-          <li><a href="#modeling-property">Modeling a Property</a></li>
-          <li><a href="#cumulative">Cumulative Cash Flows</a></li>
-          <li><a href="#npv">Opportunity Cost and Net Present Value (NPV)</a></li>
-          <li><a href="#irr">Internal Rate of Return (IRR)</a></li>
+          <li><a href="#modeling-property" i18n="@@rentorbuy.tocModelingProperty">Modeling a Property</a></li>
+          <li><a href="#cumulative" i18n="@@rentorbuy.tocCumulative">Cumulative Cash Flows</a></li>
+          <li><a href="#npv" i18n="@@rentorbuy.tocNpv">Opportunity Cost and Net Present Value (NPV)</a></li>
+          <li><a href="#irr" i18n="@@rentorbuy.tocIrr">Internal Rate of Return (IRR)</a></li>
         </ul>
       </li>
       <li><a href="#conclusion" i18n="@@rentorbuy.tocConclusion">In Conclusion</a></li>
@@ -114,13 +114,13 @@
           </div>
           <h5 i18n="@@rentorbuy.suumoForSale">For Sale</h5>
           <ul>
-            <li><strong style="color: #FF69B4">Location:</strong> <span>Shimomeguro 4, Meguro-ku, Tokyo</span></li>
-            <li><strong style="color: #FF69B4">Layout:</strong> <span>3LDK</span></li>
-            <li><strong style="color: #FF69B4">Number of floors:</strong> <span>2</span></li>
-            <li><strong style="color: #FF69B4">Floor Area:</strong> <span>78.53m²</span></li>
-            <li><strong style="color: #FF69B4">Age:</strong> <span>21 years</span></li>
-            <li><strong style="color: #FF69B4">Price:</strong> <span>¥99,700,000</span></li>
-            <li><strong style="color: #FF69B4">Station:</strong> <span>16min walk to JR Meguro</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyLocation">Location:</strong> <span>Shimomeguro 4, Meguro-ku, Tokyo</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyLayout">Layout:</strong> <span>3LDK</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyFloors">Number of floors:</strong> <span>2</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyArea">Floor Area:</strong> <span>78.53m²</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyAge">Age:</strong> <span>21 years</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyPrice">Price:</strong> <span>¥99,700,000</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyStation">Station:</strong> <span>16min walk to JR Meguro</span></li>
           </ul>
         </div>
         <div class="property-item">
@@ -129,13 +129,13 @@
           </div>
           <h5 i18n="@@rentorbuy.suumoForRent">For Rent</h5>
           <ul>
-            <li><strong style="color: #FF69B4">Location:</strong> <span>Meguro 4, Meguro-ku, Tokyo</span></li>
-            <li><strong style="color: #FF69B4">Layout:</strong> <span>3LDK</span></li>
-            <li><strong style="color: #FF69B4">Number of floors:</strong> <span>3</span></li>
-            <li><strong style="color: #FF69B4">Floor Area:</strong> <span>99.4m²</span></li>
-            <li><strong style="color: #FF69B4">Age:</strong> <span>15 years</span></li>
-            <li><strong style="color: #FF69B4">Rent:</strong> <span>¥420,000/month</span></li>
-            <li><strong style="color: #FF69B4">Station:</strong> <span>15min walk to JR Meguro</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyLocation">Location:</strong> <span>Meguro 4, Meguro-ku, Tokyo</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyLayout">Layout:</strong> <span>3LDK</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyFloors">Number of floors:</strong> <span>3</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyArea">Floor Area:</strong> <span>99.4m²</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyAge">Age:</strong> <span>15 years</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyRent">Rent:</strong> <span>¥420,000/month</span></li>
+            <li><strong style="color: #FF69B4" i18n="@@rentorbuy.propertyStation">Station:</strong> <span>15min walk to JR Meguro</span></li>
           </ul>
         </div>
       </div>
@@ -148,7 +148,7 @@
 
     <h3 id="comparison" i18n="@@rentorbuy.npvTitle">So, which is best?</h3>
 
-    <p>
+    <p i18n="@@rentorbuy.conclusionUpfront">
       Let's start with the conclusion so you can skip the rest of the article 😉.
     </p>
 
@@ -157,20 +157,20 @@
         <i class="fas fa-trophy"></i>
       </div>
       <div class="finding-content">
-        <strong>With a 25 years horizon, the rental option is cheaper than the buying option.</strong>
+        <strong i18n="@@rentorbuy.mainFinding">With a 25 years horizon, the rental option is cheaper than the buying option.</strong>
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.expensiveRentConclusion">
       You read that right! The 430,000 yen monthly rent is rather expensive, and you could argue that the rental
       property is higher-end than the one for sale. However, it is cheaper to rent than to buy, even
       in the long run.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.netWorthPerspective">
       And I don't mean that your rent will be less than your mortgage payment on a monthly basis. I mean that from a
       total net worth perspective, 25 years from now, you will be richer if you decide to rent and not to buy.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.articleExplanation">
       In the rest of the article, I'll explain the assumptions and the calculations I used to reach this conclusion.
     </p>
 
@@ -182,23 +182,23 @@
       <h2 i18n="@@rentorbuy.modelingTitle">The Decision Making Framework</h2>
     </div>
 
-    <p>There are many factors at play when choosing the perfect house that suits your needs. From a financial
+    <p i18n="@@rentorbuy.financialPerspective">There are many factors at play when choosing the perfect house that suits your needs. From a financial
       perspective, however, we can compare any two options with the tools below:</p>
     <ul>
-      <li>Net Present Value (NPV)</li>
-      <li>Internal Rate of Return (IRR)</li>
+      <li i18n="@@rentorbuy.toolNpv">Net Present Value (NPV)</li>
+      <li i18n="@@rentorbuy.toolIrr">Internal Rate of Return (IRR)</li>
     </ul>
 
-    <p>
+    <p i18n="@@rentorbuy.beforeDetails">
       But before we dive into the details, let's first formalize what we mean by a property.
     </p>
 
     <h3 id="modeling-property" i18n="@@rentorbuy.npvTitle">Modeling a Property</h3>
-    <p>
+    <p i18n="@@rentorbuy.propertyBundle">
       A property is a bundle of cash flows.
     </p>
 
-    <p>
+    <p i18n="@@rentorbuy.cashflowExample">
       For example, let's compare the cash flows for the two housing options described above. I'll use <span
         class="percentage-highlight">{{ fees / 2 |
         percent }}</span> for the broker fees (both when buying and selling) and a <span class="percentage-highlight">{{
@@ -217,31 +217,31 @@
       </button>
     </div>
 
-    <p>In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity,
+    <p i18n="@@rentorbuy.rentCashflow">In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity,
       we'll do the accounting yearly below).
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
-        <p>\[ CF_{{ '{' }}rent{{ '}' }}(t) = -R \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n \]</p>
-        <p>where \( R \) is the annual rent and \( n \) is the number of years.</p>
+        <p i18n="@@rentorbuy.rentFormula">\[ CF_{{ '{' }}rent{{ '}' }}(t) = -R \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n \]</p>
+        <p i18n="@@rentorbuy.rentFormulaExplanation">where \( R \) is the annual rent and \( n \) is the number of years.</p>
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.buyCashflowIntro">
       In case we buy the property though, there are two types of cash flows:
     </p>
     <ul>
-      <li>Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</li>
-      <li>Positive: the proceeds from selling the property.</li>
+      <li i18n="@@rentorbuy.negativeCashflows">Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</li>
+      <li i18n="@@rentorbuy.positiveCashflows">Positive: the proceeds from selling the property.</li>
     </ul>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
-        <p>\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP - F \]</p>
-        <p>\[ CF_{{ '{' }}buy{{ '}' }}(t) = -M - C \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n-1 \]</p>
-        <p>\[ CF_{{ '{' }}buy{{ '}' }}(n) = S - M - C \]</p>
-        <p>where \( DP \) is the down payment required to buy the property, \( F \) is the transaction costs or fees
+        <p i18n="@@rentorbuy.buyFormula1">\[ CF_{{ '{' }}buy{{ '}' }}(0) = -DP - F \]</p>
+        <p i18n="@@rentorbuy.buyFormula2">\[ CF_{{ '{' }}buy{{ '}' }}(t) = -M - C \quad \text{{ '{' }}for {{ '}' }} t = 1, 2, \ldots, n-1 \]</p>
+        <p i18n="@@rentorbuy.buyFormula3">\[ CF_{{ '{' }}buy{{ '}' }}(n) = S - M - C \]</p>
+        <p i18n="@@rentorbuy.buyFormulaExplanation">where \( DP \) is the down payment required to buy the property, \( F \) is the transaction costs or fees
           paid
           to a broker, \( M \) is the annual mortgage payment, \( C \) is the annual costs
           (property taxes, maintenance, insurance, etc.), \( S \) is the sale proceeds when the property is
@@ -251,21 +251,21 @@
     </div>
     <h3 id="cumulative" i18n="@@rentorbuy.npvTitle">Cumulative Cash Flows</h3>
 
-    <p>Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent
+    <p i18n="@@rentorbuy.cumulativeExplanation">Now, these cash flows represent how much money we spend or gain each year. If we want to see how much we spent
       overall, we can just sum them all together to see how "expensive" each option is.
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
-        <p>\[ V_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}buy{{ '}' }}(t) \]
+        <p i18n="@@rentorbuy.buyTotalFormula">\[ V_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}buy{{ '}' }}(t) \]
         </p>
-        <p>\[ V_{{ '{' }}rent{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}rent{{ '}' }}(t)
+        <p i18n="@@rentorbuy.rentTotalFormula">\[ V_{{ '{' }}rent{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} CF_{{ '{' }}rent{{ '}' }}(t)
           \]
         </p>
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.breakevenExample">
       For example, if we compare renting and buying (with a mortgage). We see
       that the total costs cross in year <span class="percentage-highlight">{{ breakevenYear }}</span>:
     </p>
@@ -274,14 +274,14 @@
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
-        <p>
+        <p i18n="@@rentorbuy.mathematicalAdvantage">
           Mathematically, buying becomes advantageous when \( V_{{ '{' }}buy{{ '}' }}(n) > V_{{ '{' }}rent{{ '}' }}(n)
           \).
         </p>
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.timeHorizonAdvice">
       Or in other words, it only makes sense to buy the property if we intend to live in it for more than <span
         class="percentage-highlight">{{ breakevenYear }}</span> years. Also, the longer we live in the house, the more
       advantageous it is to buy.
@@ -294,25 +294,25 @@
         <i class="fas fa-lightbulb"></i>
       </div>
       <div class="insight-content">
-        <p>
+        <p i18n="@@rentorbuy.breakevenExplanation">
           To better understand why we need <span class="percentage-highlight">{{ breakevenYear }}</span> years to break
           even, let's consider the two aspects of
           paying back the loan:
         </p>
         <ul>
-          <li>① Part of the monthly payment are forced savings we make instead of paying a rent.</li>
-          <li>② The other part is used to pay the bank interest.</li>
+          <li i18n="@@rentorbuy.forcedSavings">① Part of the monthly payment are forced savings we make instead of paying a rent.</li>
+          <li i18n="@@rentorbuy.bankInterest">② The other part is used to pay the bank interest.</li>
         </ul>
-        <p>
+        <p i18n="@@rentorbuy.realCostExplanation">
           <strong>Only ② is a real cost as everything we invest in the house is money we will get back when we sell
             it.</strong>
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.brokerFeesQuestion">
           Now, the question is: how long does it take to get the broker fees back thansk to the savings in ①?
         </p>
         <br>
-        <p>A quick back of the enveloppe calculation tells us that with brokerage fees of <span
+        <p i18n="@@rentorbuy.brokerFeesCalculation">A quick back of the enveloppe calculation tells us that with brokerage fees of <span
             class="percentage-highlight">{{ fees | percent }}</span> and a forced rent saving of <span
             class="percentage-highlight">{{ rentYield | percent: '1.1-1' }}</span>,
           minus <span class="percentage-highlight">{{ costs | percent }}</span> in runnning costs
@@ -325,21 +325,21 @@
           years to get the broker fees back.
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.realityAdjustment">
           In reality, it takes a bit less because we are only paying <span class="percentage-highlight">{{ mortgageRate
             | percent }}</span> interests on the remaining loan balance and not the total property price.
         </p>
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.cumulativeDifferencePlot">
       We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. This
       will be useful when comparing with the NPV analysis in the next section.
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
-        <p>
+        <p i18n="@@rentorbuy.plotExplanation">
           Specifically, we plot \(V_{{ '{' }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \).
         </p>
       </div>
@@ -351,22 +351,22 @@
 
     <h3 id="npv" i18n="@@rentorbuy.npvTitle">Opportunity Cost and Net Present Value (NPV)</h3>
 
-    <p>
+    <p i18n="@@rentorbuy.opportunityCostIntro">
       There is another factor to consider: <a href="https://en.wikipedia.org/wiki/Opportunity_cost" target="_blank">the
         Opportunity Cost</a> of buying vs renting.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.downPaymentInvestment">
       For example, let's say that instead of making a big down payment and a small loan for the house, we instead rent
       and invest the down payment in the stock market or in a remunerated account. Over time, that investment will
       grow at some rate \(r\).
     </p>
 
-    <p>
+    <p i18n="@@rentorbuy.mortgageInvestment">
       Similarly, if the mortgage we pay is less than the rent we would have paid, then we could invest the difference
       in the stock market.
     </p>
 
-    <p>
+    <p i18n="@@rentorbuy.futureValueMaximization">
       Building on this idea, we can try to maximize the <a href="https://en.wikipedia.org/wiki/Future_value">Future
         Value</a> (FV) of our bank account by investing whatever money we have left over each year.
     </p>
@@ -376,23 +376,23 @@
         <p class="long-equation">\[ FV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }}
           (CF_{{ '{' }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t)) \times (1 + r)^{{ '{' }}n-t{{ '}' }} \quad (1) \]
         </p>
-        <p>where \(r\) is the opportunity cost rate.</p>
+        <p i18n="@@rentorbuy.opportunityCostRate">where \(r\) is the opportunity cost rate.</p>
       </div>
     </div>
 
 
 
-    <p>In fact, we can compute the <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present
+    <p i18n="@@rentorbuy.presentValueExplanation">In fact, we can compute the <a href="https://en.wikipedia.org/wiki/Present_value" target="_blank">Present
         Value</a> (PV) instead by by discounting FV using \(r\). PV is the value of the future cash flows in today's
       money.
     </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
-        <p class="long-equation">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{
+        <p class="long-equation" i18n="@@rentorbuy.pvFormula1">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \frac{{ '{' }}FV_{{ '{' }}buy{{ '}' }}(n){{ '}' }}{{
           '{' }}(1 + r)^n{{ '}'
           }} \quad (2) \]</p>
-        <p>Or, expressed directly in terms of cash flows:</p>
+        <p i18n="@@rentorbuy.cashflowsExpression">Or, expressed directly in terms of cash flows:</p>
         <p class="long-equation">\[ PV_{{ '{' }}buy{{ '}' }}(n) = \sum_{{ '{' }}t=0{{ '}' }}^{{ '{' }}n{{ '}' }} \frac{{
           '{' }}CF_{{ '{'
           }}buy{{ '}' }}(t) - CF_{{ '{' }}rent{{ '}' }}(t){{ '}' }}{{ '{' }}(1 + r)^t{{ '}' }} \quad (3) \]</p>
@@ -404,33 +404,33 @@
         <i class="fas fa-lightbulb"></i>
       </div>
       <div class="insight-content">
-        <p>
+        <p i18n="@@rentorbuy.opportunityCostQuestion">
           <strong>How do we know the opportunity cost rate?</strong>
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.noSimpleAnswer">
           There isn't a simple answer to this question unfortunately.
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.sp500Comparison">
           A rough back of the envelope calculation is to compare the <span class="percentage-highlight">8.7%</span>
           yearly return of the SP500 in during the past <span class="percentage-highlight">25</span> years with the
           <span class="percentage-highlight">~3.5%</span> price increase of real estate in Tokyo and <span
             class="percentage-highlight">~0.7%</span> annualized inflation rate.
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.opportunityCostEstimate">
           This gives a <span class="percentage-highlight">4.5%</span> estimate for the opportunity cost
           compared to the SP500.
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.pastDataWarning">
           Of course, this estimate are based on past data and is no guarantee of what will happen in the future.
         </p>
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.presentValueComparison">
       So, let's again compare the two options, but using the Present Value of buying a house with a <span
         class="percentage-highlight">{{ opportunityCost |
         percent: '1.1-1' }}</span> opportunity cost.
@@ -443,11 +443,11 @@
         <i class="fas fa-lightbulb"></i>
       </div>
       <div class="insight-content">
-        <p>
+        <p i18n="@@rentorbuy.recommendationChanges">
           <strong>The buy vs. rent recommendation completely changes!</strong>
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.breakevenTimeChange">
           It now takes <span class="percentage-highlight">9</span> years instead of <span
             class="percentage-highlight">4</span> to break even, and the renting option looks much more attractive in
           the long
@@ -457,19 +457,19 @@
       </div>
     </div>
 
-    <p>
+    <p i18n="@@rentorbuy.interestingResult">
       I personally find this result quite interesting! Before doing the analysis, I would have never
       thought that timing the sale of your house actually mattered!
     </p>
 
     <h3 id="irr" i18n="@@rentorbuy.irrTitle">Internal Rate of Return (IRR)</h3>
-    <p>
+    <p i18n="@@rentorbuy.npvOptimization">
       OK, so using NPV to assess the buy vs rent decision, we get a better sense of whether we should buy, and also when
       we should sell. However, this tells a story in terms of absolute amounts of money, and if we really want to
       optimize, we could sell one house at the right timing and immediately buy another one and so on so as to maximize
       the slope of the NPV profile.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.rateOfReturnAssessment">
       For that reason, it makes sense to assess the rate of return of the investment for each year. We know that
       depending on the timing, the rate of return of our investment will be more or less than <span
         class="percentage-highlight">{{ opportunityCost |
@@ -478,7 +478,7 @@
       each year.
     </p>
 
-    <p>
+    <p i18n="@@rentorbuy.irrExplanation">
       This is what the <a href="https://en.wikipedia.org/wiki/Internal_rate_of_return" target="_blank">Internal Rate of
         Return</a> (IRR) is for. There isn't a simple closed formula for the IRR, but we can use a numerical method to
       compute it from the undiscounted cash flows.
@@ -486,7 +486,7 @@
 
     <app-irr-chart></app-irr-chart>
 
-    <p>
+    <p i18n="@@rentorbuy.irrSurprisingResult">
       Again a surprising result. To be optimal, we should sell at year <span class="percentage-highlight">11</span>
       according to the IRR calculation. This is one
       year earlier than what the NPV identifies as the optimal year to maximize the value of just one house investment.
@@ -497,16 +497,16 @@
         <i class="fas fa-lightbulb"></i>
       </div>
       <div class="insight-content">
-        <p>
+        <p i18n="@@rentorbuy.leverageEffect">
           <strong>In that graph, we can see the leverage effect of borrowing!</strong>
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.immediateSaleLoss">
           If we buy and sell the property immediately, we will lose the broker fees and get nothing. So the
           IRR is negative. But as we hold on to the property, the IRR will increase.
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.longTermReturn">
           In the longer run, the rate of return is the rent we save (<span class="percentage-highlight">{{
             rentYield | percent: '1.1-1' }}</span> when expressed as a percentage of the buy price), minus the cost
           ratio of <span class="percentage-highlight">{{
@@ -516,7 +516,7 @@
           we hold it.
         </p>
         <br>
-        <p>
+        <p i18n="@@rentorbuy.leverageExplanation">
           However, since we borrow money, in the beginning, we will only have invested a small fraction of the total
           price of the house. But we will still get <span class="percentage-highlight">{{ rentYield - costs | percent:
             '1.1-1' }}</span> of the total price of
@@ -530,21 +530,21 @@
     <div class="section-header">
       <h2 i18n="@@rentorbuy.conclusionTitle">In Conclusion</h2>
     </div>
-    <p>
+    <p i18n="@@rentorbuy.finalQuestion">
       So, should you rent or buy 🤷? Well, it depends on a few factors. The immediate cost of rent 💸 vs buy 💰 is one
       factor, of course, but opportunity cost and timing are also critically important!
     </p>
-    <p>
+    <p i18n="@@rentorbuy.ruleOfThumb">
       As a very rough rule of thumb, if you can keep the cost of renting below <span
         class="percentage-highlight">5%</span> of the property value, then aiming to stay at least between <span
         class="percentage-highlight">9</span> years should give you enough time to cover brokerage
       fees and use leverage to your advantage.
     </p>
-    <p>
+    <p i18n="@@rentorbuy.japanOpportunityCost">
       Recently, one could argue that, in Japan, access to the global stock market has created a really high opportunity
       cost which makes it difficult to justify buying at all. But future returns may be quite different from the past!
     </p>
-    <p>
+    <p i18n="@@rentorbuy.futureResearch">
       In fact, buying a house and investing in the stock market have different risk profiles. So in a future article, I
       would like to investigate this aspect using historical data for the Japanese housing market and the international
       stock market.
