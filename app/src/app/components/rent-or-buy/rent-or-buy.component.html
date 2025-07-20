@@ -1,47 +1,50 @@
 <div class="dashboard-container">
-  <!-- Mobile FAB System -->
-  <div class="mobile-fab-system" [class.active]="isFabOpen">
-    <!-- Main FAB Button -->
-    <button class="main-fab" (click)="toggleFab()" type="button">
-      <span class="fab-icon" [class.rotated]="isFabOpen">
-        <svg viewBox="0 0 24 24" width="24" height="24">
+  <!-- Mobile Update Analysis Button -->
+  <div class="mobile-update-button">
+    <button class="update-btn" (click)="toggleFab()" type="button">
+      <span class="update-icon" [class.rotated]="isFabOpen">
+        <svg viewBox="0 0 24 24" width="20" height="20">
           <path
             d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
         </svg>
       </span>
+      <span class="update-text" i18n="@@rentorbuy.updateAnalysis">Update Analysis</span>
     </button>
-
-    <!-- FAB Options -->
-    <div class="fab-options" *ngIf="isFabOpen">
-      <button class="fab-option rental" (click)="openModal('rental')" type="button">
-        <span class="fab-label" i18n="@@rentorbuy.rental">Rental</span>
-        <span class="fab-icon">
+    
+    <!-- Backdrop -->
+    <div class="update-backdrop" *ngIf="isFabOpen" (click)="toggleFab()"></div>
+    
+    <!-- Update Options -->
+    <div class="update-options" *ngIf="isFabOpen">
+      <button class="update-option rental" (click)="openModal('rental')" type="button">
+        <span class="update-label" i18n="@@rentorbuy.rental">Rental</span>
+        <span class="update-option-icon">
           <svg viewBox="0 0 24 24">
             <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
           </svg>
         </span>
       </button>
-      <button class="fab-option property" (click)="openModal('property')" type="button">
-        <span class="fab-label" i18n="@@rentorbuy.property">Property</span>
-        <span class="fab-icon">
+      <button class="update-option property" (click)="openModal('property')" type="button">
+        <span class="update-label" i18n="@@rentorbuy.property">Property</span>
+        <span class="update-option-icon">
           <svg viewBox="0 0 24 24">
             <path
               d="M12,3L2,12H5V20H19V12H22L12,3M12,8.75A1.25,1.25 0 0,1 13.25,10A1.25,1.25 0 0,1 12,11.25A1.25,1.25 0 0,1 10.75,10A1.25,1.25 0 0,1 12,8.75M12,15C13.5,15 15.61,15.5 16.5,16V18H7.5V16C8.39,15.5 10.5,15 12,15Z" />
           </svg>
         </span>
       </button>
-      <button class="fab-option loan" (click)="openModal('loan')" type="button">
-        <span class="fab-label" i18n="@@rentorbuy.loan">Loan</span>
-        <span class="fab-icon">
+      <button class="update-option loan" (click)="openModal('loan')" type="button">
+        <span class="update-label" i18n="@@rentorbuy.loan">Loan</span>
+        <span class="update-option-icon">
           <svg viewBox="0 0 24 24">
             <path
               d="M5,6H23V18H5V6M14,9A3,3 0 0,1 17,12A3,3 0 0,1 14,15A3,3 0 0,1 11,12A3,3 0 0,1 14,9M9,8A2,2 0 0,1 7,10V14A2,2 0 0,1 9,16H19A2,2 0 0,1 21,14V10A2,2 0 0,1 19,8H9Z" />
           </svg>
         </span>
       </button>
-      <button class="fab-option economic" (click)="openModal('economic')" type="button">
-        <span class="fab-label" i18n="@@rentorbuy.economic">Economic</span>
-        <span class="fab-icon">
+      <button class="update-option economic" (click)="openModal('economic')" type="button">
+        <span class="update-label" i18n="@@rentorbuy.economic">Economic</span>
+        <span class="update-option-icon">
           <svg viewBox="0 0 24 24">
             <path d="M16,6L18.29,8.29L13.41,13.17L9.41,9.17L2,16.59L3.41,18L9.41,12L13.41,16L19.71,9.71L22,12V6H16Z" />
           </svg>
@@ -369,19 +372,6 @@
           </div>
         </div>
 
-        <!-- Mobile Share Box -->
-        <div class="share-box mobile-only" *ngIf="!error && cashFlowData.length > 0 && financialRecommendation">
-          <div class="share-content">
-            <h4 i18n="@@rentorbuy.shareAnalysis">Share Analysis</h4>
-            <p i18n="@@rentorbuy.shareDescription">Share your rent vs buy analysis with others, or save it for later.
-            </p>
-            <button class="share-btn-full" (click)="copyShareUrl()" title="Share this analysis with a link">
-              <span class="share-icon">🔗</span>
-              <span class="share-text">Copy Share Link</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Results section -->
         <div class="results-section">
           <div *ngIf="error" class="error-message">
@@ -444,6 +434,19 @@
               <canvas #irrChart></canvas>
               <div *ngIf="!error && cashFlowData.length === 0" class="chart-placeholder">
                 <span i18n="@@rentorbuy.irrChartPlaceholder">IRR chart will appear here after calculation</span>
+              </div>
+            </div>
+
+            <!-- Mobile Share Box -->
+            <div class="share-box mobile-only" *ngIf="!error && cashFlowData.length > 0 && financialRecommendation">
+              <div class="share-content">
+                <h4 i18n="@@rentorbuy.shareAnalysis">Share Analysis</h4>
+                <p i18n="@@rentorbuy.shareDescription">Share your rent vs buy analysis with others, or save it for later.
+                </p>
+                <button class="share-btn-full" (click)="copyShareUrl()" title="Share this analysis with a link">
+                  <span class="share-icon">🔗</span>
+                  <span class="share-text">Copy Share Link</span>
+                </button>
               </div>
             </div>
           </div>
