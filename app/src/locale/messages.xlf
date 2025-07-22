@@ -1997,11 +1997,193 @@
           <context context-type="linenumber">43</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="rentorbuy.updateAnalysis" datatype="html">
-        <source>Update Analysis</source>
+      <trans-unit id="rentorbuy.newComparison" datatype="html">
+        <source>New Comparison</source>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
           <context context-type="linenumber">8</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.toolFirstTime" datatype="html">
+        <source>If this is your first time using the tool, you can start by clicking the "Start New Comparison" button below. 👇</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">365</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.startNewComparison" datatype="html">
+        <source>Start New Comparison</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">371</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.startTutorial" datatype="html">
+        <source>Start Tutorial</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">370</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialTitle" datatype="html">
+        <source>Setup Your Analysis</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">607</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep1" datatype="html">
+        <source>Basic Info</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">615</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep2" datatype="html">
+        <source>Loan</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">620</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep3" datatype="html">
+        <source>Investment</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">625</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep1Title" datatype="html">
+        <source>Let's start with the basics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">635</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep1Description" datatype="html">
+        <source>Tell us about your rental and purchase options:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">636</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialMonthlyRent" datatype="html">
+        <source>Monthly Rent (万円)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">639</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialPropertyPrice" datatype="html">
+        <source>Property Price (万円)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">644</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep2Title" datatype="html">
+        <source>Do you plan to take a loan?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">650</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep2Description" datatype="html">
+        <source>This will help us calculate your mortgage costs:</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">651</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialYesLoan" datatype="html">
+        <source>Yes, I'll take a loan</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">655</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialNoLoan" datatype="html">
+        <source>No, I'll pay cash</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">659</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialDownPayment" datatype="html">
+        <source>Down Payment (%)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">664</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialLoanRate" datatype="html">
+        <source>Loan Rate (%)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">669</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialLoanPeriod" datatype="html">
+        <source>Loan Period (years)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">674</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep3Title" datatype="html">
+        <source>What about alternative investments?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">680</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialStep3Description" datatype="html">
+        <source>If you didn't buy a house, how much would you invest in stocks?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">681</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialYesInvestment" datatype="html">
+        <source>Yes, I would invest in stocks</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">685</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialNoInvestment" datatype="html">
+        <source>No, I wouldn't invest</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">689</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialInvestmentReturn" datatype="html">
+        <source>Expected Annual Return (%)</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">694</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialPrevious" datatype="html">
+        <source>Previous</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">702</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialNext" datatype="html">
+        <source>Next</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">705</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.tutorialComplete" datatype="html">
+        <source>Complete Setup</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">708</context>
         </context-group>
       </trans-unit>
       <trans-unit id="rentorbuy.monthlyRent" datatype="html">

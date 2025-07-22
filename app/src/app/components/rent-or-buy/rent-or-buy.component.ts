@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, ActivatedRoute } from '@angular/router';
 import Chart from 'chart.js/auto';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, fromEvent, debounceTime, takeUntil, throttleTime } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { RentBuyCalculatorService } from '../../services/rent-buy-calculator.service';
 import { AnalyticsService } from '../../services/analytics.service';
@@ -88,6 +88,22 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   // Mobile FAB system  
   isFabOpen = false;
   activeModal: string | null = null;
+  isMobileButtonVisible = true;
+  private lastScrollTop = 0;
+  
+  // Tutorial system
+  isTutorialOpen = false;
+  tutorialStep = 1;
+  tutorialData = {
+    monthlyRent: 150,
+    housePrice: 5000,
+    hasLoan: true,
+    downPayment: 20,
+    loanRate: 1.5,
+    loanPeriod: 35,
+    hasInvestment: true,
+    investmentReturn: 7
+  };
   
   cashFlowData: CashFlow[] = [];
   error: string | null = null;
@@ -361,6 +377,16 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       // Calculate NPV on initialization
       this.calculateNpv();
     }, 100);
+
+    // Add scroll event listener for mobile button visibility
+    fromEvent(window, 'scroll')
+      .pipe(
+        throttleTime(100), // Throttle to improve performance
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.onScroll();
+      });
   }
 
   isMobileView(): boolean {
@@ -1381,6 +1407,21 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
   toggleFab(): void {
     this.isFabOpen = !this.isFabOpen;
   }
+  
+  onScroll(): void {
+    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Hide button when scrolling down, show when scrolling up
+    if (currentScrollTop > this.lastScrollTop && currentScrollTop > 100) {
+      // Scrolling down and past initial 100px
+      this.isMobileButtonVisible = false;
+    } else if (currentScrollTop < this.lastScrollTop) {
+      // Scrolling up
+      this.isMobileButtonVisible = true;
+    }
+    
+    this.lastScrollTop = currentScrollTop;
+  }
 
   openModal(type: string): void {
     this.activeModal = type;
@@ -1425,5 +1466,82 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       case 'irr': return $localize`:@@rentorbuy.irrChart:Internal Rate of Return (IRR)`;
       default: return '';
     }
+  }
+  
+  // Tutorial methods
+  openTutorial(): void {
+    this.isTutorialOpen = true;
+    this.tutorialStep = 1;
+    this.resetTutorialData();
+  }
+  
+  closeTutorial(): void {
+    this.isTutorialOpen = false;
+    this.tutorialStep = 1;
+  }
+  
+  nextTutorialStep(): void {
+    if (this.tutorialStep < 3) {
+      this.tutorialStep++;
+    }
+  }
+  
+  previousTutorialStep(): void {
+    if (this.tutorialStep > 1) {
+      this.tutorialStep--;
+    }
+  }
+  
+  completeTutorial(): void {
+    // Apply tutorial data to the main form
+    this.rent.monthlyRent = this.tutorialData.monthlyRent;
+    
+    // Allocate property price: 3500万円 to house, rest to land
+    const propertyPrice = this.tutorialData.housePrice;
+    this.buy.housePrice = 3500; // Fixed house price
+    this.buy.landPrice = propertyPrice - 3500; // Remaining amount goes to land
+    
+    if (this.tutorialData.hasLoan) {
+      this.loan.loanPeriod = this.tutorialData.loanPeriod;
+      this.loan.loanRate = this.tutorialData.loanRate;
+      this.loan.upfrontAmount = this.tutorialData.downPayment;
+    } else {
+      // If no loan, set upfront amount to 100%
+      this.loan.upfrontAmount = 100;
+    }
+    
+    if (this.tutorialData.hasInvestment) {
+      this.macro.opportunityCost = this.tutorialData.investmentReturn;
+    } else {
+      this.macro.opportunityCost = 0;
+    }
+    
+    // Trigger calculation
+    this.onFormChange();
+    
+    // Close tutorial
+    this.closeTutorial();
+    
+    // Close intro box
+    this.closeIntroBox();
+  }
+  
+  private resetTutorialData(): void {
+    this.tutorialData = {
+      monthlyRent: 20,
+      housePrice: 7000,
+      hasLoan: true,
+      downPayment: 20,
+      loanRate: 1.5,
+      loanPeriod: 35,
+      hasInvestment: true,
+      investmentReturn: 7
+    };
+    
+    // Ensure smooth initial state for animations
+    setTimeout(() => {
+      // This ensures the conditional fields start in the correct state
+      this.tutorialData = { ...this.tutorialData };
+    }, 100);
   }
 }

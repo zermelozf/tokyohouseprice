@@ -155,6 +155,40 @@
         }
       }
       
+      .intro-actions {
+        margin: 1.5rem 0;
+        text-align: center;
+        
+        .tutorial-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background-color: #FF69B4;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            background-color: #FF1493;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 105, 180, 0.3);
+          }
+          
+          .tutorial-icon {
+            font-size: 16px;
+          }
+          
+          .tutorial-text {
+            font-weight: 500;
+          }
+        }
+      }
+      
       .close-intro-btn {
         position: absolute;
         top: 0.75rem;
@@ -768,6 +802,14 @@
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
   
   // Remove bottom margin when inside charts container to maintain consistent spacing
   .charts-container & {
@@ -777,6 +819,7 @@
   // Remove bottom margin in mobile view
   @media (max-width: 768px) {
     margin-bottom: 0;
+    margin-top: 20px;
   }
   
   .share-content {
@@ -1129,6 +1172,13 @@
   right: 0;
   z-index: 1000;
   padding: 0 20px;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(0);
+
+  &.hidden {
+    opacity: 0;
+    transform: translateY(100px);
+  }
 
   @media (max-width: 768px) {
     display: block; // Show on mobile
@@ -1815,6 +1865,298 @@
 
     i {
       font-size: 1rem;
+    }
+  }
+}
+
+// Tutorial Modal
+.tutorial-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.tutorial-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.3s ease;
+  width: 500px;
+  
+  @media (max-width: 768px) {
+    width: 95vw;
+    max-height: 95vh;
+  }
+}
+
+.tutorial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  background-color: #f8f9fa;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .tutorial-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+.tutorial-body {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  @media (max-width: 768px) {
+    max-height: 75vh;
+    padding: 15px;
+  }
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background-color: #e0e0e0;
+    z-index: 1;
+  }
+  
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: #e0e0e0;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .step-label {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      transition: color 0.3s ease;
+    }
+    
+    &.active {
+      .step-number {
+        background-color: #FF69B4;
+        color: white;
+      }
+      
+      .step-label {
+        color: #FF69B4;
+        font-weight: 500;
+      }
+    }
+    
+    &.completed {
+      .step-number {
+        background-color: #28a745;
+        color: white;
+      }
+      
+      .step-label {
+        color: #28a745;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.tutorial-step {
+  h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  p {
+    margin: 0 0 20px 0;
+    color: #666;
+    line-height: 1.5;
+  }
+}
+
+.tutorial-form-group {
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    
+    &:focus {
+      outline: none;
+      border-color: #FF69B4;
+      box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.1);
+    }
+  }
+  
+  .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateX(2px);
+    }
+    
+    input[type="radio"] {
+      margin: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:checked {
+        transform: scale(1.1);
+      }
+    }
+    
+    span {
+      font-size: 14px;
+      color: #333;
+      transition: color 0.2s ease;
+    }
+    
+    &:hover span {
+      color: #FF69B4;
+    }
+  }
+  
+
+  
+  // Conditional field animations
+  &.conditional-field {
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+    transform: translateY(-10px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &.show {
+      max-height: 100px;
+      opacity: 1;
+      margin-bottom: 20px;
+      transform: translateY(0);
+    }
+  }
+}
+
+.tutorial-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-top: 1px solid #eee;
+  background-color: #f8f9fa;
+  
+  .tutorial-btn-secondary {
+    background: none;
+    border: 1px solid #ddd;
+    color: #666;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: #f8f9fa;
+      border-color: #FF69B4;
+      color: #FF69B4;
+    }
+  }
+  
+  .tutorial-btn-primary {
+    background-color: #FF69B4;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: #FF1493;
+      transform: translateY(-1px);
+    }
+    
+    &:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
     }
   }
 }
