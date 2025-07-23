@@ -1,15 +1,12 @@
-<div class="dashboard-container">
+<div class="dashboard-container" [class.intro-visible]="isIntroVisible">
   <!-- Mobile Update Analysis Button -->
   <div class="mobile-update-button" [class.hidden]="!isMobileButtonVisible" *ngIf="!isIntroVisible">
     <button class="update-btn" (click)="toggleFab()" type="button">
       <span class="update-icon" [class.rotated]="isFabOpen">
         🎯
       </span>
-      <span class="update-text" i18n="@@rentorbuy.newComparison">New Comparison</span>
+      <span class="update-text" i18n="@@rentorbuy.newComparison">Update Parameters</span>
     </button>
-
-    <!-- Backdrop -->
-    <div class="update-backdrop" *ngIf="isFabOpen" (click)="toggleFab()"></div>
 
     <!-- Update Options -->
     <div class="update-options" *ngIf="isFabOpen">
@@ -49,6 +46,9 @@
       </button>
     </div>
   </div>
+
+  <!-- Mobile Backdrop -->
+  <div class="update-backdrop" *ngIf="isFabOpen && !isIntroVisible" (click)="toggleFab()"></div>
 
   <!-- Modal Overlay -->
   <div class="modal-overlay" *ngIf="activeModal" (click)="closeModal()">
@@ -372,13 +372,20 @@
               <span class="tutorial-text" i18n="@@rentorbuy.startNewComparison">Start New Comparison</span>
             </button>
           </div>
+          <p class="advanced-text" i18n="@@rentorbuy.advancedUsersNote">If you are familiar with the options, feel free to tweak the parameters directly</p>
+          <div class="intro-actions">
+            <button class="tutorial-btn secondary" (click)="openAdvancedOptions()" type="button">
+              <span class="tutorial-icon">⚙️</span>
+              <span class="tutorial-text" i18n="@@rentorbuy.updateParameters">Tweak Parameters Directly</span>
+            </button>
+          </div>
           <p class="footnote-text" i18n="@@rentorbuy.toolLearnMore">Learn more about the underlying model in <a
               href="/rent-or-buy-analysis">this article</a> 🤓✨
           </p>
         </div>
 
         <!-- Investment Advice Box (Main Focus) -->
-        <div class="investment-advice-box" *ngIf="!error && cashFlowData.length > 0 && financialRecommendation">
+        <div class="investment-advice-box" *ngIf="!error && cashFlowData.length > 0 && financialRecommendation && !isIntroVisible">
           <div class="strategy-header">
             <h3 class="strategy-title"><span class="title-icon">💡</span> <span
                 i18n="@@rentorbuy.optimalStrategy">Optimal Strategy</span></h3>
@@ -465,7 +472,7 @@
         </div> <!-- End results-section -->
         
         <!-- Mobile Share Box -->
-        <div class="share-box mobile-only show" *ngIf="!error && cashFlowData.length > 0">
+        <div class="share-box mobile-only show" *ngIf="!error && cashFlowData.length > 0 && !isIntroVisible">
           <div class="share-content">
             <h4 i18n="@@rentorbuy.shareAnalysis">Share Analysis</h4>
             <p i18n="@@rentorbuy.shareDescription">Share your rent vs buy analysis with others, or save it for

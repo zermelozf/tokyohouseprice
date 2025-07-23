@@ -1408,6 +1408,21 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
     this.isFabOpen = !this.isFabOpen;
   }
   
+  openAdvancedOptions(): void {
+    // Check if we're on mobile (screen width <= 768px)
+    if (window.innerWidth <= 768) {
+      // Mobile: close intro box first, then open the sub-options menu with backdrop
+      this.closeIntroBox();
+      // Small delay to ensure intro box is closed before opening mobile options
+      setTimeout(() => {
+        this.isFabOpen = true;
+      }, 100);
+    } else {
+      // Desktop: close the intro box to reveal the form
+      this.closeIntroBox();
+    }
+  }
+  
   onScroll(): void {
     const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     

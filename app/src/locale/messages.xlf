@@ -2018,6 +2018,20 @@
           <context context-type="linenumber">371</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="rentorbuy.updateParameters" datatype="html">
+        <source>Update Parameters</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">375</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="rentorbuy.advancedUsersNote" datatype="html">
+        <source>If you are familiar with the options, feel free to tweak the parameters directly</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/rent-or-buy/rent-or-buy.component.html</context>
+          <context context-type="linenumber">374</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="rentorbuy.startTutorial" datatype="html">
         <source>Start Tutorial</source>
         <context-group purpose="location">
