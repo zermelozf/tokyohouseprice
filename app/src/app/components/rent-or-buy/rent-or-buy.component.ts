@@ -769,7 +769,7 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
         ? this.getTranslatedText('right_away', 'right away')
         : this.locale === 'ja' 
           ? `${this.getTranslatedText('after_years_prefix', 'after living there for')}${this.minYearsForAdvantage}${this.getTranslatedText('after_years_suffix', ' years')}`
-          : `after living there for ${this.minYearsForAdvantage} years`;
+          : `${this.minYearsForAdvantage} years`;
       
       const profitText = this.maxNpvValue 
         ? this.locale === 'ja'
@@ -781,31 +781,31 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
       
       if (this.minYearsForAdvantage === this.optimalYearsForMaxNpv) {
         if (this.locale === 'ja') {
-          recommendation = ` ${this.getTranslatedText('buying_pays_off', 'Buying pays off')}${breakEvenText}${this.getTranslatedText('pays_off_and_best_savings', ' and gives you the best savings at year')}${this.optimalYearsForMaxNpv}${this.getTranslatedText('best_savings_at_year', '')}${profitText}。`;
+          recommendation = ` 🏠 ${this.getTranslatedText('buying_pays_off', 'Buying pays off')}${breakEvenText}${this.getTranslatedText('pays_off_and_best_savings', ' and gives you the best savings at year')}${this.optimalYearsForMaxNpv}${this.getTranslatedText('best_savings_at_year', '')}${profitText}。`;
         } else {
-          recommendation = ` Buying pays off ${breakEvenText} and gives you the best savings at year ${this.optimalYearsForMaxNpv}${profitText}.`;
+          recommendation = ` 🏠 Buying pays off ${breakEvenText} and gives you the best savings at year ${this.optimalYearsForMaxNpv}${profitText}.`;
         }
       } else {
         if (this.locale === 'ja') {
-          recommendation = ` ${this.getTranslatedText('buying_starts_paying_off', 'Buying starts paying off')}${breakEvenText}${this.getTranslatedText('starts_paying_off', '.')} ${this.getTranslatedText('for_maximum_savings', 'For maximum savings, ')}${this.optimalYearsForMaxNpv}${this.getTranslatedText('stay_until_year', ' until year')}${profitText}。`;
+          recommendation = ` 🏠 ${this.getTranslatedText('buying_starts_paying_off', 'Don\'t buy if')}${breakEvenText}${this.getTranslatedText('starts_paying_off', '.')} ${this.getTranslatedText('for_maximum_savings', 'For maximum savings, sell on year')}${this.optimalYearsForMaxNpv}${this.getTranslatedText('sell_on_year', '')}${profitText}。`;
         } else {
-          recommendation = ` Buying starts paying off ${breakEvenText}. For maximum savings, stay until year ${this.optimalYearsForMaxNpv}${profitText}.`;
+          recommendation = ` 🏠 Don't buy if you can't stay in the house for at least ${breakEvenText}. For maximum savings, sell on year ${this.optimalYearsForMaxNpv}${profitText}.`;
         }
       }
       
-      // Add advice about selling before losses
-      if (this.sellBeforeNegative !== null) {
+      // Add advice about selling before losses (only if max year is not 40)
+      if (this.sellBeforeNegative !== null && this.optimalYearsForMaxNpv !== 40) {
         if (this.sellBeforeNegative === this.optimalYearsForMaxNpv) {
           if (this.locale === 'ja') {
-            recommendation += ` ${this.sellBeforeNegative}${this.getTranslatedText('after_year_renting_cheaper', ' After year, renting becomes cheaper again.')}`;
+            recommendation += ` ⚠️ ${this.sellBeforeNegative}${this.getTranslatedText('after_year_renting_cheaper', ' After year, renting becomes cheaper again.')}`;
           } else {
-            recommendation += ` After year ${this.sellBeforeNegative}, renting becomes cheaper again.`;
+            recommendation += ` ⚠️ After year ${this.sellBeforeNegative}, renting becomes cheaper again.`;
           }
         } else {
           if (this.locale === 'ja') {
-            recommendation += ` ${this.getTranslatedText('sell_before_year', 'Also, ')}${this.sellBeforeNegative + 1}${this.getTranslatedText('sell_before_year_suffix', ' - after that, renting becomes cheaper.')}`;
+            recommendation += ` ⚠️ ${this.getTranslatedText('sell_before_year', 'Also, you should sell before year')}${this.sellBeforeNegative + 1}${this.getTranslatedText('sell_before_year_suffix', ' - after that, renting becomes cheaper.')}`;
           } else {
-            recommendation += ` Also,  you should sell before year ${this.sellBeforeNegative + 1} - after that, renting becomes cheaper.`;
+            recommendation += ` ⚠️ Also, you should sell before year ${this.sellBeforeNegative + 1} because you will lose money compared to renting after that.`;
           }
         }
       }

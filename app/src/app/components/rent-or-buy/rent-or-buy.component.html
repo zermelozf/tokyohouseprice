@@ -359,6 +359,9 @@
           <button class="close-intro-btn"
             *ngIf="isIntroVisible && !error && cashFlowData.length > 0 && financialRecommendation"
             (click)="closeIntroBox()" type="button" title="Close introduction">×</button>
+          <div class="intro-header-image">
+            <img src="buy-vs-rent.jpg" alt="Financial analysis charts and graphs" class="intro-photo">
+          </div>
           <p i18n="@@rentorbuy.toolDescription">Hey there! 👋 </p>
           <p i18n="@@rentorbuy.toolWelcome">Welcome to the Rent vs Buy Comparator! You can tweak property, mortgage and
             economic parameters to see how it impacts your net wort in real time.</p>
@@ -368,15 +371,15 @@
           </p>
           <div class="intro-actions">
             <button class="tutorial-btn" (click)="openTutorial()" type="button">
-              <span class="tutorial-icon">🎯</span>
+              <span class="tutorial-icon">✨</span>
               <span class="tutorial-text" i18n="@@rentorbuy.startNewComparison">Start New Comparison</span>
             </button>
           </div>
           <p class="advanced-text" i18n="@@rentorbuy.advancedUsersNote">If you are familiar with the options, feel free to tweak the parameters directly</p>
           <div class="intro-actions">
             <button class="tutorial-btn secondary" (click)="openAdvancedOptions()" type="button">
-              <span class="tutorial-icon">⚙️</span>
-              <span class="tutorial-text" i18n="@@rentorbuy.updateParameters">Tweak Parameters Directly</span>
+              <span class="tutorial-icon">🤓</span>
+              <span class="tutorial-text" i18n="@@rentorbuy.updateParameters">Nerd Mode </span>
             </button>
           </div>
           <p class="footnote-text" i18n="@@rentorbuy.toolLearnMore">Learn more about the underlying model in <a
