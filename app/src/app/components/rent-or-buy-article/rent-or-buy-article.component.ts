@@ -67,7 +67,7 @@ export class RentOrBuyArticleComponent implements OnInit, AfterViewInit {
   opportunityCost: number = 0.045;
   rentYield: number = 0.01;
   isNewsletterClosed: boolean = false;
-  showTechnicalDetails: boolean = true;
+  showTechnicalDetails: boolean = false;
   
   // Newsletter form properties
   newsletterEmail: string = '';

@@ -210,16 +210,16 @@
 
     <app-cashflow-chart></app-cashflow-chart>
 
+
+    <p i18n="@@rentorbuy.rentCashflow"><strong>In case we rent the property</strong>, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity,
+      we'll do the accounting yearly below).
+    </p>
     <div class="toggle-container">
       <button class="toggle-button" (click)="toggleTechnicalDetails()">
         <span *ngIf="showTechnicalDetails" i18n="@@rentorbuy.hideDetails">Hide the Maths</span>
         <span *ngIf="!showTechnicalDetails" i18n="@@rentorbuy.showDetails">Show the Maths</span>
       </button>
     </div>
-
-    <p i18n="@@rentorbuy.rentCashflow">In case we rent the property, the cash flow is pretty simple: we just pay a monthly rent (though for simplicity,
-      we'll do the accounting yearly below).
-    </p>
 
     <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
       <div class="formula-box">
@@ -229,7 +229,7 @@
     </div>
 
     <p i18n="@@rentorbuy.buyCashflowIntro">
-      In case we buy the property though, there are two types of cash flows:
+      <strong>In case we buy the property</strong> though, there are two types of cash flows:
     </p>
     <ul>
       <li i18n="@@rentorbuy.negativeCashflows">Negative: down payment, mortgage, property taxes, maintenance, insurance, etc.</li>
@@ -332,22 +332,9 @@
       </div>
     </div>
 
-    <p i18n="@@rentorbuy.cumulativeDifferencePlot">
-      We can also plot the difference between the two cumulative cash flows to make it even easier to visualize. This
-      will be useful when comparing with the NPV analysis in the next section.
+    <p class="warning-highlight">
+      This is not the whole story though as we'll see in the next section!
     </p>
-
-    <div class="technical-content" [@expandCollapse]="showTechnicalDetails ? 'expanded' : 'collapsed'">
-      <div class="formula-box">
-        <p i18n="@@rentorbuy.plotExplanation">
-          Specifically, we plot \(V_{{ '{' }}buy{{ '}' }}(n) - V_{{ '{' }}rent{{ '}' }}(n) \).
-        </p>
-      </div>
-    </div>
-
-    <div id="cashflowChart">
-      <app-cumulative-difference-chart></app-cumulative-difference-chart>
-    </div>
 
     <h3 id="npv" i18n="@@rentorbuy.npvTitle">Opportunity Cost and Net Present Value (NPV)</h3>
 

@@ -21,6 +21,26 @@
       text-decoration: underline;
     }
   }
+  
+  // Warning highlight styling
+  .warning-highlight {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    color: #856404;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    
+    &::before {
+      content: "⚠️";
+      font-size: 1.5rem;
+      margin-right: 0.5rem;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
 
   header {
     text-align: center;
@@ -272,7 +292,7 @@
       justify-content: center;
 
       i {
-        font-size: 1.2rem;
+        font-size: 1.8rem;
       }
     }
 
@@ -314,7 +334,7 @@
       justify-content: center;
 
       i {
-        font-size: 1.2rem;
+        font-size: 1.8rem;
       }
     }
 
