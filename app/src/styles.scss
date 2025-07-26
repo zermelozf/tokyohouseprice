@@ -26,3 +26,24 @@ main {
     margin-top: 64px; /* Keep margin for fixed navbar */
   }
 }
+
+/* Make reCAPTCHA badge less visible */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Alternative: Make it very small and positioned in corner */
+/*
+.grecaptcha-badge {
+  transform: scale(0.6) !important;
+  transform-origin: bottom right !important;
+  opacity: 0.3 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.grecaptcha-badge:hover {
+  opacity: 0.8 !important;
+}
+*/

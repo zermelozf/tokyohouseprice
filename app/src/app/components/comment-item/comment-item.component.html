@@ -1,0 +1,151 @@
+<div class="comment-item">
+  <div class="comment-header">
+    <div class="comment-author">
+      <strong>{{ comment.author }}</strong>
+    </div>
+    <div class="comment-date">
+      {{ formatDate(comment.createdAt) }}
+    </div>
+  </div>
+  
+  <div class="comment-content">
+    <p>{{ comment.content }}</p>
+  </div>
+  
+  <div class="comment-actions">
+    <button 
+      class="like-btn" 
+      (click)="onToggleLike()"
+      [class.liked]="isLikedByCurrentUser()"
+      [class.animating]="isAnimatingLike"
+      [disabled]="isLiking"
+      type="button">
+      <i class="fas fa-heart"></i>
+      <span>{{ comment.likes || 0 }}</span>
+    </button>
+    <button 
+      *ngIf="!isReply"
+      class="reply-btn" 
+      (click)="toggleReplyForm()"
+      type="button">
+      <i class="fas fa-reply"></i>
+      <span i18n="@@comments.reply">Reply</span>
+    </button>
+  </div>
+
+  <!-- Admin controls -->
+  <div class="admin-actions" *ngIf="authService.isAdmin()">
+    <button 
+      class="delete-btn" 
+      (click)="onDeleteComment()"
+      type="button"
+      [disabled]="isDeleting"
+      i18n-title="@@admin.deleteComment"
+      title="Delete comment">
+      <i class="fas fa-trash"></i>
+      <span *ngIf="!isDeleting" i18n="@@admin.delete">Delete</span>
+      <span *ngIf="isDeleting" i18n="@@admin.deleting">Deleting...</span>
+    </button>
+  </div>
+
+  <!-- Reply form (only for top-level comments) -->
+  <div class="reply-form" *ngIf="showReplyForm && !isReply">
+    <form (ngSubmit)="onSubmitReply()" #replyForm="ngForm">
+      <div class="form-row">
+        <div class="form-group" *ngIf="!(authService.user$ | async)">
+          <label for="replyAuthor" i18n="@@comments.name">Name *</label>
+          <input 
+            type="text" 
+            id="replyAuthor" 
+            name="replyAuthor" 
+            [(ngModel)]="newReply.author" 
+            required 
+            #replyAuthorInput="ngModel"
+            [class.error]="replyAuthorInput.invalid && replyAuthorInput.touched"
+            i18n-placeholder="@@comments.namePlaceholder"
+            placeholder="Enter your name">
+        </div>
+        <div class="form-group" *ngIf="authService.user$ | async as user">
+          <label for="replyAuthorLoggedIn" i18n="@@comments.nameLoggedIn">Name</label>
+          <input 
+            type="text" 
+            id="replyAuthorLoggedIn" 
+            name="replyAuthorLoggedIn"
+            [value]="getUserDisplayName(user)" 
+            readonly
+            class="name-readonly">
+        </div>
+        <div class="form-group" *ngIf="!(authService.user$ | async)">
+          <label for="replyEmail" i18n="@@comments.emailOptional">Email (Optional)</label>
+          <input 
+            type="email" 
+            id="replyEmail" 
+            name="replyEmail" 
+            [(ngModel)]="newReply.email" 
+            email 
+            #replyEmailInput="ngModel"
+            [class.error]="replyEmailInput.invalid && replyEmailInput.touched"
+            i18n-placeholder="@@comments.emailOptionalPlaceholder"
+            placeholder="Enter your email (optional)">
+        </div>
+        <div class="form-group" *ngIf="authService.user$ | async as user">
+          <label for="replyEmailLoggedIn" i18n="@@comments.emailLoggedIn">Email</label>
+          <input 
+            type="email" 
+            id="replyEmailLoggedIn" 
+            name="replyEmailLoggedIn"
+            [value]="user.email" 
+            readonly
+            class="email-readonly">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="replyContent" i18n="@@comments.reply">Reply *</label>
+        <textarea 
+          id="replyContent" 
+          name="replyContent" 
+          [(ngModel)]="newReply.content" 
+          required 
+          #replyContentInput="ngModel"
+          [class.error]="replyContentInput.invalid && replyContentInput.touched"
+          rows="3"
+          i18n-placeholder="@@comments.replyPlaceholder"
+          placeholder="Write your reply..."></textarea>
+      </div>
+      <div class="reply-actions">
+        <button 
+          type="submit" 
+          [disabled]="!replyForm.valid || isSubmittingReply"
+          class="submit-reply-btn">
+          <span *ngIf="!isSubmittingReply" i18n="@@comments.postReply">Post Reply</span>
+          <span *ngIf="isSubmittingReply" i18n="@@comments.posting">Posting...</span>
+        </button>
+        <button 
+          type="button" 
+          (click)="cancelReply()"
+          class="cancel-btn"
+          i18n="@@comments.cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Nested replies -->
+  <div class="replies" *ngIf="comment.replies && comment.replies.length > 0">
+    <div *ngFor="let reply of displayedReplies" class="reply-item">
+      <app-comment-item 
+        [comment]="reply" 
+        [articleId]="articleId"
+        [isReply]="true"
+        (replyAdded)="onReplyAdded()">
+      </app-comment-item>
+    </div>
+    
+    <!-- Load more replies button -->
+    <div class="load-more-replies-section" *ngIf="hasMoreReplies">
+      <button class="load-more-replies-btn" (click)="loadMoreReplies()">
+        <i class="fas fa-chevron-down"></i>
+        <span i18n="@@comments.loadMoreReplies">Load {{ remainingRepliesCount > repliesPerPage ? repliesPerPage : remainingRepliesCount }} more repl{{ (remainingRepliesCount > repliesPerPage ? repliesPerPage : remainingRepliesCount) === 1 ? 'y' : 'ies' }}</span>
+      </button>
+    </div>
+  </div>
+</div> 

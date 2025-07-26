@@ -1,0 +1,145 @@
+<div class="comments-section">
+  <div class="comments-header">
+    <h2 i18n="@@comments.title">Comments</h2>
+    <div class="header-actions">
+      <div class="comments-count" *ngIf="commentsCount > 0">
+        <span i18n="@@comments.count">{{ commentsCount }} comment{{ commentsCount > 1 ? 's' : '' }}</span>
+      </div>
+      <div class="sort-controls" *ngIf="commentsCount > 1">
+        <label for="sortBy" i18n="@@comments.sortBy">Sort by:</label>
+        <select id="sortBy" [(ngModel)]="sortBy" (ngModelChange)="onSortChange()" class="sort-select">
+          <option value="date" i18n="@@comments.sortByDate">Date (Newest First)</option>
+          <option value="dateOld" i18n="@@comments.sortByDateOld">Date (Oldest First)</option>
+          <option value="likes" i18n="@@comments.sortByLikes">Most Liked</option>
+        </select>
+      </div>
+      <div class="admin-controls">
+        <button 
+          *ngIf="!(authService.user$ | async) && !showAdminLogin" 
+          class="login-btn" 
+          (click)="showAdminLogin = true"
+          i18n="@@auth.login">
+          Login
+        </button>
+        <div *ngIf="authService.user$ | async as user" class="user-info">
+          <span class="user-greeting">{{ user.email }}</span>
+          <button class="logout-btn" (click)="onLogout()" i18n="@@auth.logout">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments list -->
+  <div class="comments-list" *ngIf="displayedComments$ | async as comments">
+    <div *ngIf="allComments.length === 0 && !isLoading" class="no-comments">
+      <p i18n="@@comments.noComments">Be the first to comment!</p>
+    </div>
+    <div *ngFor="let comment of comments" class="comment-thread">
+      <app-comment-item 
+        [comment]="comment" 
+        [articleId]="articleId"
+        (replyAdded)="onReplyAdded()">
+      </app-comment-item>
+    </div>
+    
+    <!-- Load more button -->
+    <div class="load-more-section" *ngIf="hasMoreComments">
+      <button class="load-more-btn" (click)="loadMoreComments()">
+        <i class="fas fa-chevron-down"></i>
+        <span i18n="@@comments.loadMore">Load {{ remainingCommentsCount > commentsPerPage ? commentsPerPage : remainingCommentsCount }} more comment{{ (remainingCommentsCount > commentsPerPage ? commentsPerPage : remainingCommentsCount) > 1 ? 's' : '' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading">
+    <p i18n="@@comments.loading">Loading comments...</p>
+  </div>
+
+  <!-- Add new comment form - moved to bottom -->
+  <div class="add-comment-form">
+    <h3 i18n="@@comments.addComment">Add a Comment</h3>
+    <form (ngSubmit)="onSubmitComment()" #commentForm="ngForm">
+      <div class="form-row">
+        <div class="form-group" *ngIf="!(authService.user$ | async)">
+          <label for="author" i18n="@@comments.name">Name *</label>
+          <input 
+            type="text" 
+            id="author" 
+            name="author" 
+            [(ngModel)]="newComment.author" 
+            required 
+            #authorInput="ngModel"
+            [class.error]="authorInput.invalid && authorInput.touched"
+            i18n-placeholder="@@comments.namePlaceholder"
+            placeholder="Enter your name">
+        </div>
+        <div class="form-group" *ngIf="authService.user$ | async as user">
+          <label for="authorLoggedIn" i18n="@@comments.nameLoggedIn">Display Name</label>
+          <input 
+            type="text" 
+            id="authorLoggedIn" 
+            name="authorLoggedIn"
+            [(ngModel)]="customDisplayName"
+            class="name-editable">
+        </div>
+        <div class="form-group" *ngIf="!(authService.user$ | async)">
+          <label for="email" i18n="@@comments.emailOptional">Email (Optional)</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            [(ngModel)]="newComment.email" 
+            email 
+            #emailInput="ngModel"
+            [class.error]="emailInput.invalid && emailInput.touched"
+            i18n-placeholder="@@comments.emailOptionalPlaceholder"
+            placeholder="Enter your email (optional)">
+        </div>
+        <div class="form-group" *ngIf="authService.user$ | async as user">
+          <label for="emailLoggedIn" i18n="@@comments.emailLoggedIn">Email</label>
+          <input 
+            type="email" 
+            id="emailLoggedIn" 
+            name="emailLoggedIn"
+            [value]="user.email" 
+            readonly
+            class="email-readonly">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="content" i18n="@@comments.comment">Comment *</label>
+        <textarea 
+          id="content" 
+          name="content" 
+          [(ngModel)]="newComment.content" 
+          required 
+          #contentInput="ngModel"
+          [class.error]="contentInput.invalid && contentInput.touched"
+          rows="4"
+          i18n-placeholder="@@comments.commentPlaceholder"
+          placeholder="Share your thoughts..."></textarea>
+      </div>
+      <button 
+        type="submit" 
+        [disabled]="!commentForm.valid || isSubmitting"
+        class="submit-btn">
+        <span *ngIf="!isSubmitting" i18n="@@comments.postComment">Post Comment</span>
+        <span *ngIf="isSubmitting" i18n="@@comments.posting">Posting...</span>
+      </button>
+      <div class="recaptcha-notice">
+        <small>This site is protected by reCAPTCHA and the Google 
+          <a href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a> and 
+          <a href="https://policies.google.com/terms" target="_blank">Terms of Service</a> apply.
+        </small>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Login Modal -->
+<app-admin-login 
+  *ngIf="showAdminLogin" 
+  (close)="onAdminLoginClose()"
+  (loginSuccess)="onAdminLoginSuccess()">
+</app-admin-login> 

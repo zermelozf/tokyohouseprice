@@ -400,7 +400,7 @@
     </p>
     <p i18n="@@article.conclusionP2">
       I hope you enjoyed reading this article as much as I enjoyed writing it. If you have any questions or feedback,
-      please let me know!
+      please share your thoughts in the comments below!
     </p>
     <p i18n="@@article.tryAppPromo">Also, I spent some time creating a property evaluation app based on the model
       described in this article. Feel
@@ -408,7 +408,8 @@
 
   </section>
 
-  <app-giscus-comments></app-giscus-comments>
+  <!-- Comments section with our optimized system -->
+  <app-comments [articleId]="'house-price-article'"></app-comments>
 </article>
 
 <footer class="article-footer">

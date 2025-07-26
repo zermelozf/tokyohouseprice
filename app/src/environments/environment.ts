@@ -2,6 +2,9 @@ export const environment = {
   production: false,
   // apiUrl: 'http://localhost:8000',
   apiUrl: 'https://tokyohouseprice-99305686342.us-central1.run.app',
+  recaptcha: {
+    siteKey: '6Lflq48rAAAAADuyvHaDEUdz8nk1oXzvLuEFJ3f9'
+  },
   firebaseConfig: {
     apiKey: "AIzaSyAd4-nwElGxAEIYtCe-pJH_9rszfDbYUXo",
     authDomain: "tokyohouseprice.firebaseapp.com",
