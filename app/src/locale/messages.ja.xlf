@@ -2995,6 +2995,130 @@
         <source>%</source>
         <target>%</target>
       </trans-unit>
+      <trans-unit id="comments.title" datatype="html">
+        <source>Comments</source>
+        <target>コメント</target>
+      </trans-unit>
+      <trans-unit id="comments.count" datatype="html">
+        <source>{{ commentsCount }} comment{{ commentsCount > 1 ? 's' : '' }}</source>
+        <target>{{ commentsCount }}件のコメント</target>
+      </trans-unit>
+      <trans-unit id="comments.sortBy" datatype="html">
+        <source>Sort by:</source>
+        <target>並び順:</target>
+      </trans-unit>
+      <trans-unit id="comments.sortByDate" datatype="html">
+        <source>Date (Newest First)</source>
+        <target>日付（新しい順）</target>
+      </trans-unit>
+      <trans-unit id="comments.sortByDateOld" datatype="html">
+        <source>Date (Oldest First)</source>
+        <target>日付（古い順）</target>
+      </trans-unit>
+      <trans-unit id="comments.sortByLikes" datatype="html">
+        <source>Most Liked</source>
+        <target>いいね順</target>
+      </trans-unit>
+      <trans-unit id="auth.login" datatype="html">
+        <source>Login</source>
+        <target>ログイン</target>
+      </trans-unit>
+      <trans-unit id="auth.logout" datatype="html">
+        <source>Logout</source>
+        <target>ログアウト</target>
+      </trans-unit>
+      <trans-unit id="comments.noComments" datatype="html">
+        <source>Be the first to comment!</source>
+        <target>最初のコメントを投稿しましょう！</target>
+      </trans-unit>
+      <trans-unit id="comments.loadMore" datatype="html">
+        <source>Load {{ remainingCommentsCount > commentsPerPage ? commentsPerPage : remainingCommentsCount }} more comment{{ (remainingCommentsCount > commentsPerPage ? commentsPerPage : remainingCommentsCount) > 1 ? 's' : '' }}</source>
+        <target>さらに{{ remainingCommentsCount > commentsPerPage ? commentsPerPage : remainingCommentsCount }}件のコメントを読み込む</target>
+      </trans-unit>
+      <trans-unit id="comments.loading" datatype="html">
+        <source>Loading comments...</source>
+        <target>コメントを読み込み中...</target>
+      </trans-unit>
+      <trans-unit id="comments.addComment" datatype="html">
+        <source>Add a Comment</source>
+        <target>コメントを追加</target>
+      </trans-unit>
+      <trans-unit id="comments.name" datatype="html">
+        <source>Name *</source>
+        <target>名前 *</target>
+      </trans-unit>
+      <trans-unit id="comments.namePlaceholder" datatype="html">
+        <source>Enter your name</source>
+        <target>お名前を入力してください</target>
+      </trans-unit>
+      <trans-unit id="comments.nameLoggedIn" datatype="html">
+        <source>Display Name</source>
+        <target>表示名</target>
+      </trans-unit>
+      <trans-unit id="comments.emailOptional" datatype="html">
+        <source>Email (Optional)</source>
+        <target>メールアドレス（任意）</target>
+      </trans-unit>
+      <trans-unit id="comments.emailOptionalPlaceholder" datatype="html">
+        <source>Enter your email (optional)</source>
+        <target>メールアドレスを入力してください（任意）</target>
+      </trans-unit>
+      <trans-unit id="comments.emailLoggedIn" datatype="html">
+        <source>Email</source>
+        <target>メールアドレス</target>
+      </trans-unit>
+      <trans-unit id="comments.comment" datatype="html">
+        <source>Comment *</source>
+        <target>コメント *</target>
+      </trans-unit>
+      <trans-unit id="comments.commentPlaceholder" datatype="html">
+        <source>Share your thoughts...</source>
+        <target>ご意見をお聞かせください...</target>
+      </trans-unit>
+      <trans-unit id="comments.postComment" datatype="html">
+        <source>Post Comment</source>
+        <target>コメントを投稿</target>
+      </trans-unit>
+      <trans-unit id="comments.posting" datatype="html">
+        <source>Posting...</source>
+        <target>投稿中...</target>
+      </trans-unit>
+      <trans-unit id="comments.recaptchaNotice" datatype="html">
+        <source>This site is protected by reCAPTCHA and the Google <ph id="0" equiv="START_LINK" disp="&lt;a href=&quot;https://policies.google.com/privacy&quot; target=&quot;_blank&quot;&gt;"/>Privacy Policy<ph id="1" equiv="CLOSE_LINK" disp="&lt;/a&gt;"/> and <ph id="2" equiv="START_LINK_1" disp="&lt;a href=&quot;https://policies.google.com/terms&quot; target=&quot;_blank&quot;&gt;"/>Terms of Service<ph id="3" equiv="CLOSE_LINK" disp="&lt;/a&gt;"/> apply.</source>
+        <target>このサイトはreCAPTCHAによって保護されており、Googleの<ph id="0" equiv="START_LINK" disp="&lt;a href=&quot;https://policies.google.com/privacy&quot; target=&quot;_blank&quot;&gt;"/>プライバシーポリシー<ph id="1" equiv="CLOSE_LINK" disp="&lt;/a&gt;"/>と<ph id="2" equiv="START_LINK_1" disp="&lt;a href=&quot;https://policies.google.com/terms&quot; target=&quot;_blank&quot;&gt;"/>利用規約<ph id="3" equiv="CLOSE_LINK" disp="&lt;/a&gt;"/>が適用されます。</target>
+      </trans-unit>
+      <trans-unit id="comments.reply" datatype="html">
+        <source>Reply</source>
+        <target>返信</target>
+      </trans-unit>
+      <trans-unit id="admin.deleteComment" datatype="html">
+        <source>Delete comment</source>
+        <target>コメントを削除</target>
+      </trans-unit>
+      <trans-unit id="admin.delete" datatype="html">
+        <source>Delete</source>
+        <target>削除</target>
+      </trans-unit>
+      <trans-unit id="admin.deleting" datatype="html">
+        <source>Deleting...</source>
+        <target>削除中...</target>
+      </trans-unit>
+      <trans-unit id="comments.replyPlaceholder" datatype="html">
+        <source>Write your reply...</source>
+        <target>返信を書いてください...</target>
+      </trans-unit>
+      <trans-unit id="comments.postReply" datatype="html">
+        <source>Post Reply</source>
+        <target>返信を投稿</target>
+      </trans-unit>
+      <trans-unit id="comments.cancel" datatype="html">
+        <source>Cancel</source>
+        <target>キャンセル</target>
+      </trans-unit>
+      <trans-unit id="comments.loadMoreReplies" datatype="html">
+        <source>Load {{ remainingRepliesCount > repliesPerPage ? repliesPerPage : remainingRepliesCount }} more repl{{ (remainingRepliesCount > repliesPerPage ? repliesPerPage : remainingRepliesCount) === 1 ? 'y' : 'ies' }}</source>
+        <target>さらに{{ remainingRepliesCount > repliesPerPage ? repliesPerPage : remainingRepliesCount }}件の返信を読み込む</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
