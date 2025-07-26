@@ -13,6 +13,30 @@ service cloud.firestore {
         request.resource.data.isActive is bool;
     }
     
+    // Allow comments read/write for everyone, delete for admin
+    match /comments/{document} {
+      allow read: if true;
+      allow create: if 
+        request.resource.data.keys().hasAll(['articleId', 'author', 'content', 'createdAt']) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.author is string &&
+        request.resource.data.author.size() > 0 &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() <= 2000 &&
+        request.resource.data.createdAt is timestamp &&
+        // Optional email - if provided, must be valid
+        (!request.resource.data.keys().hasAny(['email']) || 
+         (request.resource.data.email is string && 
+          request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'))) &&
+        // Optional parentCommentId for replies
+        (!request.resource.data.keys().hasAny(['parentCommentId']) || 
+         request.resource.data.parentCommentId is string);
+      // Allow admin to delete comments
+      allow delete: if request.auth != null && 
+        request.auth.token.email == 'arnaud@linalgo.com';
+    }
+    
     // Deny everything else by default
     match /{document=**} {
       allow read, write: if false;

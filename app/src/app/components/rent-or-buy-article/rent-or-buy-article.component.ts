@@ -8,6 +8,7 @@ import { PvBuyChartComponent } from '../pv-buy-chart/pv-buy-chart.component';
 import { CashflowChartComponent } from '../cashflow-chart/cashflow-chart.component';
 import { CumulativeDifferenceChartComponent } from '../cumulative-difference-chart/cumulative-difference-chart.component';
 import { IrrChartComponent } from '../irr-chart/irr-chart.component';
+import { CommentsComponent } from '../comments/comments.component';
 import { RentBuyCalculatorService } from '../../services/rent-buy-calculator.service';
 import { NewsletterService } from '../../services/newsletter.service';
 
@@ -33,7 +34,7 @@ declare const MathJax: any;
 @Component({
   selector: 'app-rent-or-buy-article',
   standalone: true,
-  imports: [CommonModule, FormsModule, RentVsBuyChartComponent, PvBuyChartComponent, CashflowChartComponent, CumulativeDifferenceChartComponent, IrrChartComponent],
+  imports: [CommonModule, FormsModule, RentVsBuyChartComponent, PvBuyChartComponent, CashflowChartComponent, CumulativeDifferenceChartComponent, IrrChartComponent, CommentsComponent],
   templateUrl: './rent-or-buy-article.component.html',
   styleUrls: ['./rent-or-buy-article.component.scss'],
   animations: [
