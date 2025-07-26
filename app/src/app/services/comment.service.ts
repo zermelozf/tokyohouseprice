@@ -6,6 +6,10 @@ import {
   addDoc, 
   getDocs, 
   deleteDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  increment,
   query, 
   orderBy, 
   where, 
@@ -22,6 +26,8 @@ export interface Comment {
   email?: string; // Optional email
   content: string;
   createdAt: Timestamp;
+  likes?: number; // Number of likes
+  likedBy?: string[]; // Array of user emails who liked this comment
   replies?: Comment[];
 }
 
@@ -40,7 +46,9 @@ export class CommentService {
       articleId: comment.articleId,
       author: comment.author,
       content: comment.content,
-      createdAt: Timestamp.now()
+      createdAt: Timestamp.now(),
+      likes: 0,
+      likedBy: []
     };
 
     // Add optional fields if they exist
@@ -137,5 +145,29 @@ export class CommentService {
     
     // Then delete the main comment
     await this.deleteComment(commentId);
+  }
+
+  // Like a comment
+  async likeComment(commentId: string, userEmail: string): Promise<void> {
+    const commentDoc = doc(this.firestore, 'comments', commentId);
+    await updateDoc(commentDoc, {
+      likes: increment(1),
+      likedBy: arrayUnion(userEmail)
+    });
+  }
+
+  // Unlike a comment
+  async unlikeComment(commentId: string, userEmail: string): Promise<void> {
+    const commentDoc = doc(this.firestore, 'comments', commentId);
+    await updateDoc(commentDoc, {
+      likes: increment(-1),
+      likedBy: arrayRemove(userEmail)
+    });
+  }
+
+  // Check if user has liked a comment
+  hasUserLiked(comment: Comment, userEmail: string | null): boolean {
+    if (!userEmail || !comment.likedBy) return false;
+    return comment.likedBy.includes(userEmail);
   }
 } 

@@ -13,11 +13,11 @@ service cloud.firestore {
         request.resource.data.isActive is bool;
     }
     
-    // Allow comments read/write for everyone, delete for admin
+    // Allow comments read/write for everyone, delete for admin, update for likes
     match /comments/{document} {
       allow read: if true;
       allow create: if 
-        request.resource.data.keys().hasAll(['articleId', 'author', 'content', 'createdAt']) &&
+        request.resource.data.keys().hasAll(['articleId', 'author', 'content', 'createdAt', 'likes', 'likedBy']) &&
         request.resource.data.articleId is string &&
         request.resource.data.author is string &&
         request.resource.data.author.size() > 0 &&
@@ -25,6 +25,8 @@ service cloud.firestore {
         request.resource.data.content.size() > 0 &&
         request.resource.data.content.size() <= 2000 &&
         request.resource.data.createdAt is timestamp &&
+        request.resource.data.likes is number &&
+        request.resource.data.likedBy is list &&
         // Optional email - if provided, must be valid
         (!request.resource.data.keys().hasAny(['email']) || 
          (request.resource.data.email is string && 
@@ -32,6 +34,14 @@ service cloud.firestore {
         // Optional parentCommentId for replies
         (!request.resource.data.keys().hasAny(['parentCommentId']) || 
          request.resource.data.parentCommentId is string);
+      // Allow authenticated users to update likes
+      allow update: if request.auth != null && 
+        request.auth.token.email is string &&
+        // Only allow updating likes and likedBy fields
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likedBy']) &&
+        // Ensure likes is a number and likedBy is a list
+        request.resource.data.likes is number &&
+        request.resource.data.likedBy is list;
       // Allow admin to delete comments
       allow delete: if request.auth != null && 
         request.auth.token.email == 'arnaud@linalgo.com';

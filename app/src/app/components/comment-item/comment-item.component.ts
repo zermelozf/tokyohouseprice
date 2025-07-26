@@ -23,15 +23,25 @@ import { AuthService } from '../../services/auth.service';
         <p>{{ comment.content }}</p>
       </div>
       
-      <div class="comment-actions" *ngIf="!isReply">
-        <button 
-          class="reply-btn" 
-          (click)="toggleReplyForm()"
-          type="button">
-          <i class="fas fa-reply"></i>
-          <span i18n="@@comments.reply">Reply</span>
-        </button>
-      </div>
+             <div class="comment-actions">
+         <button 
+           class="like-btn" 
+           (click)="onToggleLike()"
+           [class.liked]="isLikedByCurrentUser()"
+           [disabled]="isLiking"
+           type="button">
+           <i class="fas fa-heart"></i>
+           <span>{{ comment.likes || 0 }}</span>
+         </button>
+         <button 
+           *ngIf="!isReply"
+           class="reply-btn" 
+           (click)="toggleReplyForm()"
+           type="button">
+           <i class="fas fa-reply"></i>
+           <span i18n="@@comments.reply">Reply</span>
+         </button>
+       </div>
 
       <!-- Admin controls -->
       <div class="admin-actions" *ngIf="authService.isAdmin()">
@@ -51,20 +61,30 @@ import { AuthService } from '../../services/auth.service';
       <!-- Reply form (only for top-level comments) -->
       <div class="reply-form" *ngIf="showReplyForm && !isReply">
         <form (ngSubmit)="onSubmitReply()" #replyForm="ngForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="replyAuthor" i18n="@@comments.name">Name *</label>
-              <input 
-                type="text" 
-                id="replyAuthor" 
-                name="replyAuthor" 
-                [(ngModel)]="newReply.author" 
-                required 
-                #replyAuthorInput="ngModel"
-                [class.error]="replyAuthorInput.invalid && replyAuthorInput.touched"
-                i18n-placeholder="@@comments.namePlaceholder"
-                placeholder="Enter your name">
-            </div>
+                     <div class="form-row">
+             <div class="form-group" *ngIf="!(authService.user$ | async)">
+               <label for="replyAuthor" i18n="@@comments.name">Name *</label>
+               <input 
+                 type="text" 
+                 id="replyAuthor" 
+                 name="replyAuthor" 
+                 [(ngModel)]="newReply.author" 
+                 required 
+                 #replyAuthorInput="ngModel"
+                 [class.error]="replyAuthorInput.invalid && replyAuthorInput.touched"
+                 i18n-placeholder="@@comments.namePlaceholder"
+                 placeholder="Enter your name">
+             </div>
+             <div class="form-group" *ngIf="authService.user$ | async as user">
+               <label for="replyAuthorLoggedIn" i18n="@@comments.nameLoggedIn">Name</label>
+               <input 
+                 type="text" 
+                 id="replyAuthorLoggedIn" 
+                 name="replyAuthorLoggedIn"
+                 [value]="getUserDisplayName(user)" 
+                 readonly
+                 class="name-readonly">
+             </div>
                          <div class="form-group" *ngIf="!(authService.user$ | async)">
                <label for="replyEmail" i18n="@@comments.emailOptional">Email (Optional)</label>
                <input 
@@ -171,6 +191,9 @@ import { AuthService } from '../../services/auth.service';
 
     .comment-actions {
       margin-bottom: 1rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
     }
 
     .admin-actions {
@@ -265,10 +288,49 @@ import { AuthService } from '../../services/auth.service';
       border-color: #e74c3c;
     }
 
-    .email-readonly {
+    .email-readonly,
+    .name-readonly {
       background-color: #f8f9fa !important;
       color: #6c757d !important;
       cursor: not-allowed !important;
+    }
+
+    .like-btn {
+      background: none;
+      border: none;
+      color: #6c757d;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .like-btn:hover:not(:disabled) {
+      background: #f8f9fa;
+      color: #e91e63;
+    }
+
+    .like-btn.liked {
+      color: #e91e63;
+    }
+
+    .like-btn.liked i {
+      animation: heartPulse 0.3s ease-in-out;
+    }
+
+    .like-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    @keyframes heartPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
     }
 
     .reply-actions {
@@ -361,6 +423,7 @@ export class CommentItemComponent {
   showReplyForm = false;
   isSubmittingReply = false;
   isDeleting = false;
+  isLiking = false;
 
   newReply = {
     author: '',
@@ -400,11 +463,12 @@ export class CommentItemComponent {
     try {
       const currentUser = this.authService.getCurrentUser();
       const emailToUse = currentUser?.email || this.newReply.email;
+      const authorToUse = currentUser ? this.getUserDisplayName(currentUser) : this.newReply.author;
 
       await this.commentService.addComment({
         articleId: this.articleId,
         parentCommentId: this.comment.id,
-        author: this.newReply.author,
+        author: authorToUse,
         email: emailToUse,
         content: this.newReply.content
       });
@@ -417,6 +481,10 @@ export class CommentItemComponent {
     } finally {
       this.isSubmittingReply = false;
     }
+  }
+
+  getUserDisplayName(user: any): string {
+    return user.displayName || user.email?.split('@')[0] || 'User';
   }
 
   onReplyAdded() {
@@ -446,6 +514,38 @@ export class CommentItemComponent {
     } finally {
       this.isDeleting = false;
     }
+  }
+
+  async onToggleLike() {
+    if (this.isLiking) return;
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser?.email) {
+      alert('Please login to like comments');
+      return;
+    }
+
+    this.isLiking = true;
+    try {
+      const isLiked = this.isLikedByCurrentUser();
+      
+      if (isLiked) {
+        await this.commentService.unlikeComment(this.comment.id!, currentUser.email);
+      } else {
+        await this.commentService.likeComment(this.comment.id!, currentUser.email);
+      }
+      
+      this.replyAdded.emit(); // Refresh the comments to show updated likes
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    } finally {
+      this.isLiking = false;
+    }
+  }
+
+  isLikedByCurrentUser(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return this.commentService.hasUserLiked(this.comment, currentUser?.email || null);
   }
 
   formatDate(timestamp: any): string {

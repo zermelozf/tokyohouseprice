@@ -39,20 +39,30 @@ import { Observable } from 'rxjs';
       <div class="add-comment-form">
         <h3 i18n="@@comments.addComment">Add a Comment</h3>
         <form (ngSubmit)="onSubmitComment()" #commentForm="ngForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="author" i18n="@@comments.name">Name *</label>
-              <input 
-                type="text" 
-                id="author" 
-                name="author" 
-                [(ngModel)]="newComment.author" 
-                required 
-                #authorInput="ngModel"
-                [class.error]="authorInput.invalid && authorInput.touched"
-                i18n-placeholder="@@comments.namePlaceholder"
-                placeholder="Enter your name">
-            </div>
+                     <div class="form-row">
+             <div class="form-group" *ngIf="!(authService.user$ | async)">
+               <label for="author" i18n="@@comments.name">Name *</label>
+               <input 
+                 type="text" 
+                 id="author" 
+                 name="author" 
+                 [(ngModel)]="newComment.author" 
+                 required 
+                 #authorInput="ngModel"
+                 [class.error]="authorInput.invalid && authorInput.touched"
+                 i18n-placeholder="@@comments.namePlaceholder"
+                 placeholder="Enter your name">
+             </div>
+             <div class="form-group" *ngIf="authService.user$ | async as user">
+               <label for="authorLoggedIn" i18n="@@comments.nameLoggedIn">Name</label>
+               <input 
+                 type="text" 
+                 id="authorLoggedIn" 
+                 name="authorLoggedIn"
+                 [value]="getUserDisplayName(user)" 
+                 readonly
+                 class="name-readonly">
+             </div>
                          <div class="form-group" *ngIf="!(authService.user$ | async)">
                <label for="email" i18n="@@comments.emailOptional">Email (Optional)</label>
                <input 
@@ -262,7 +272,8 @@ import { Observable } from 'rxjs';
       border-color: #e74c3c;
     }
 
-    .email-readonly {
+    .email-readonly,
+    .name-readonly {
       background-color: #f8f9fa !important;
       color: #6c757d !important;
       cursor: not-allowed !important;
@@ -376,10 +387,11 @@ export class CommentsComponent implements OnInit {
     try {
       const currentUser = this.authService.getCurrentUser();
       const emailToUse = currentUser?.email || this.newComment.email;
+      const authorToUse = currentUser ? this.getUserDisplayName(currentUser) : this.newComment.author;
 
       await this.commentService.addComment({
         articleId: this.articleId,
-        author: this.newComment.author,
+        author: authorToUse,
         email: emailToUse,
         content: this.newComment.content
       });
@@ -399,6 +411,10 @@ export class CommentsComponent implements OnInit {
     } finally {
       this.isSubmitting = false;
     }
+  }
+
+  getUserDisplayName(user: any): string {
+    return user.displayName || user.email?.split('@')[0] || 'User';
   }
 
   onReplyAdded() {
