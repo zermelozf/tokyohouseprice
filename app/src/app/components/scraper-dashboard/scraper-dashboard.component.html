@@ -1,0 +1,93 @@
+<div class="scraper">
+  <header class="hd">
+    <h1>🏠 SUUMO Scraper</h1>
+    <span class="sub">local dev tool</span>
+    <span class="sub status" *ngIf="summary">
+      DB: {{ summary.distinct_properties || 0 }} properties · {{ summary.total_rows || 0 }} snapshots · last {{ summary.last_scrape || 'never' }}
+    </span>
+  </header>
+
+  <div class="api-error" *ngIf="apiError">{{ apiError }}</div>
+
+  <!-- Start on SUUMO -->
+  <section class="card">
+    <h2>Start a search on SUUMO</h2>
+    <p class="muted top0">Open a Tokyo-wide list, refine any filters on SUUMO (price, area, walk time, layout, age, ward…), then copy the URL into the box below.</p>
+    <div class="links">
+      <a class="tile" *ngFor="let l of suumoLinks" [href]="l.url" target="_blank" rel="noopener">
+        <span class="jp">{{ l.label }}</span><small>{{ l.sub }}</small>
+      </a>
+    </div>
+  </section>
+
+  <!-- Paste URL -->
+  <section class="card">
+    <h2>Paste a SUUMO search URL</h2>
+    <div class="urlrow">
+      <input [(ngModel)]="urlInput" placeholder="https://suumo.jp/jj/bukken/ichiran/…  (must contain /ichiran/)">
+    </div>
+    <div class="actions">
+      <button (click)="previewFromUrl()" [disabled]="urlPreviewing">⚡ Preview</button>
+      <span class="sep">·</span>
+      <div class="small"><label>Crawl pages</label><input type="number" min="1" [(ngModel)]="crawlPages"></div>
+      <button class="warn" (click)="crawlFromUrl()">▶ Crawl → save to DB</button>
+      <span class="note">{{ urlPending }}</span>
+      <span class="muted">{{ urlCrawlMsg }}</span>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="card">
+    <h2>Results <span class="muted normal">{{ resMeta }}</span>
+      <button class="ghost tiny" (click)="showCollected()">show collected data</button>
+    </h2>
+    <div class="stats" *ngIf="stats">
+      <div class="stat"><div class="n">{{ stats.count }}</div><div class="l">count</div></div>
+      <div class="stat"><div class="n">{{ fmtYen(stats.median_price_yen) }}</div><div class="l">median price</div></div>
+      <div class="stat"><div class="n">{{ stats.median_price_per_m2 ? (stats.median_price_per_m2 | number) : '—' }}</div><div class="l">median ¥/m²</div></div>
+      <div class="stat"><div class="n">{{ stats.min_price_yen ? fmtYen(stats.min_price_yen) + ' – ' + fmtYen(stats.max_price_yen) : '—' }}</div><div class="l">range</div></div>
+    </div>
+    <div class="tablewrap" *ngIf="rows.length">
+      <table>
+        <thead><tr>
+          <th>type</th><th>price</th><th>¥/m²</th><th>layout</th><th>bldg m²</th>
+          <th>land m²</th><th>age</th><th>walk</th><th>ward</th><th>address</th><th>link</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngFor="let r of rows">
+            <td>{{ r.category }}</td>
+            <td>{{ fmtYen(r.price_yen) }}</td>
+            <td>{{ ppm2(r) }}</td>
+            <td>{{ r.layout || '—' }}</td>
+            <td>{{ r.building_m2 ?? '—' }}</td>
+            <td>{{ r.land_m2 ?? '—' }}</td>
+            <td>{{ r.age_years ?? '—' }}</td>
+            <td>{{ r.nearest_walk_min ?? '—' }}</td>
+            <td>{{ r.ward }}</td>
+            <td class="addr">{{ r.address }}</td>
+            <td><a [href]="r.url" target="_blank" rel="noopener">open ↗</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Trends -->
+  <section class="card">
+    <h2>Trends</h2>
+    <div class="actions">
+      <button class="ghost" (click)="loadTrends()">Load trends</button>
+      <span class="muted">median price &amp; ¥/m² per scrape date · needs ≥2 days of crawls to show movement</span>
+    </div>
+    <div class="tablewrap" *ngIf="trendRows.length">
+      <table>
+        <thead><tr><th *ngFor="let c of trendCols">{{ c.replace('_', ' ') }}</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of trendRows">
+            <td *ngFor="let c of trendCols">{{ trendCell(r, c) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

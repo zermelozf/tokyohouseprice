@@ -4,3 +4,7 @@ __pycache__/*
 api/__pycache__/*
 .firebase/
 data/
+.venv/
+scraper/__pycache__/*
+scraper/data/
+.DS_Store

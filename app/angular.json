@@ -51,6 +51,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/app/dev-routes.ts",
+                  "with": "src/app/dev-routes.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -80,11 +86,23 @@
             },
             "ja": {
               "localize": ["ja"],
-              "outputPath": "dist/app-ja/"
+              "outputPath": "dist/app-ja/",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/dev-routes.ts",
+                  "with": "src/app/dev-routes.prod.ts"
+                }
+              ]
             },
             "en-US": {
               "localize": ["en-US"],
-              "outputPath": "dist/app-en/"
+              "outputPath": "dist/app-en/",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/dev-routes.ts",
+                  "with": "src/app/dev-routes.prod.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

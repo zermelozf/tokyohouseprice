@@ -1,6 +1,8 @@
 export const environment = {
   production: true,
   apiUrl: 'https://tokyohouseprice-99305686342.us-central1.run.app',
+  // Scraper is dev/local-only; never used in the deployed build.
+  scraperApiUrl: '',
   recaptcha: {
     siteKey: '6Lflq48rAAAAADuyvHaDEUdz8nk1oXzvLuEFJ3f9'
   },

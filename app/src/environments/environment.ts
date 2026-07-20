@@ -2,6 +2,8 @@ export const environment = {
   production: false,
   // apiUrl: 'http://localhost:8000',
   apiUrl: 'https://tokyohouseprice-99305686342.us-central1.run.app',
+  // Local-only SUUMO scraper API (run `ENABLE_SCRAPER=1 uvicorn api:app` on the Mac Studio).
+  scraperApiUrl: 'http://localhost:8000',
   recaptcha: {
     siteKey: '6Lflq48rAAAAADuyvHaDEUdz8nk1oXzvLuEFJ3f9'
   },

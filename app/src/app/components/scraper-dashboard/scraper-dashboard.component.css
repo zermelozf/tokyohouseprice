@@ -1,0 +1,90 @@
+/* Matches the main site: light theme, Inter (inherited), pink accent,
+   white cards with soft shadows. */
+.scraper { max-width: 1100px; margin: 0 auto; padding: 2rem; color: #333; }
+
+.hd {
+  display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+  padding-bottom: 1rem; border-bottom: 1px solid #eee; margin-bottom: 1.5rem;
+}
+.hd h1 { font-size: 1.6rem; color: #333; margin: 0; }
+.hd .sub { color: #666; font-size: 0.8rem; }
+.hd .status { margin-left: auto; }
+
+.card {
+  background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.card h2 {
+  font-size: 1.05rem; color: #333; font-weight: 600; margin: 0 0 1rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.card h2 .normal { font-weight: 400; color: #888; font-size: 0.9rem; }
+
+/* SUUMO quick-link tiles */
+.links { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.tile {
+  display: flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.7rem 1rem; border: 1px solid #ddd; border-radius: 8px;
+  text-decoration: none; color: #333; background: #fff; transition: all 0.15s ease;
+}
+.tile:hover { border-color: #FF69B4; background: #fdf2f8; text-decoration: none; }
+.tile .jp { font-weight: 600; font-size: 0.95rem; }
+.tile small { color: #888; font-size: 0.75rem; }
+
+/* URL box */
+.urlrow { margin-bottom: 0.9rem; }
+.urlrow input {
+  width: 100%; padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: #333;
+}
+.urlrow input:focus { outline: none; border-color: #FF69B4; }
+
+label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 0.3rem; }
+input[type="number"] {
+  width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 0.9rem; color: #333;
+}
+
+.actions { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: end; }
+.actions .small { width: 110px; }
+.actions .sep { color: #ccc; align-self: center; }
+
+button {
+  background: #FF69B4; color: #fff; border: none; border-radius: 6px;
+  padding: 0.6rem 1.1rem; font-weight: 500; font-size: 0.9rem; font-family: inherit;
+  cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255, 105, 180, 0.3);
+}
+button:hover { background: #FF1493; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 105, 180, 0.4); }
+button:active { transform: translateY(0); }
+button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+button.ghost { background: #fff; color: #FF69B4; border: 1px solid #FF69B4; box-shadow: none; }
+button.ghost:hover { background: #fdf2f8; }
+button.tiny { padding: 0.3rem 0.7rem; font-size: 0.78rem; margin-left: auto; }
+button.warn { background: #4CAF50; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3); }
+button.warn:hover { background: #43a047; box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4); }
+
+.stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.3rem 0 1rem; }
+.stat .n { font-size: 1.4rem; font-weight: 700; color: #333; }
+.stat .l { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.03em; }
+
+.tablewrap { max-height: 520px; overflow: auto; border: 1px solid #eee; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th, td { text-align: left; padding: 0.55rem 0.6rem; white-space: nowrap; }
+th { color: #666; font-weight: 600; position: sticky; top: 0; background: #f8f9fa; border-bottom: 1px solid #eee; }
+td { border-bottom: 1px solid #f0f0f0; }
+tbody tr:hover { background: #fafbfc; }
+td.addr { white-space: normal; max-width: 260px; color: #666; }
+
+a { color: #ec4899; text-decoration: none; }
+a:hover { color: #db2777; text-decoration: underline; }
+
+.muted { color: #666; font-size: 0.85rem; }
+.top0 { margin-top: 0; }
+.note { font-size: 0.85rem; color: #856404; align-self: center; }
+
+.api-error {
+  background: #fff3cd; border: 1px solid #ffeeba; color: #856404;
+  padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem;
+}
+
+@media (max-width: 768px) { .scraper { padding: 1rem; } }

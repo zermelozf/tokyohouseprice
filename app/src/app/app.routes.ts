@@ -5,6 +5,9 @@ import { HousePriceArticleComponent } from './components/house-price-article/hou
 import { NakanoMapComponent } from './components/nakano-map/nakano-map.component';
 import { RentOrBuyComponent } from './components/rent-or-buy/rent-or-buy.component';
 import { RentOrBuyArticleComponent } from './components/rent-or-buy-article/rent-or-buy-article.component';
+// Local-only SUUMO scraper route. Replaced with an empty array in deploy builds
+// via angular.json `fileReplacements` (see dev-routes.prod.ts).
+import { devRoutes } from './dev-routes';
 
 // Define shared routes that will be used for both languages
 const sharedRoutes: Routes = [
@@ -21,7 +24,10 @@ const sharedRoutes: Routes = [
 export const routes: Routes = [
   // Default routes (English)
   ...sharedRoutes,
-  
+
+  // Local-only dev tool (empty in production)
+  ...devRoutes,
+
   // Japanese localized routes
   {
     path: 'ja',

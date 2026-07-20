@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
+import os
 import pandas as pd
 from pydantic import BaseModel
 import pickle
@@ -63,6 +64,13 @@ class PredictionOutput(BaseModel):
     land: Land
     building: Building
     found: bool = True
+
+
+# Local-only SUUMO scraper dashboard API. Enabled with ENABLE_SCRAPER=1 for
+# local dev on the Mac Studio; intentionally absent from the Cloud Run deploy.
+if os.environ.get("ENABLE_SCRAPER") == "1":
+    from scraper_routes import router as scraper_router
+    app.include_router(scraper_router)
 
 
 @app.get("/")
