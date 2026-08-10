@@ -402,6 +402,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     return this.reviewTagInput.split(',').map(t => t.trim()).includes(tag);
   }
 
+  /** How many of your verdicts the current filters actually show. A verdict
+   * sits on the property for good, but the filters are free to exclude it —
+   * without this you see "3 bad" next to one pin and assume something broke. */
+  reviewedShown(source: 'map' | 'search' = 'map'): number {
+    const rows: any[] = source === 'search' ? this.searchRows : this.mapPoints;
+    return rows.filter(r => r.verdict).length;
+  }
+
+  reviewedTotal(): number {
+    return Object.values(this.reviewCounts).reduce((a, b) => a + (b || 0), 0);
+  }
+
   loadReviewCounts(): void {
     this.api.reviews().subscribe({
       next: r => this.reviewCounts = r.counts || {},
@@ -872,6 +884,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     });
     this.api.config().subscribe({ next: c => this.config = c, error: () => {} });
     this.loadJobs();
+    // Verdicts and presets are the two things that survive a reload, so load
+    // them up front. Without this the counters read 0 on a fresh page and it
+    // looks as though nothing was ever saved.
+    this.loadReviewCounts();
+    this.loadSavedFilters();
     // Default the crawled-time window to yesterday → today.
     const today = new Date();
     const yesterday = new Date();

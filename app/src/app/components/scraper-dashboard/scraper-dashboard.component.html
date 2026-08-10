@@ -218,6 +218,10 @@
     <div class="reviewbar" *ngIf="searchRows.length">
       <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
       <span class="muted">unreviewed first · keys 1/2/3</span>
+      <span class="muted" *ngIf="reviewedTotal()">
+        · {{ reviewedTotal() }} reviewed overall,
+        <b>{{ reviewedShown('search') }}</b> of them match these filters
+      </span>
       <span class="vfilter">
         <button type="button" class="chip" *ngFor="let v of VERDICTS"
                 [class.sel]="searchVerdicts.includes(v.key)" (click)="toggleSearchVerdict(v.key)"
@@ -512,6 +516,10 @@
             🔍 Review {{ mapPoints.length }} shown
           </button>
           <span class="muted">unreviewed first · keys 1/2/3</span>
+          <span class="muted" *ngIf="reviewedTotal()">
+            · {{ reviewedTotal() }} reviewed overall,
+            <b>{{ reviewedShown('map') }}</b> of them match these filters
+          </span>
           <span class="vfilter">
             <button type="button" class="chip" *ngFor="let v of VERDICTS"
                     [class.sel]="mapVerdicts.includes(v.key)" (click)="toggleMapVerdict(v.key)"
