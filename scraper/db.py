@@ -81,9 +81,19 @@ CREATE TABLE IF NOT EXISTS property_detail (
     address      TEXT,
     title        TEXT,
     specs_json   TEXT,        -- full {label: value} map from the detail page
+    images_json  TEXT,        -- the property's own photos, in page order
     n_specs      INTEGER,
     fetched_at   TEXT,
     PRIMARY KEY (property_id, scrape_date)
+);
+
+-- Named filter presets. The map carries a lot of state (eight ranges plus a
+-- dozen scalars), so retyping it is the main friction in coming back to a
+-- search you had already tuned.
+CREATE TABLE IF NOT EXISTS saved_filter (
+    name        TEXT PRIMARY KEY,
+    filters     TEXT,          -- JSON blob, opaque to the server
+    created     TEXT
 );
 
 -- Manual verdicts. Keyed on property_id alone, not (property_id, date): a

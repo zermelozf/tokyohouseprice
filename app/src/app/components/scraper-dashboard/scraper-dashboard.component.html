@@ -469,6 +469,22 @@
         <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
         </select>
         </div>
+        <div class="filterbar">
+          <label>saved</label>
+          <select (change)="loadFilter($any($event.target).value)">
+            <option value="">— load a saved filter —</option>
+            <option *ngFor="let f of savedFilters" [value]="f.name">{{ f.name }}</option>
+          </select>
+          <input class="fname" [(ngModel)]="filterName" placeholder="name this filter"
+                 (keyup.enter)="saveCurrentFilter()">
+          <button class="ghost tiny" (click)="saveCurrentFilter()" [disabled]="!filterName.trim()">save</button>
+          <button class="ghost tiny" (click)="copyShareLink()" title="a link that restores this exact view">
+            🔗 copy link</button>
+          <button class="ghost tiny" *ngIf="savedFilters.length"
+                  (click)="removeFilter(savedFilters[0].name)"
+                  [title]="'delete ' + savedFilters[0].name">🗑 {{ savedFilters[0].name }}</button>
+          <span class="note" *ngIf="shareMsg">{{ shareMsg }}</span>
+        </div>
         <div class="reviewbar">
           <button (click)="startReview(true)" [disabled]="!mapPoints.length">
             🔍 Review {{ mapPoints.length }} shown
@@ -1214,69 +1230,74 @@
 <!-- ============ manual review: one card at a time ============ -->
 <div class="modal-backdrop" *ngIf="reviewOpen" (click)="reviewOpen = false">
   <div class="modal revmodal" (click)="$event.stopPropagation()">
-    <div class="modal-head">
-      <b>Review listings</b>
-      <span class="revprog">
-        {{ reviewIndex + 1 }} / {{ reviewQueue.length }}
-        <span class="muted" *ngIf="reviewCounts">
-          · so far {{ reviewCounts['good'] || 0 }} good,
-          {{ reviewCounts['maybe'] || 0 }} maybe, {{ reviewCounts['bad'] || 0 }} bad
-        </span>
+    <button class="modal-close" (click)="reviewOpen = false" title="close (Esc)">✕</button>
+    <div class="revhead">
+      <b>Review</b>
+      <span class="revprog">{{ reviewIndex + 1 }} / {{ reviewQueue.length }}</span>
+      <span class="muted" *ngIf="reviewCounts">
+        {{ reviewCounts['good'] || 0 }} good · {{ reviewCounts['maybe'] || 0 }} maybe
+        · {{ reviewCounts['bad'] || 0 }} bad
       </span>
-      <button class="ghost tiny" (click)="reviewOpen = false">✕ close</button>
     </div>
 
-    <div class="modal-body" *ngIf="reviewCard as c">
-      <div class="revcard" [style.border-top-color]="verdictMeta(c.verdict)?.color || '#e2e6ec'">
-        <a [href]="c.url" target="_blank" rel="noopener" class="revphoto" [title]="'open on SUUMO'">
-          <img *ngIf="c.image_url" [src]="c.image_url" alt="" loading="lazy">
-          <div class="revphoto-none" *ngIf="!c.image_url">no photo on the listing card</div>
-        </a>
-
-        <div class="revfacts">
-          <div class="revprice">
-            {{ c.price_raw || fmtYen(c.price_yen) }}
-            <span class="muted">· {{ c.property_label || c.category }}</span>
-            <span class="verdictpill" *ngIf="verdictMeta(c.verdict) as m"
-                  [style.background]="m.color">{{ m.icon }} {{ m.label }}</span>
-          </div>
-          <div class="revline">
-            {{ c.layout || '—' }} ·
-            {{ c.building_m2 ? c.building_m2 + ' m²' : (c.land_m2 ? c.land_m2 + ' m² land' : '—') }}
-            <span *ngIf="c.build_year_est"> · built {{ c.build_year_est }}</span>
-          </div>
-          <div class="revline strong" *ngIf="c.commute_min != null">
-            🎓 {{ c.commute_min }} min to LFIT
-            <span class="muted">— {{ c.commute_walk_min }}′ to {{ c.commute_from }},
-              {{ c.commute_transit_min }}′ train</span>
-          </div>
-          <div class="revline" *ngIf="c.capacity as cap">
-            🏗️ fits {{ cap.max_floor_m2 }} m² over {{ cap.max_footprint_m2 }} m² footprint
-          </div>
-          <div class="revline muted">{{ c.address }}</div>
-          <a [href]="c.url" target="_blank" rel="noopener">open the full listing on SUUMO ↗</a>
+    <div class="revbody" *ngIf="reviewCard as c">
+      <div class="revgallery">
+        <img *ngIf="reviewPhotos.length" [src]="reviewPhotos[reviewPhotoIndex]" alt="" loading="lazy">
+        <div class="revphoto-none" *ngIf="!reviewPhotos.length">
+          {{ reviewPhotosLoading ? 'loading photos…' : 'no photos on this listing' }}
         </div>
+        <button class="galnav prev" *ngIf="reviewPhotos.length > 1"
+                (click)="photoStep(-1)" title="previous photo (←)">‹</button>
+        <button class="galnav next" *ngIf="reviewPhotos.length > 1"
+                (click)="photoStep(1)" title="next photo (→)">›</button>
+        <span class="galcount" *ngIf="reviewPhotos.length">
+          {{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}
+          <span *ngIf="reviewPhotosLoading">· loading…</span>
+        </span>
       </div>
 
-      <div class="revtags">
-        <button type="button" class="chip" *ngFor="let t of QUICK_TAGS"
-                [class.sel]="hasQuickTag(t)" (click)="toggleQuickTag(t)">{{ t }}</button>
-      </div>
-      <input class="revnote" [(ngModel)]="reviewTagInput" placeholder="tags, comma separated">
-      <input class="revnote" [(ngModel)]="reviewNote" placeholder="note (optional)">
+      <div class="revside">
+        <div class="revprice">
+          {{ c.price_raw || fmtYen(c.price_yen) }}
+          <span class="verdictpill" *ngIf="verdictMeta(c.verdict) as m"
+                [style.background]="m.color">{{ m.icon }} {{ m.label }}</span>
+        </div>
+        <div class="revline muted">{{ c.property_label || c.category }}</div>
+        <div class="revline">
+          {{ c.layout || '—' }} ·
+          {{ c.building_m2 ? c.building_m2 + ' m²' : (c.land_m2 ? c.land_m2 + ' m² land' : '—') }}
+          <span *ngIf="c.build_year_est"> · built {{ c.build_year_est }}</span>
+        </div>
+        <div class="revline strong" *ngIf="c.commute_min != null">
+          🎓 {{ c.commute_min }} min to LFIT
+          <span class="muted">{{ c.commute_walk_min }}′ to {{ c.commute_from }},
+            {{ c.commute_transit_min }}′ train</span>
+        </div>
+        <div class="revline" *ngIf="c.capacity as cap">
+          🏗️ fits {{ cap.max_floor_m2 }} m², {{ cap.max_footprint_m2 }} m² footprint
+        </div>
+        <div class="revline muted">{{ c.address }}</div>
+        <a [href]="c.url" target="_blank" rel="noopener">open the full listing on SUUMO ↗</a>
 
-      <div class="revactions">
-        <button class="revbad" (click)="grade('bad')">✕ bad <kbd>1</kbd></button>
-        <button class="revmaybe" (click)="grade('maybe')">? maybe <kbd>2</kbd></button>
-        <button class="revgood" (click)="grade('good')">♥ good <kbd>3</kbd></button>
-        <button class="ghost" (click)="nextCard()">skip <kbd>→</kbd></button>
-        <button class="ghost tiny" (click)="nextCard(-1)">← back</button>
-        <button class="ghost tiny" *ngIf="reviewCard?.verdict" (click)="grade(null)">clear verdict</button>
+        <label class="revlabel">why — click any that apply</label>
+        <div class="revtags">
+          <button type="button" class="chip" *ngFor="let t of QUICK_TAGS"
+                  [class.sel]="hasQuickTag(t)" (click)="toggleQuickTag(t)">{{ t }}</button>
+        </div>
+        <input class="revnote" [(ngModel)]="reviewTagInput"
+               placeholder="…or type your own, comma separated">
+        <input class="revnote" [(ngModel)]="reviewNote" placeholder="note (optional)">
       </div>
-      <p class="muted revhint">
-        Verdicts save immediately and show on the map, so a listing you rejected
-        says so the next time you see it.
-      </p>
+    </div>
+
+    <div class="revactions" *ngIf="reviewCard">
+      <button class="revbad" (click)="grade('bad')">✕ bad <kbd>1</kbd></button>
+      <button class="revmaybe" (click)="grade('maybe')">? maybe <kbd>2</kbd></button>
+      <button class="revgood" (click)="grade('good')">♥ good <kbd>3</kbd></button>
+      <button class="ghost" (click)="nextCard()">skip <kbd>space</kbd></button>
+      <button class="ghost tiny" (click)="nextCard(-1)">← back</button>
+      <button class="ghost tiny" *ngIf="reviewCard?.verdict" (click)="grade(null)">clear</button>
+      <span class="muted revhint">← → browse photos · saves as you go</span>
     </div>
   </div>
 </div>

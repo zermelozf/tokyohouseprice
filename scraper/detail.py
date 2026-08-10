@@ -90,6 +90,29 @@ def kankyo_url(url: str) -> str | None:
     return f"{m.group(1)}kankyo/{m.group(2) or ''}" if m else None
 
 
+# Listing photos are lazy-loaded: `src` carries a base64 placeholder and the
+# real URL sits in `rel` or `data-src`. Reading `src` gets a 1x1 transparent gif.
+_IMG = re.compile(r'(?:rel|data-src)="(https?://[^"]+?\.(?:jpg|jpeg|png))"', re.I)
+# Agency logos and UI chrome live under /jj/ and gazo/kaisha; the property's own
+# photos are under front/gazo/bukken or gazo%2Fbukken.
+_IMG_KEEP = ("front/gazo/bukken", "gazo%2Fbukken", "front/gazo/fr/bukken")
+
+
+def extract_images(html: str, limit: int = 30) -> list[str]:
+    """Every photo of the property itself, in page order, deduped."""
+    out, seen = [], set()
+    for url in _IMG.findall(html):
+        if not any(k in url for k in _IMG_KEEP):
+            continue
+        if url in seen:
+            continue
+        seen.add(url)
+        out.append(url)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def scrape_detail(url: str, fetcher: Fetcher | None = None) -> dict:
     """Fetch one detail page and return the exact pin plus the full spec table.
 
@@ -115,6 +138,7 @@ def scrape_detail(url: str, fetcher: Fetcher | None = None) -> dict:
         if own:
             fetcher.close()
     extracted = extract_specs(html)
+    images = extract_images(html)
     specs = extracted["specs"]
     m = re.search(r"/((?:nc|jnc)_[0-9]+)/", url)
     return {
@@ -125,6 +149,7 @@ def scrape_detail(url: str, fetcher: Fetcher | None = None) -> dict:
         "address": specs.get("所在地") or specs.get("住所"),
         "title": extracted.get("title"),
         "specs": specs,
+        "images": images,
     }
 
 

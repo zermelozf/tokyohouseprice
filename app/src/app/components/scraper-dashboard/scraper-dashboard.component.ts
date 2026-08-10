@@ -183,6 +183,99 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // investing-shaped and therefore rankable on one rule.
   compareAnchor: number | null = null;
 
+  // --- saved filters -------------------------------------------------------
+  // The map carries eight ranges plus a dozen scalars, so re-tuning a search
+  // you already had is the main friction in coming back to it. Presets are
+  // stored server-side; the same state also round-trips through the URL, which
+  // is what makes a search shareable.
+  savedFilters: { name: string; filters: any; created: string }[] = [];
+  filterName = '';
+  shareMsg = '';
+
+  /** Everything that decides what the map shows. */
+  filterState(): any {
+    return {
+      mapForm: { ...this.mapForm },
+      ranges: JSON.parse(JSON.stringify(this.mapRanges)),
+      mapEras: [...this.mapEras],
+      mapVerdicts: [...this.mapVerdicts],
+      budgetYen: this.budgetYen, budgetBuildM2: this.budgetBuildM2,
+      bldMinBuy: this.bldMinBuy, bldMinRent: this.bldMinRent,
+      bldMinRentHouse: this.bldMinRentHouse,
+      rentMaxYen: this.rentMaxYen, ageMaxKnown: this.ageMaxKnown,
+      colorBy: this.colorBy,
+    };
+  }
+
+  applyFilterState(st: any, reload = true): void {
+    if (!st) return;
+    if (st.mapForm) this.mapForm = { ...this.mapForm, ...st.mapForm };
+    this.mapEras = st.mapEras ?? this.mapEras;
+    this.mapVerdicts = st.mapVerdicts ?? this.mapVerdicts;
+    for (const k of ['budgetYen','budgetBuildM2','bldMinBuy','bldMinRent',
+                     'bldMinRentHouse','rentMaxYen','ageMaxKnown','colorBy'] as const) {
+      if (st[k] !== undefined) (this as any)[k] = st[k];
+    }
+    // Ranges are applied after the reload, since their bounds depend on the
+    // data that comes back.
+    this.pendingRanges = st.ranges || null;
+    if (reload) this.loadMap(); else this.applyPendingRanges();
+  }
+
+  private pendingRanges: any = null;
+  private applyPendingRanges(): void {
+    if (!this.pendingRanges) return;
+    for (const [k, v] of Object.entries(this.pendingRanges as Record<string, any>)) {
+      const b = this.mapBounds[k];
+      if (!b || !v) continue;
+      this.mapRanges[k] = { lo: Math.max(b.min, Math.min(v.lo, b.max)),
+                            hi: Math.min(b.max, Math.max(v.hi, b.min)) };
+    }
+    this.pendingRanges = null;
+    this.applyRanges();
+  }
+
+  loadSavedFilters(): void {
+    this.api.savedFilters().subscribe({
+      next: r => this.savedFilters = r.filters || [], error: () => {},
+    });
+  }
+
+  saveCurrentFilter(): void {
+    const name = (this.filterName || '').trim();
+    if (!name) return;
+    this.api.saveFilter(name, this.filterState()).subscribe({
+      next: () => { this.filterName = ''; this.loadSavedFilters();
+                    this.shareMsg = `saved "${name}"`; },
+      error: () => { this.shareMsg = 'save failed'; },
+    });
+  }
+
+  loadFilter(name: string): void {
+    const f = this.savedFilters.find(x => x.name === name);
+    if (f) { this.applyFilterState(f.filters); this.shareMsg = `loaded "${name}"`; }
+  }
+
+  removeFilter(name: string): void {
+    this.api.deleteFilter(name).subscribe({ next: () => this.loadSavedFilters(), error: () => {} });
+  }
+
+  /** A link that restores this exact view. */
+  copyShareLink(): void {
+    const blob = btoa(encodeURIComponent(JSON.stringify(this.filterState())));
+    const url = `${location.origin}${location.pathname}#f=${blob}`;
+    const done = () => { this.shareMsg = 'link copied'; setTimeout(() => this.shareMsg = '', 2500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, done);
+    else { prompt('Copy this link', url); }
+  }
+
+  private restoreFromUrl(): void {
+    const m = location.hash.match(/[#&]f=([^&]+)/);
+    if (!m) return;
+    try { this.applyFilterState(JSON.parse(decodeURIComponent(atob(m[1]))), false); }
+    catch { /* a mangled link should not break the page */ }
+  }
+
   // --- manual review -------------------------------------------------------
   // A verdict is a judgement about a place, so it is kept per property and
   // survives re-crawls, price changes and relistings under a new id.
@@ -192,6 +285,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   reviewNote = '';
   reviewTagInput = '';
   reviewCounts: Record<string, number> = {};
+  // Gallery for the card on screen. The card image is one photo; the listing
+  // has ~24, and they only exist on the detail page — fetched on demand and
+  // cached, so browsing costs one request per listing you actually look at.
+  reviewPhotos: string[] = [];
+  reviewPhotoIndex = 0;
+  reviewPhotosLoading = false;
   readonly VERDICTS = Object.entries(VERDICT_META)
     .map(([key, m]) => ({ key: key as Verdict, ...m }));
   // Which verdicts the map shows. Default hides nothing; the point of the
@@ -214,10 +313,38 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     this.reviewNote = '';
     this.reviewTagInput = '';
     this.reviewOpen = true;
+    this.loadPhotos();
   }
 
   get reviewCard(): MapPoint | null {
     return this.reviewQueue[this.reviewIndex] ?? null;
+  }
+
+  /** Load the full gallery for the card on screen. */
+  private loadPhotos(): void {
+    const c = this.reviewCard;
+    this.reviewPhotoIndex = 0;
+    this.reviewPhotos = c?.image_url ? [c.image_url] : [];
+    if (!c) return;
+    this.reviewPhotosLoading = true;
+    this.api.detail(c.url).subscribe({
+      next: d => {
+        this.reviewPhotosLoading = false;
+        const imgs = (d as any).images as string[] | undefined;
+        if (imgs && imgs.length) {
+          // Card image first if it is not already in the set, then the rest.
+          const rest = imgs.filter(u => u !== c.image_url);
+          this.reviewPhotos = c.image_url ? [c.image_url, ...rest] : rest;
+        }
+      },
+      error: () => { this.reviewPhotosLoading = false; },
+    });
+  }
+
+  photoStep(step: number): void {
+    if (!this.reviewPhotos.length) return;
+    const n = this.reviewPhotos.length;
+    this.reviewPhotoIndex = (this.reviewPhotoIndex + step + n) % n;
   }
 
   /** Grade the card and advance. Verdicts are saved immediately — a review
@@ -247,6 +374,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     if (next < 0) { this.reviewIndex = 0; return; }
     if (next >= this.reviewQueue.length) { this.reviewOpen = false; return; }
     this.reviewIndex = next;
+    this.loadPhotos();
   }
 
   toggleQuickTag(tag: string): void {
@@ -733,8 +861,10 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       '1': () => this.grade('bad'),
       '2': () => this.grade('maybe'),
       '3': () => this.grade('good'),
-      'ArrowRight': () => this.nextCard(),
-      'ArrowLeft': () => this.nextCard(-1),
+      'ArrowRight': () => this.photoStep(1),
+      'ArrowLeft': () => this.photoStep(-1),
+      ' ': () => this.nextCard(),
+      'Backspace': () => this.nextCard(-1),
       'Escape': () => { this.reviewOpen = false; },
     };
     const fn = map[e.key];
@@ -1153,7 +1283,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
         this.mapAll = res.points;
         this.computeBounds(this.mapAll);
         this.mapLoaded = true;
-        this.applyRanges();          // draws through the sliders
+        if (this.pendingRanges) this.applyPendingRanges();
+        else this.applyRanges();     // draws through the sliders
       },
       error: () => {},
     });
@@ -1335,7 +1466,10 @@ ${folders}
   renderMarkers(): void {
     if (!this.map || !this.markerLayer) return;
     this.markerLayer.clearLayers();
-    this.spiderfied = null;
+    // collapseSpider, not just resetting the flag: the fan-out lives in its own
+    // layer, so clearing markerLayer left stale copies on the map — which is
+    // why a listing graded from a spidered cluster kept its old colour.
+    this.collapseSpider();
 
     // Agents routinely list the same property, so a single set of coordinates
     // can carry half a dozen listings — drawn naively they stack and all but
@@ -1358,12 +1492,34 @@ ${folders}
   }
 
   /** One listing: a coloured dot with its detail popup. */
+  /** How a graded pin looks. Red read as an alert rather than a judgement, so
+   * a rejected listing now fades out instead of shouting, and the two you care
+   * about are marked by a ring rather than by hue alone. */
+  private markerStyle(p: MapPoint, radius: number): any {
+    const base = { pane: 'listings', radius, opacity: 1, fillOpacity: 1,
+                   weight: 2.5, color: '#ffffff', className: 'listing-dot',
+                   fillColor: this.pointColor(p) };
+    if (p.verdict === 'bad') {
+      // Greyed out and shrunk: still there so you know it was judged, but it
+      // stops competing for attention.
+      return { ...base, radius: Math.max(4, radius - 2), fillColor: '#b6bdc6',
+               fillOpacity: 0.45, color: '#d7dce2', weight: 1.5,
+               className: 'listing-dot dot-bad' };
+    }
+    if (p.verdict === 'good') {
+      return { ...base, radius: radius + 1, fillColor: '#d4a017',
+               color: '#8a6d0b', weight: 3, className: 'listing-dot dot-good' };
+    }
+    if (p.verdict === 'maybe') {
+      return { ...base, color: '#2563eb', weight: 3.5,
+               className: 'listing-dot dot-maybe' };
+    }
+    return base;
+  }
+
   private listingMarker(p: MapPoint, radius = 7): any {
-    const marker = this.L.circleMarker([p.lat, p.lng], {
-      pane: 'listings', radius, weight: 2.5, color: '#ffffff', opacity: 1,
-      fillColor: this.pointColor(p), fillOpacity: 1, className: 'listing-dot',
-      ...(p.verdict ? { weight: 3, color: '#fff' } : {}),
-    }).bindPopup(this.popupHtml(p));
+    const marker = this.L.circleMarker([p.lat, p.lng],
+      this.markerStyle(p, radius)).bindPopup(this.popupHtml(p));
     // Wire the popup's "See all details" button back into Angular.
     marker.on('popupopen', (e: any) => {
       const root = e.popup.getElement();
@@ -1376,6 +1532,7 @@ ${folders}
         this.reviewTagInput = (p.review_tags || []).join(', ');
         this.reviewOpen = true;
         this.map?.closePopup();
+        this.loadPhotos();
       });
       const cmp = root?.querySelector('.cmpbtn');
       if (cmp) cmp.onclick = () => this.zone.run(() => {
@@ -1396,7 +1553,11 @@ ${folders}
     // Mixed groups read as grey; a uniform one keeps its colour — under
     // whichever dimension the dots are currently coloured by.
     const shades = new Set(points.map(p => this.pointColor(p)));
-    const color = shades.size === 1 ? this.pointColor(points[0]) : '#6b7280';
+    let color = shades.size === 1 ? this.pointColor(points[0]) : '#6b7280';
+    // A cluster where everything has been rejected should fade too, and one
+    // holding anything you liked should say so without opening it.
+    if (points.every(p => p.verdict === 'bad')) color = '#b6bdc6';
+    else if (points.some(p => p.verdict === 'good')) color = '#d4a017';
 
     const badge = this.L.marker([lat, lng], {
       pane: 'listings',

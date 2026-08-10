@@ -414,7 +414,7 @@ def get_detail(property_id: str, scrape_date: str | None = None) -> dict | None:
         return None
     import json
     cols = ("property_id, scrape_date, url, lat, lng, address, title, "
-            "specs_json, n_specs, fetched_at")
+            "specs_json, images_json, n_specs, fetched_at")
     conn = connect()
     try:
         if scrape_date:
@@ -430,6 +430,7 @@ def get_detail(property_id: str, scrape_date: str | None = None) -> dict | None:
             return None
         d = dict(row)
         d["specs"] = json.loads(d.pop("specs_json") or "{}")
+        d["images"] = json.loads(d.pop("images_json") or "[]")
         return d
     finally:
         conn.close()
@@ -485,11 +486,12 @@ def save_detail(d: dict, scrape_date: str | None = None) -> None:
         conn.execute(
             "INSERT OR REPLACE INTO property_detail "
             "(property_id, scrape_date, url, lat, lng, address, title, "
-            " specs_json, n_specs, fetched_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " specs_json, images_json, n_specs, fetched_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (d["property_id"], day, d.get("url"), d.get("lat"), d.get("lng"),
              d.get("address"), d.get("title"),
-             json.dumps(specs, ensure_ascii=False), len(specs),
+             json.dumps(specs, ensure_ascii=False),
+             json.dumps(d.get("images") or [], ensure_ascii=False), len(specs),
              now.isoformat()))
         conn.commit()
     finally:

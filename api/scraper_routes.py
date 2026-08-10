@@ -188,6 +188,56 @@ def list_reviews():
     return {"reviews": rows, "counts": counts, "tags": tags}
 
 
+class SavedFilterBody(BaseModel):
+    name: str
+    filters: dict
+
+
+@router.get("/filters")
+def list_filters():
+    conn = init_db()
+    try:
+        import json as _json
+        return {"filters": [
+            {"name": r["name"], "filters": _json.loads(r["filters"] or "{}"),
+             "created": r["created"]}
+            for r in conn.execute("SELECT * FROM saved_filter ORDER BY created DESC")]}
+    finally:
+        conn.close()
+
+
+@router.post("/filters")
+def save_filter(body: SavedFilterBody):
+    """Store a named preset. The blob is opaque here — the dashboard owns its
+    own shape, so adding a control never needs a migration."""
+    import json as _json
+    from datetime import datetime as _dt
+    name = body.name.strip()
+    if not name:
+        return {"error": "name required"}
+    conn = init_db()
+    try:
+        conn.execute("INSERT OR REPLACE INTO saved_filter (name, filters, created) "
+                     "VALUES (?,?,?)",
+                     (name, _json.dumps(body.filters, ensure_ascii=False),
+                      _dt.now().isoformat()))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"saved": name}
+
+
+@router.delete("/filters/{name}")
+def delete_filter(name: str):
+    conn = init_db()
+    try:
+        n = conn.execute("DELETE FROM saved_filter WHERE name = ?", (name,)).rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    return {"deleted": n > 0}
+
+
 @router.get("/summary")
 def summary():
     return query.db_summary()

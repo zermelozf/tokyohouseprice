@@ -123,6 +123,7 @@ export interface PropertyDetail {
   address: string | null;
   title?: string | null;
   specs?: Record<string, string>;
+  images?: string[];        // the property's own photos, in page order
   n_specs?: number;
   fetched_at?: string;
   cached?: boolean;
@@ -569,6 +570,16 @@ export class ScraperService {
   reviews(): Observable<{ reviews: any[]; counts: Record<string, number>;
                           tags: Record<string, number> }> {
     return this.http.get<any>(`${this.base}/scraper/reviews`);
+  }
+
+  savedFilters(): Observable<{ filters: { name: string; filters: any; created: string }[] }> {
+    return this.http.get<any>(`${this.base}/scraper/filters`);
+  }
+  saveFilter(name: string, filters: any): Observable<any> {
+    return this.http.post(`${this.base}/scraper/filters`, { name, filters });
+  }
+  deleteFilter(name: string): Observable<any> {
+    return this.http.delete(`${this.base}/scraper/filters/${encodeURIComponent(name)}`);
   }
 
   crawlDates(): Observable<{ dates: CrawlDate[] }> {
