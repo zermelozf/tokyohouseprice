@@ -27,14 +27,20 @@ from .fetch import Fetcher
 
 log = logging.getLogger("suumo.commute")
 
-# Walking minutes from each station to the school gate. Straight-line metres
-# from OpenStreetMap at ~80 m/min, rounded up — see the docstring in report.
+# Walking minutes from each station to the school gate, at the Japanese
+# convention of 80 m/min — the same rate SUUMO quotes, so the two legs of a
+# journey are measured the same way.
+#
+# These are PEDESTRIAN ROUTE distances, not straight lines. Straight-line
+# understates a real walk by 20-60% here (下板橋 is 992 m as the crow flies and
+# 1,493 m on foot), which made every commute look 2-7 minutes shorter than it
+# is and disagreed with Google by about that much.
 LFIT = "Lycée Français International de Tokyo"
 DESTINATIONS = {
-    "新板橋": 6,
-    "板橋": 9,
-    "西巣鴨": 10,
-    "下板橋": 12,
+    "新板橋": 10,   #   746 m on foot
+    "板橋": 12,     #   881 m
+    "西巣鴨": 13,   #   975 m
+    "下板橋": 19,   # 1,493 m
 }
 
 # Arrive by 08:30 on a weekday: the school run, not an off-peak average.

@@ -574,6 +574,13 @@ def compare(req: CompareRequest) -> dict:
             "age_years": row.get("age_years"), "era": row.get("era"),
             "build_year_est": row.get("build_year_est"),
             "era_approx": row.get("era_approx"),
+            # The school run is the hard constraint, so it belongs on the card
+            # next to the money rather than only in the search table.
+            "commute_min": row.get("commute_min"),
+            "commute_from": row.get("commute_from"),
+            "commute_walk_min": row.get("commute_walk_min"),
+            "commute_transit_min": row.get("commute_transit_min"),
+            "commute_via": row.get("commute_via"),
             "derived": derived,
             "buildable": buildable(row, built) if built else None,
             "series": series,

@@ -979,6 +979,11 @@
               <b>{{ o.price_raw || fmtYen(o.price_yen) }}</b></div>
             <div class="cmprow"><span>size / layout</span>
               <b>{{ o.building_m2 || o.land_m2 || '—' }} m² · {{ o.layout || '—' }}</b></div>
+            <div class="cmprow" [title]="commuteTip(o)">
+              <span>🎓 to LFIT</span>
+              <b *ngIf="o.commute_min != null">{{ o.commute_min }} min</b>
+              <b *ngIf="o.commute_min == null" class="dim">unknown</b>
+            </div>
 
             <div class="cmprow big" *ngIf="monthlyAt(i) as m">
               <span>monthly cash</span>

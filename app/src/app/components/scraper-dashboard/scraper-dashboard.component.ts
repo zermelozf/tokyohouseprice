@@ -1727,13 +1727,21 @@ ${folders}
       p.building_m2 != null ? `house ${esc(p.building_m2)} m²` : null,
       p.land_m2 != null ? `land ${esc(p.land_m2)} m²` : null,
       p.nearest_walk_min != null ? `${esc(p.nearest_walk_min)} min walk to stn` : null,
-      (p as any).commute_min != null
-        ? `🎓 ${esc((p as any).commute_min)} min to LFIT` : null,
       this.builtLabel(p),
       ppm2 ? esc(ppm2) : null,
     ].filter(Boolean).join(' · ');
     const ref = this.refPoi();
-    const dist = `${ref.icon} ${this.distanceToRef(p.lat, p.lng).toFixed(1)} km to ${esc(ref.name)} <span style="color:#999">(approx.)</span>`;
+    // The school run is the constraint, so lead with the real journey. The
+    // straight-line distance is kept only as a small aside: it is a poor proxy
+    // — 志茂 is nearer the school than 東十条 and ten minutes further from it.
+    const km = `${this.distanceToRef(p.lat, p.lng).toFixed(1)} km straight line`;
+    const commute = p.commute_min != null
+      ? `<b>🎓 ${esc(p.commute_min)} min to LFIT</b>`
+        + `<span style="color:#666"> — ${esc(p.commute_walk_min)}′ walk to `
+        + `${esc(p.commute_from)}, ${esc(p.commute_transit_min)}′ train, arrive `
+        + `${esc(p.commute_via)}</span>`
+        + `<br><span style="color:#999;font-size:0.92em">${km}</span>`
+      : `<span style="color:#999">🎓 commute unknown — ${km} to ${esc(ref.name)}</span>`;
     const picked = this.isCompared(p.property_id);
 
     // While a comparison is being assembled the popup is a picker: everything
@@ -1752,7 +1760,7 @@ ${folders}
     return `<div class="mappop">
       ${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.category)}<br>
       ${bits}<br>
-      <span style="color:#1e5b96">${dist}</span><br>
+      <span style="color:#1e5b96">${commute}</span><br>
       <span style="color:#666">${esc(p.address || '')}</span><br>
       ${actions}
     </div>`;

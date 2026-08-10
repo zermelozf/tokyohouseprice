@@ -320,6 +320,11 @@ export interface CompareOption {
   build_year_est: number | null;
   era_approx: boolean;
   derived: Record<string, any>;
+  commute_min: number | null;
+  commute_from: string | null;
+  commute_walk_min: number | null;
+  commute_transit_min: number | null;
+  commute_via: string | null;
   cashflows: number[];
   monthly_costs: number[];   // recurring monthly outgoings, per year
   exit_values: number[];     // equity if you sell in that year
