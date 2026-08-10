@@ -145,6 +145,13 @@ export interface MapPoint {
   build_year: number | null;
   age_years: number | null;
   scrape_date: string;
+  // The card's own type word — 賃貸マンション / 賃貸一戸建て / 中古一戸建て. Rent
+  // needs it: a flat and a house are both category='rent' and their size
+  // floors differ.
+  property_label: string | null;
+  station_raw: string | null;
+  // How big a house the plot can legally carry (land only) — see scraper/zoning.
+  capacity: PlotCapacity | null;
   // Door-to-school commute, precomputed per station (scraper/commute.py).
   commute_min: number | null;
   commute_from: string | null;
@@ -156,6 +163,22 @@ export interface MapPoint {
   era: SeismicEra | null;
   build_year_est: number | null;   // stated year, else derived from 築N年
   era_approx: boolean;             // derived year, or a year on a revision boundary
+}
+
+export interface PlotCapacity {
+  coverage_pct: number;        // 建ぺい率
+  far_pct: number;             // 容積率 as designated
+  far_effective_pct: number;   // after the frontage-road cap
+  road_width_m: number | null;
+  zone: string | null;
+  limited_by: 'designated' | 'road width';
+  max_floor_m2: number;
+  max_footprint_m2: number;
+  storeys_needed: number | null;
+  land_m2: number;
+  land_m2_max: number | null;          // 分譲地: the largest 区画 on the listing
+  max_floor_m2_largest: number | null;
+  restrictions: string[];              // named by SUUMO, not quantified anywhere
 }
 
 export type SeismicEra = 'kyu' | 'shin' | 'y2000';
@@ -415,6 +438,11 @@ export interface Filters {
   budget_yen?: number | null;
   budget_build_m2?: number;
   budget_build_cost_m2?: number;
+  bld_min_buy?: number | null;    // sale: building floor (land is exempt)
+  bld_min_rent?: number | null;       // rental flats
+  bld_min_rent_house?: number | null; // rental houses
+  rent_max_yen?: number | null;       // monthly rent ceiling
+  age_max_known?: number | null;  // rows with no stated age are kept
   date_from?: string | null;   // crawled-time window, 'YYYY-MM-DD' inclusive
   date_to?: string | null;
   sort?: string | null;

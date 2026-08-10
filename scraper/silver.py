@@ -25,6 +25,7 @@ def to_snapshot(rec: dict, scraped_at: datetime | None = None) -> dict:
         "building_id": rec.get("building_id"),
         "url": rec.get("url"),
         "title": rec.get("title"),
+        "property_label": rec.get("property_label"),
         "address": rec.get("address"),
         "station_raw": rec.get("station_raw"),
         "stations_json": json.dumps(stations, ensure_ascii=False),
@@ -50,7 +51,7 @@ def to_snapshot(rec: dict, scraped_at: datetime | None = None) -> dict:
 
 _COLS = [
     "property_id", "scrape_date", "source", "market", "category", "ward",
-    "building_id", "url", "title", "address", "station_raw", "stations_json",
+    "building_id", "url", "title", "property_label", "address", "station_raw", "stations_json",
     "nearest_walk_min", "price_yen", "price_max_yen", "price_raw",
     "admin_fee_yen", "deposit_yen", "key_money_yen", "layout", "land_m2",
     "building_m2", "unit_floor", "floors", "build_year", "build_month",

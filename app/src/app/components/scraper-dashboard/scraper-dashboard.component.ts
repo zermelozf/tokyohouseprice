@@ -98,6 +98,13 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // shows listings the crawler already refuses to fetch details for.
   budgetYen: number | null = 200_000_000;
   budgetBuildM2 = 130;
+  // Floors SUUMO cannot express: chintai's area filter stops at 100m², and a
+  // single global floor would delete land, which has no building or age.
+  bldMinBuy: number | null = 120;
+  bldMinRent: number | null = 80;        // flats: none in range exceed ~108m²
+  bldMinRentHouse: number | null = 110;  // houses
+  rentMaxYen: number | null = 400_000;
+  ageMaxKnown: number | null = 25;
   readonly budgetOptions = [100_000_000, 150_000_000, 200_000_000, 250_000_000, 300_000_000];
   searchRows: Listing[] = [];
   searchStats: Stats | null = null;
@@ -137,7 +144,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // `date` empty means "latest snapshot of every property"; a specific crawl
   // date pins the map to what that day's crawl actually saw.
   mapForm: { category: string; ward: string; date: string; commuteMax: number | null } =
-    { category: '', ward: '', date: '', commuteMax: null };
+    { category: '', ward: '', date: '', commuteMax: 40 };
   // 耐震基準 tiers to show; empty = all (including listings with no known year).
   mapEras: SeismicEra[] = [];
   // What the dots encode. Era colouring answers "how much of this street is
@@ -175,13 +182,106 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // least-capital option, which is the only anchor that keeps every stream
   // investing-shaped and therefore rankable on one rule.
   compareAnchor: number | null = null;
+
+  // --- map range filters ---------------------------------------------------
+  // The map loads once and filters in the browser: a slider has to respond to
+  // the drag, and a round trip per frame would not. Bounds come from the data
+  // rather than being guessed, so the ends of every slider are reachable.
+  mapAll: MapPoint[] = [];
+  mapRanges: Record<string, { lo: number; hi: number }> = {};
+  mapBounds: Record<string, { min: number; max: number; step: number }> = {};
+  readonly RANGE_SPECS: { key: string; label: string; unit: string; step: number;
+                          pick: (p: MapPoint) => number | null }[] = [
+    { key: 'price',  label: 'price (buy)',    unit: '¥',   step: 1_000_000,
+      pick: p => p.market === 'rent' ? null : p.price_yen },
+    { key: 'rent',   label: 'rent / month',   unit: '¥',   step: 10_000,
+      pick: p => p.market === 'rent' ? p.price_yen : null },
+    // Bare plots only. A house has a plot too, but when you are buying the
+    // house its land size is not what you are choosing on — filtering by it
+    // would quietly drop houses for a reason nobody asked about.
+    { key: 'land',   label: 'land (plots)',   unit: 'm²',  step: 5,
+      pick: p => p.category === 'land' ? p.land_m2 : null },
+    { key: 'house',  label: 'house',          unit: 'm²',  step: 5,
+      pick: p => this.isHouse(p) ? p.building_m2 : null },
+    { key: 'flat',   label: 'mansion / apt',  unit: 'm²',  step: 5,
+      pick: p => this.isFlat(p) ? p.building_m2 : null },
+    // What a plot can carry, rather than how big the plot is — the land area
+    // alone does not tell you whether a house fits, because 建ぺい率 and the
+    // frontage-road cap decide that.
+    { key: 'buildable', label: 'buildable floor', unit: 'm²', step: 5,
+      pick: p => p.capacity ? p.capacity.max_floor_m2 : null },
+    { key: 'footprint', label: 'footprint',       unit: 'm²', step: 5,
+      pick: p => p.capacity ? p.capacity.max_footprint_m2 : null },
+    { key: 'lfit',   label: '🎓 to LFIT',      unit: 'min', step: 1,
+      pick: p => p.commute_min },
+  ];
+
+  isHouse(p: MapPoint): boolean {
+    const l = p.property_label || '';
+    return l.includes('一戸建') || (p.market !== 'rent' && p.category !== 'land' && !l.includes('マンション'));
+  }
+  isFlat(p: MapPoint): boolean {
+    const l = p.property_label || '';
+    return l.includes('マンション') || l.includes('アパート') || l.includes('テラス');
+  }
+
+  /** Slider bounds from the data itself, so both ends are always reachable. */
+  private computeBounds(points: MapPoint[]): void {
+    for (const spec of this.RANGE_SPECS) {
+      const vals = points.map(spec.pick).filter((v): v is number => v != null);
+      if (!vals.length) { delete this.mapBounds[spec.key]; continue; }
+      const lo = Math.floor(Math.min(...vals) / spec.step) * spec.step;
+      const hi = Math.ceil(Math.max(...vals) / spec.step) * spec.step;
+      this.mapBounds[spec.key] = { min: lo, max: hi, step: spec.step };
+      const cur = this.mapRanges[spec.key];
+      // Keep the user's window when new data arrives, clamped to what exists.
+      this.mapRanges[spec.key] = cur
+        ? { lo: Math.max(lo, Math.min(cur.lo, hi)), hi: Math.min(hi, Math.max(cur.hi, lo)) }
+        : { lo, hi };
+    }
+  }
+
+  /** A listing passes if every dimension it *has* is inside its window.
+   * A plot has no building, a flat is not a house — those tests simply do not
+   * apply, rather than excluding the row. */
+  private inRanges(p: MapPoint): boolean {
+    for (const spec of this.RANGE_SPECS) {
+      const b = this.mapBounds[spec.key], r = this.mapRanges[spec.key];
+      if (!b || !r) continue;
+      const v = spec.pick(p);
+      if (v == null) continue;
+      if (v < r.lo || v > r.hi) return false;
+    }
+    return true;
+  }
+
+  /** Re-filter and redraw, without touching the server. */
+  applyRanges(): void {
+    this.mapPoints = this.mapAll.filter(p => this.inRanges(p));
+    this.renderMarkers();
+  }
+
+  resetRanges(): void {
+    this.mapRanges = {};
+    this.computeBounds(this.mapAll);
+    this.applyRanges();
+  }
+
+  rangeLabel(key: string): string {
+    const spec = this.RANGE_SPECS.find(s => s.key === key)!;
+    const r = this.mapRanges[key], b = this.mapBounds[key];
+    if (!r || !b) return '—';
+    const fmt = (v: number) => spec.unit === '¥' ? this.fmtYen(v) : `${v}${spec.unit === 'm²' ? '' : ''}`;
+    const full = r.lo <= b.min && r.hi >= b.max;
+    return full ? `any (${fmt(b.min)}–${fmt(b.max)})` : `${fmt(r.lo)} – ${fmt(r.hi)}`;
+  }
   // Forced exit year. null -> each option shown at its own best-by-IRR year.
   compareSellYear: number | null = null;
   // The rent-or-buy article's own form defaults, so the two tools agree unless
   // you change something here.
   compareAssumptions: CompareAssumptions = {
     loan_rate: 0.015, loan_term: 35, down_payment_pct: 0.20, broker_fee_pct: 0.035,
-    maintenance_rate: 0.005, land_spread_vs_rent: 0, rent_inflation: 0.01,
+    maintenance_rate: 0.007, land_spread_vs_rent: 0, rent_inflation: 0.01,
     renewal_fee_months: 1, opportunity_cost_real: 0.05, simulation_years: 40,
     build_cost_per_m2: 250_000, build_cost_per_m2_rc: 350_000,
     cost_inflation: null, property_tax_rate: 0.014, city_planning_rate: 0.003,
@@ -928,9 +1028,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       categories: this.mapForm.category ? [this.mapForm.category] : [],
       wards: this.mapForm.ward ? [this.mapForm.ward] : [],
       eras: [...this.mapEras],
-      commute_max: this.mapForm.commuteMax,
-      budget_yen: this.budgetYen,
-      budget_build_m2: this.budgetBuildM2,
+      // Numeric cuts are the sliders' job — the server sends everything in
+      // scope so the ranges can span the real data.
+      age_max_known: this.ageMaxKnown,
       limit: 5000,
     };
     // Pinning both bounds to one day narrows "latest snapshot per property" to
@@ -940,7 +1040,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       f.date_to = this.mapForm.date;
     }
     this.api.mapData(f).subscribe({
-      next: res => { this.mapPoints = res.points; this.mapLoaded = true; this.renderMarkers(); },
+      next: res => {
+        this.mapAll = res.points;
+        this.computeBounds(this.mapAll);
+        this.mapLoaded = true;
+        this.applyRanges();          // draws through the sliders
+      },
       error: () => {},
     });
   }
@@ -1520,6 +1625,58 @@ ${folders}
              hurdlePct: (hurdle * 100).toFixed(2), yTicks, xTicks, w, h };
   }
 
+  /** Where to check the restrictions this tool cannot compute.
+   *
+   * 高度地区, 日影規制 and absolute height caps are municipal designations: not
+   * in the national dataset, and the ward sites move their pages constantly —
+   * eight of nine guessed ward URLs were already dead. Only the Tokyo-wide
+   * 都市計画情報 portal is stable, so link that and carry the address across for
+   * the search, rather than shipping links that rot.
+   */
+  private zoningLink(p: MapPoint): string {
+    const addr = (p.address || '').trim();
+    const tokyo = (addr.startsWith('東京') || !addr);
+    const url = tokyo
+      ? 'https://www2.wagmap.jp/tokyo_tokeizu/Portal'
+      : `https://www.google.com/search?q=${encodeURIComponent(addr + ' 都市計画情報 用途地域 高度地区')}`;
+    const what = tokyo ? '東京都都市計画情報' : '市の都市計画情報';
+    return `<a href="${this.esc(url)}" target="_blank" rel="noopener"`
+         + ` title="Check 高度地区 / 日影規制 / height caps for ${this.esc(addr)} — this tool cannot compute them">`
+         + `🗾 ${this.esc(what)} ↗</a>`;
+  }
+
+  /** The listing's nearest station, named. "N min walk to stn" was ambiguous
+   * next to the commute line, which names whichever station is fastest to the
+   * school — often a different one, and sometimes a longer walk. */
+  private nearestStation(p: MapPoint): string | null {
+    const raw = p.station_raw || '';
+    // rent: 東京メトロ南北線/志茂駅 歩8分   sale: 都営三田線「板橋本町」徒歩9分
+    const stops: { line: string; name: string; walk: number }[] = [];
+    for (const m of raw.matchAll(/([^\/／,、]+)[\/／]\s*([^\/／,、\s]+?)駅\s*歩\s*(\d+)\s*分/g)) {
+      stops.push({ line: m[1].trim(), name: m[2], walk: +m[3] });
+    }
+    for (const m of raw.matchAll(/([^「]+)「([^」]+)」\s*徒歩\s*(\d+)\s*分/g)) {
+      stops.push({ line: m[1].trim(), name: m[2], walk: +m[3] });
+    }
+    if (!stops.length) {
+      return p.nearest_walk_min != null ? `${p.nearest_walk_min} min walk to stn` : null;
+    }
+    stops.sort((a, b) => a.walk - b.walk);
+    const n = stops[0];
+    const more = stops.length > 1 ? ` +${stops.length - 1}` : '';
+    return `${this.esc(n.walk)}′ to ${this.esc(n.name)} (${this.esc(n.line)})${more}`;
+  }
+
+  /** The listing's own type word, for labelling its floor area. */
+  buildingWord(p: MapPoint): string {
+    const label = p.property_label || '';
+    if (label.includes('一戸建')) return 'house';
+    if (label.includes('マンション')) return 'flat';
+    if (label.includes('アパート')) return 'apt';
+    if (label.includes('テラス') || label.includes('タウン')) return 'terrace';
+    return p.market === 'rent' ? 'unit' : 'house';
+  }
+
   /** What a land listing may cost, once the house you must build is paid for. */
   landCeiling(): number {
     return (this.budgetYen ?? 0) - this.budgetBuildM2 * 250_000;
@@ -1724,12 +1881,41 @@ ${folders}
     // Always surface price + house (building) size + land size when available.
     const bits = [
       p.layout ? esc(p.layout) : null,
-      p.building_m2 != null ? `house ${esc(p.building_m2)} m²` : null,
+      // Label the area by what the listing actually is. Calling every
+      // building "house" hid the distinction that decides the size floor —
+      // a 85m² 賃貸マンション clears it, a 85m² 賃貸一戸建て does not.
+      p.building_m2 != null
+        ? `${esc(this.buildingWord(p))} ${esc(p.building_m2)} m²` : null,
       p.land_m2 != null ? `land ${esc(p.land_m2)} m²` : null,
-      p.nearest_walk_min != null ? `${esc(p.nearest_walk_min)} min walk to stn` : null,
+      this.nearestStation(p),
       this.builtLabel(p),
       ppm2 ? esc(ppm2) : null,
     ].filter(Boolean).join(' · ');
+    // For a plot, the useful size is not the land but the house it can carry.
+    const cap = p.capacity;
+    // Lead with the plan you would actually build, not with the maximum. The
+    // storey count to exhaust the whole 容積率 allowance answers a question
+    // nobody asks — on a 68m² footprint it says "4 floors" when the 130m²
+    // house you want takes two.
+    const want = this.budgetBuildM2;
+    const capLine = cap
+      ? `<span style="color:#1e5b96">🏗️ a <b>${esc(want)} m²</b> house needs `
+        + `<b>${esc(Math.ceil(want / cap.max_footprint_m2))} floors</b> here`
+        + ` (${esc(cap.max_footprint_m2)} m² per floor)</span>`
+        + `<span style="color:#666"> — allows up to ${esc(cap.max_floor_m2)} m² total;`
+        + ` 建ぺい率 ${esc(cap.coverage_pct)}%, 容積率 ${esc(cap.far_effective_pct)}%`
+        + (cap.limited_by === 'road width'
+            ? ` <b>capped by the ${esc(cap.road_width_m)} m road</b> from ${esc(cap.far_pct)}%`
+            : ` as designated`)
+        + (cap.zone ? ` · ${esc(cap.zone)}` : '') + `</span>`
+        + (cap.restrictions && cap.restrictions.length
+            ? `<br><span style="color:#b45309">⚠ not included: `
+              + cap.restrictions.map((r: string) => esc(r)).join('; ')
+              + ` — ${this.zoningLink(p)}</span>`
+            : `<br><span style="color:#999">${this.zoningLink(p)}</span>`)
+        + `<br>`
+      : '';
+
     const ref = this.refPoi();
     // The school run is the constraint, so lead with the real journey. The
     // straight-line distance is kept only as a small aside: it is a poor proxy
@@ -1758,9 +1944,9 @@ ${folders}
          <button class="cmpbtn" type="button">⚖️ Compare</button>`;
 
     return `<div class="mappop">
-      ${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.category)}<br>
+      ${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.property_label || p.category)}<br>
       ${bits}<br>
-      <span style="color:#1e5b96">${commute}</span><br>
+      ${capLine}<span style="color:#1e5b96">${commute}</span><br>
       <span style="color:#666">${esc(p.address || '')}</span><br>
       ${actions}
     </div>`;
@@ -1908,6 +2094,11 @@ ${folders}
       price_max: s.price_max ?? null,
       budget_yen: this.budgetYen,
       budget_build_m2: this.budgetBuildM2,
+      bld_min_buy: this.bldMinBuy,
+      bld_min_rent: this.bldMinRent,
+      bld_min_rent_house: this.bldMinRentHouse,
+      rent_max_yen: this.rentMaxYen,
+      age_max_known: this.ageMaxKnown,
       date_from: s.date_from || null,
       date_to: s.date_to || null,
       limit: s.limit || 300,

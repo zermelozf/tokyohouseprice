@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS listings_snapshot (
     building_id   TEXT,
     url           TEXT,
     title         TEXT,
+    -- 賃貸マンション / 賃貸一戸建て / 中古一戸建て … the card's own type label.
+    -- Rent needs it: a flat and a house are both category='rent' but are not
+    -- remotely the same product, and their size floors differ.
+    property_label TEXT,
     address       TEXT,
     station_raw   TEXT,
     stations_json TEXT,

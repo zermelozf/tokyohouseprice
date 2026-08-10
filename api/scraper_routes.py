@@ -58,6 +58,13 @@ class Filters(BaseModel):
     budget_yen: Optional[int] = None
     budget_build_m2: int = 130
     budget_build_cost_m2: int = 250_000
+    # Market-specific floors. chintai's own area filter stops at 100m², and a
+    # global bld_min would drop every land listing, so these are applied here.
+    bld_min_buy: Optional[float] = None
+    bld_min_rent: Optional[float] = None        # rental flats
+    bld_min_rent_house: Optional[float] = None  # rental houses
+    rent_max_yen: Optional[int] = None          # monthly rent ceiling
+    age_max_known: Optional[int] = None   # rows with no stated age are kept
     date_from: Optional[str] = None   # crawled-time window, 'YYYY-MM-DD' inclusive
     date_to: Optional[str] = None
     sort: Optional[str] = None

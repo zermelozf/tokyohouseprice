@@ -853,3 +853,41 @@ tr.detailrow > td { background: #fbfcfd; padding: 0.9rem 1rem; white-space: norm
 .difftable td.cattag { white-space: nowrap; color: #555; }
 td.commutecell { text-align: right; }
 td.commutecell b { color: #1e5b96; }
+
+.dualnum { display: flex; gap: 0.25rem; }
+.dualnum input { flex: 1 1 0; min-width: 0; }
+
+/* --- dual-thumb range sliders on the map -------------------------------- */
+.rangebank { flex-basis: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.5rem 1.1rem; }
+.rangerow label {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;
+  margin: 0 0 0.1rem; font-size: 0.7rem; color: #8a919b;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.rangerow .rangeval { color: #222; font-size: 0.74rem; text-transform: none; letter-spacing: 0;
+                      font-variant-numeric: tabular-nums; }
+/* Two inputs share one track; only the thumbs take pointer events, so the
+   lower and upper handles can be grabbed independently. */
+.dualrange { position: relative; height: 22px; }
+.dualrange .track, .dualrange .fill {
+  position: absolute; top: 9px; height: 4px; border-radius: 2px;
+}
+.dualrange .track { left: 0; right: 0; background: #e2e6ec; }
+.dualrange .fill { background: #FF69B4; }
+.dualrange input[type="range"] {
+  position: absolute; top: 0; left: 0; width: 100%; height: 22px; margin: 0;
+  background: none; -webkit-appearance: none; appearance: none; pointer-events: none;
+}
+.dualrange input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; cursor: grab;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; border: 2px solid #FF69B4; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.dualrange input[type="range"]::-moz-range-thumb {
+  pointer-events: auto; cursor: grab;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; border: 2px solid #FF69B4; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.dualrange input[type="range"]::-moz-range-track { background: none; }
+.rangefoot { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; color: #666; }
+.rangefoot b { color: #222; font-size: 0.95rem; }

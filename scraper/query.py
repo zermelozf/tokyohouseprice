@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from . import commute
+from . import commute, zoning
 from .db import connect
 
 # Filters is a plain dict with any of these optional keys:
@@ -78,6 +78,42 @@ def budget_ceiling(row: dict, f: dict) -> float | None:
     return total
 
 
+# Floors that differ by market, and that SUUMO cannot always express: chintai's
+# area filter stops at 100m², and a single global bld_min/age_max would delete
+# every land listing, since a plot has neither a building nor an age. So each
+# test only applies to rows it can actually judge.
+def apply_floors(rows: list[dict], f: dict) -> list[dict]:
+    buy_min = f.get("bld_min_buy")
+    rent_min = f.get("bld_min_rent")          # flats
+    rent_house_min = f.get("bld_min_rent_house")
+    age_max = f.get("age_max_known")
+    # Rent ceilings live in the crawl URL, but a filter tightened later never
+    # removes what earlier crawls already stored — the row simply stops being
+    # refreshed. So the ceiling has to be enforced here too, or yesterday's
+    # over-budget listings linger for ever.
+    rent_max = f.get("rent_max_yen")
+    out = []
+    for r in rows:
+        bld = r.get("building_m2")
+        if r.get("market") == "rent":
+            # A rental house and a rental flat are both category='rent' but are
+            # not the same product — and no flat in this catchment exceeds
+            # ~108m², so one shared floor deletes the whole category.
+            is_house = "一戸建" in (r.get("property_label") or "")
+            floor = rent_house_min if is_house else rent_min
+            if floor is not None and (bld is None or bld < floor):
+                continue
+            if rent_max is not None and (r.get("price_yen") or 0) > rent_max:
+                continue
+        elif buy_min is not None and bld is not None and bld < buy_min:
+            continue          # a plot has no building; it is judged on land
+        age = r.get("age_years")
+        if age_max is not None and age is not None and age > age_max:
+            continue          # unknown age (新築, land) is kept, not guessed
+        out.append(r)
+    return out
+
+
 def apply_budget(rows: list[dict], f: dict) -> list[dict]:
     if f.get("budget_yen") is None:
         return rows
@@ -88,6 +124,32 @@ def apply_budget(rows: list[dict], f: dict) -> list[dict]:
         if price is not None and cap is not None and price <= cap:
             out.append(r)
     return out
+
+
+def annotate_capacity(rows: list[dict]) -> list[dict]:
+    """Attach how big a house each plot can carry. Only land needs it — for a
+    house you are buying the building that is already there."""
+    import json as _json
+    plots = [r for r in rows if r.get("category") == "land" and r.get("land_m2")]
+    if not plots:
+        for r in rows:
+            r["capacity"] = None
+        return rows
+    conn = connect()
+    try:
+        specs = {}
+        for row in conn.execute(
+                "SELECT property_id, specs_json FROM property_detail "
+                "WHERE property_id IN ({}) GROUP BY property_id".format(
+                    ",".join("?" * len(plots))),
+                [r["property_id"] for r in plots]):
+            specs[row["property_id"]] = _json.loads(row["specs_json"] or "{}")
+    finally:
+        conn.close()
+    for r in rows:
+        r["capacity"] = (zoning.capacity(r.get("land_m2"), specs.get(r["property_id"]))
+                         if r.get("category") == "land" else None)
+    return rows
 
 
 def annotate_era(rows: list[dict]) -> list[dict]:
@@ -157,7 +219,8 @@ _COLS = ", ".join("s." + c for c in (
     "property_id", "scrape_date", "market", "category", "ward", "url", "title",
     "address", "station_raw", "nearest_walk_min", "price_yen", "price_max_yen",
     "price_raw", "admin_fee_yen", "deposit_yen", "key_money_yen", "layout",
-    "land_m2", "building_m2", "floors", "build_year", "age_years"))
+    "land_m2", "building_m2", "floors", "build_year", "age_years",
+    "property_label"))
 
 
 def search_db(f: dict) -> list[dict]:
@@ -220,13 +283,13 @@ def search_db(f: dict) -> list[dict]:
     # Era is filtered in Python, not SQL: the rule needs a build year that may
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
-    rows = commute.annotate(annotate_era(rows))
+    rows = annotate_capacity(commute.annotate(annotate_era(rows)))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     if f.get("commute_max") is not None:
         rows = [r for r in rows if r["commute_min"] is not None
                 and r["commute_min"] <= f["commute_max"]]
-    rows = apply_budget(rows, f)
+    rows = apply_floors(apply_budget(rows, f), f)
     rows = sort_rows(rows, f.get("sort"))
     limit = f.get("limit")
     return rows[:limit] if limit else rows
@@ -269,7 +332,7 @@ def map_points(f: dict) -> list[dict]:
     SELECT s.property_id, pd.lat, pd.lng, s.market, s.category, s.ward,
            s.price_yen, s.price_raw, s.url, s.title, s.address, s.layout,
            s.building_m2, s.land_m2, s.nearest_walk_min, s.station_raw,
-           s.build_year, s.age_years, s.scrape_date
+           s.property_label, s.build_year, s.age_years, s.scrape_date
     FROM listings_snapshot s
     JOIN latest l ON l.property_id = s.property_id AND l.d = s.scrape_date
     JOIN det ON det.property_id = s.property_id
@@ -278,8 +341,8 @@ def map_points(f: dict) -> list[dict]:
     """
     conn = connect()
     try:
-        rows = commute.annotate(annotate_era([dict(r) for r in conn.execute(
-            sql, date_params + params).fetchall()]))
+        rows = annotate_capacity(commute.annotate(annotate_era(
+            [dict(r) for r in conn.execute(sql, date_params + params).fetchall()])))
     finally:
         conn.close()
     if f.get("eras"):
@@ -287,7 +350,7 @@ def map_points(f: dict) -> list[dict]:
     if f.get("commute_max") is not None:
         rows = [r for r in rows if r["commute_min"] is not None
                 and r["commute_min"] <= f["commute_max"]]
-    return apply_budget(rows, f)
+    return apply_floors(apply_budget(rows, f), f)
 
 
 # --- on-demand detail enrichment (exact location) --------------------------

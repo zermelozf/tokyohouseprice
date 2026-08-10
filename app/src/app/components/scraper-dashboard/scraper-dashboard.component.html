@@ -178,6 +178,22 @@
           <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
         </select>
       </div>
+        <div class="small">
+        <label title="Building floor: buy / rental flat / rental house. Land is exempt — a plot has no building. No rental flat in this catchment exceeds ~108m², so flats and houses need different floors.">min m² buy/flat/house</label>
+        <span class="dualnum">
+          <input type="number" step="10" [(ngModel)]="bldMinBuy">
+          <input type="number" step="10" [(ngModel)]="bldMinRent">
+          <input type="number" step="10" [(ngModel)]="bldMinRentHouse">
+        </span>
+        </div>
+        <div class="small">
+        <label title="Monthly rent ceiling. Enforced here as well as in the crawl, because tightening a crawl filter never removes rows earlier crawls already stored.">max rent</label>
+        <input type="number" step="10000" [(ngModel)]="rentMaxYen" (ngModelChange)="loadMap()">
+        </div>
+        <div class="small">
+        <label title="Max age in years. Listings with no stated age (新築, land) are kept.">max age</label>
+        <input type="number" step="5" [(ngModel)]="ageMaxKnown">
+        </div>
       <div class="small"><label>limit</label><input type="number" min="1" [(ngModel)]="searchForm.limit"></div>
       <button (click)="runSearch()">🔍 Search</button>
       <span class="exportlinks" *ngIf="searchRows.length">
@@ -453,45 +469,30 @@
         <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
         </select>
         </div>
-        <div class="small">
-        <label [title]="'Total budget. Applied here, not in the crawl — SUUMO\'s own ceiling stops at 1億2千万. A plot is judged on this less the cost of a ' + budgetBuildM2 + 'm² build.'">budget</label>
-        <select [(ngModel)]="budgetYen" (ngModelChange)="loadMap()">
-        <option [ngValue]="null">no limit</option>
-        <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
-        </select>
-        </div>
-        <div class="small">
-        <label title="door-to-school minutes: walk + train + walk to the Lycée">🎓 LFIT max</label>
-        <select [(ngModel)]="mapForm.commuteMax" (ngModelChange)="loadMap()">
-        <option [ngValue]="null">any</option>
-        <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">{{ m }} min</option>
-        </select>
-        </div>
-        <div class="small">
-        <label>crawl date</label>
-        <select [(ngModel)]="mapForm.date" (ngModelChange)="loadMap()">
-        <option value="">latest of each</option>
-        <option *ngFor="let d of crawlDates" [value]="d.date">{{ d.date }} ({{ d.properties }})</option>
-        </select>
-        </div>
-        <div class="small">
-        <label>distance to</label>
-        <select [(ngModel)]="refPoiName" (ngModelChange)="renderMarkers()">
-        <option *ngFor="let p of pois" [value]="p.name">{{ p.icon }} {{ p.name }}</option>
-        </select>
-        </div>
-        <div class="small">
-        <label title="travel mode for the “route to …” links in listing popups">route by</label>
-        <select [(ngModel)]="travelMode" (ngModelChange)="renderMarkers()">
-        <option *ngFor="let m of travelModes" [value]="m.key">{{ m.label }}</option>
-        </select>
-        </div>
-        <div class="small">
-        <label title="what the dot colours encode">colour by</label>
-        <select [(ngModel)]="colorBy" (ngModelChange)="renderMarkers()">
-        <option value="category">category</option>
-        <option value="era">耐震基準 (seismic standard)</option>
-        </select>
+        <div class="rangebank">
+          <div class="rangerow" *ngFor="let spec of RANGE_SPECS">
+            <ng-container *ngIf="mapBounds[spec.key] as b">
+              <label [title]="spec.label + ' — bounds come from the data currently loaded'">
+                {{ spec.label }}<span class="rangeval">{{ rangeLabel(spec.key) }}</span>
+              </label>
+              <div class="dualrange">
+                <div class="track"></div>
+                <div class="fill"
+                     [style.left.%]="100 * (mapRanges[spec.key].lo - b.min) / (b.max - b.min || 1)"
+                     [style.right.%]="100 * (b.max - mapRanges[spec.key].hi) / (b.max - b.min || 1)"></div>
+                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
+                       [(ngModel)]="mapRanges[spec.key].lo"
+                       (ngModelChange)="mapRanges[spec.key].lo = $event > mapRanges[spec.key].hi ? mapRanges[spec.key].hi : $event; applyRanges()">
+                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
+                       [(ngModel)]="mapRanges[spec.key].hi"
+                       (ngModelChange)="mapRanges[spec.key].hi = $event < mapRanges[spec.key].lo ? mapRanges[spec.key].lo : $event; applyRanges()">
+              </div>
+            </ng-container>
+          </div>
+          <div class="rangefoot">
+            <b>{{ mapPoints.length }}</b> of {{ mapAll.length }} shown
+            <button class="ghost tiny" (click)="resetRanges()">reset ranges</button>
+          </div>
         </div>
         <button (click)="loadMap()">🔄 Refresh</button>
         <div class="era-filter">

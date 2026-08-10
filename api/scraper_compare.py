@@ -59,7 +59,11 @@ class Assumptions(BaseModel):
     loan_term: int = 35
     down_payment_pct: float = 0.20
     broker_fee_pct: float = 0.035
-    maintenance_rate: float = 0.005
+    # 0.7% of the building's replacement cost, escalating with age. A flat 0.5%
+    # on the building alone came to ~¥3.5M over 30 years, below the ¥500-800万
+    # commonly budgeted for a detached house; with the age slope 0.7% lands
+    # mid-range. (0.5% was defensible only while the basis included land.)
+    maintenance_rate: float = 0.007
     rent_inflation: float = 0.01
     # Land is priced relative to the rents it produces, not in isolation.
     # A property growing faster than its rent means the gross yield falls
