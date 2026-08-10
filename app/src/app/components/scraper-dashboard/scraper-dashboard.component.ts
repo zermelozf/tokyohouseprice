@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, NgZone } from '@angular/core';
+import { HostListener, Component, OnDestroy, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -8,7 +8,7 @@ import {
   ScraperService, Listing, Stats, Summary, Filters,
   ScheduledJob, JobInput, SchedulerState, ScraperConfig, CrawlStatus, PropertyDetail, MapPoint,
   CrawlDate, CrawlDiff, DiffListing, FieldChange, SeismicEra, ERA_META,
-  CompareAssumptions, CompareResult, CompareOption,
+  CompareAssumptions, CompareResult, CompareOption, Verdict, VERDICT_META,
 } from '../../services/scraper.service';
 
 interface DetailState { loading?: boolean; open?: boolean; data?: PropertyDetail; error?: string; }
@@ -182,6 +182,97 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // least-capital option, which is the only anchor that keeps every stream
   // investing-shaped and therefore rankable on one rule.
   compareAnchor: number | null = null;
+
+  // --- manual review -------------------------------------------------------
+  // A verdict is a judgement about a place, so it is kept per property and
+  // survives re-crawls, price changes and relistings under a new id.
+  reviewOpen = false;
+  reviewQueue: MapPoint[] = [];
+  reviewIndex = 0;
+  reviewNote = '';
+  reviewTagInput = '';
+  reviewCounts: Record<string, number> = {};
+  readonly VERDICTS = Object.entries(VERDICT_META)
+    .map(([key, m]) => ({ key: key as Verdict, ...m }));
+  // Which verdicts the map shows. Default hides nothing; the point of the
+  // status badge is to stop you reopening the same rejects, not to hide them.
+  mapVerdicts: string[] = [];
+  readonly QUICK_TAGS = ['bright', 'dark', 'noisy', 'main road', 'narrow street',
+                         'good layout', 'odd layout', 'needs work', 'nice street',
+                         'no parking', 'steep', 'overlooked'];
+
+  verdictMeta(v: Verdict | null | undefined) {
+    return v ? VERDICT_META[v] : null;
+  }
+
+  /** Start a review session over what the map is currently showing. */
+  startReview(onlyUnreviewed = true): void {
+    const pool = onlyUnreviewed ? this.mapPoints.filter(p => !p.verdict) : this.mapPoints;
+    if (!pool.length) return;
+    this.reviewQueue = [...pool];
+    this.reviewIndex = 0;
+    this.reviewNote = '';
+    this.reviewTagInput = '';
+    this.reviewOpen = true;
+  }
+
+  get reviewCard(): MapPoint | null {
+    return this.reviewQueue[this.reviewIndex] ?? null;
+  }
+
+  /** Grade the card and advance. Verdicts are saved immediately — a review
+   * session should never lose work if the tab is closed halfway. */
+  grade(v: Verdict | null): void {
+    const card = this.reviewCard;
+    if (!card) return;
+    const tags = this.reviewTagInput.split(',').map(t => t.trim()).filter(Boolean);
+    const note = this.reviewNote.trim();
+    this.api.saveReview(card.property_id, v, tags, note).subscribe({
+      next: () => {
+        card.verdict = v;
+        card.review_tags = tags;
+        card.review_note = note;
+        this.loadReviewCounts();
+        this.renderMarkers();      // the map badge updates as you go
+      },
+      error: () => {},
+    });
+    this.nextCard();
+  }
+
+  nextCard(step = 1): void {
+    this.reviewNote = '';
+    this.reviewTagInput = '';
+    const next = this.reviewIndex + step;
+    if (next < 0) { this.reviewIndex = 0; return; }
+    if (next >= this.reviewQueue.length) { this.reviewOpen = false; return; }
+    this.reviewIndex = next;
+  }
+
+  toggleQuickTag(tag: string): void {
+    const cur = this.reviewTagInput.split(',').map(t => t.trim()).filter(Boolean);
+    const i = cur.indexOf(tag);
+    if (i >= 0) cur.splice(i, 1); else cur.push(tag);
+    this.reviewTagInput = cur.join(', ');
+  }
+
+  hasQuickTag(tag: string): boolean {
+    return this.reviewTagInput.split(',').map(t => t.trim()).includes(tag);
+  }
+
+  loadReviewCounts(): void {
+    this.api.reviews().subscribe({
+      next: r => this.reviewCounts = r.counts || {},
+      error: () => {},
+    });
+  }
+
+  toggleMapVerdict(key: string): void {
+    this.mapVerdicts = this.mapVerdicts.includes(key)
+      ? this.mapVerdicts.filter(v => v !== key)
+      : [...this.mapVerdicts, key];
+    this.loadMap();
+  }
 
   // --- map range filters ---------------------------------------------------
   // The map loads once and filters in the browser: a slider has to respond to
@@ -633,6 +724,23 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     return `${d.getFullYear()}-${m}-${day}`;
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onReviewKey(e: KeyboardEvent): void {
+    if (!this.reviewOpen) return;
+    const el = e.target as HTMLElement;
+    if (el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) return;   // typing a note
+    const map: Record<string, () => void> = {
+      '1': () => this.grade('bad'),
+      '2': () => this.grade('maybe'),
+      '3': () => this.grade('good'),
+      'ArrowRight': () => this.nextCard(),
+      'ArrowLeft': () => this.nextCard(-1),
+      'Escape': () => { this.reviewOpen = false; },
+    };
+    const fn = map[e.key];
+    if (fn) { e.preventDefault(); fn(); }
+  }
+
   ngOnDestroy(): void {
     if (this.pollTimer) clearInterval(this.pollTimer);
     if (this.map) { this.map.remove(); this.map = null; }
@@ -1031,6 +1139,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       // Numeric cuts are the sliders' job — the server sends everything in
       // scope so the ranges can span the real data.
       age_max_known: this.ageMaxKnown,
+      verdicts: [...this.mapVerdicts],
       limit: 5000,
     };
     // Pinning both bounds to one day narrows "latest snapshot per property" to
@@ -1253,12 +1362,21 @@ ${folders}
     const marker = this.L.circleMarker([p.lat, p.lng], {
       pane: 'listings', radius, weight: 2.5, color: '#ffffff', opacity: 1,
       fillColor: this.pointColor(p), fillOpacity: 1, className: 'listing-dot',
+      ...(p.verdict ? { weight: 3, color: '#fff' } : {}),
     }).bindPopup(this.popupHtml(p));
     // Wire the popup's "See all details" button back into Angular.
     marker.on('popupopen', (e: any) => {
       const root = e.popup.getElement();
       const btn = root?.querySelector('.allbtn');
       if (btn) btn.onclick = () => this.zone.run(() => this.openDetails(p));
+      const rev = root?.querySelector('.revbtn');
+      if (rev) rev.onclick = () => this.zone.run(() => {
+        this.reviewQueue = [p]; this.reviewIndex = 0;
+        this.reviewNote = p.review_note || '';
+        this.reviewTagInput = (p.review_tags || []).join(', ');
+        this.reviewOpen = true;
+        this.map?.closePopup();
+      });
       const cmp = root?.querySelector('.cmpbtn');
       if (cmp) cmp.onclick = () => this.zone.run(() => {
         this.toggleCompare(p);
@@ -1344,6 +1462,9 @@ ${folders}
 
   /** Dot colour under the active `colorBy` mode. Grey = unknown era. */
   pointColor(p: MapPoint): string {
+    // A verdict outranks the other dimensions: once you have judged a place,
+    // that is what you need to see at a glance.
+    if (p.verdict) return VERDICT_META[p.verdict].color;
     if (this.colorBy === 'era') return p.era ? ERA_META[p.era].color : '#9ca3af';
     return this.catColor(p.category);
   }
@@ -1860,6 +1981,16 @@ ${folders}
     return `built ${tilde}${this.esc(p.build_year_est)}${age}`;
   }
 
+  /** Your own verdict, so a listing you already rejected says so on sight. */
+  private verdictBadge(p: MapPoint): string {
+    if (!p.verdict) return '';
+    const m = VERDICT_META[p.verdict];
+    const tags = (p.review_tags || []).join(', ');
+    return `<span title="${this.esc(tags || m.label)}" style="background:${m.color};`
+         + `color:#fff;padding:1px 6px;border-radius:2px;font-size:11px;font-weight:700">`
+         + `${m.icon} ${this.esc(m.label)}</span> `;
+  }
+
   /** Coloured 耐震基準 chip, with a caveat when the tier isn't certain. */
   private eraBadge(p: MapPoint): string {
     if (!p.era) return '';
@@ -1941,10 +2072,14 @@ ${folders}
               title="Google Maps route from this listing to ${esc(ref.name)} (${esc(this.travelMode)})"
            >🗺️ route to ${esc(ref.name.split(' ')[0])} ↗</a>
          <button class="allbtn" type="button">📋 See all details</button>
-         <button class="cmpbtn" type="button">⚖️ Compare</button>`;
+         <button class="cmpbtn" type="button">⚖️ Compare</button>
+         <button class="revbtn" type="button">🔍 Review</button>`;
 
+    const photo = p.image_url
+      ? `<img class="popimg" src="${this.esc(p.image_url)}" alt="" loading="lazy">` : '';
     return `<div class="mappop">
-      ${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.property_label || p.category)}<br>
+      ${photo}
+      ${this.verdictBadge(p)}${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.property_label || p.category)}<br>
       ${bits}<br>
       ${capLine}<span style="color:#1e5b96">${commute}</span><br>
       <span style="color:#666">${esc(p.address || '')}</span><br>

@@ -64,6 +64,9 @@ class Filters(BaseModel):
     bld_min_rent: Optional[float] = None        # rental flats
     bld_min_rent_house: Optional[float] = None  # rental houses
     rent_max_yen: Optional[int] = None          # monthly rent ceiling
+    # Manual verdicts to keep. 'none' selects the not-yet-reviewed, which is
+    # what the review queue asks for.
+    verdicts: list[str] = []
     age_max_known: Optional[int] = None   # rows with no stated age are kept
     date_from: Optional[str] = None   # crawled-time window, 'YYYY-MM-DD' inclusive
     date_to: Optional[str] = None
@@ -154,6 +157,35 @@ def compare_listings(body: CompareRequest):
     """Rent-vs-buy / buy-vs-buy on two picked listings, through the same NPV
     engine as the rent-or-buy article (see scraper_compare)."""
     return compare(body)
+
+
+class ReviewBody(BaseModel):
+    property_id: str
+    verdict: Optional[str] = None     # good | maybe | bad; null clears it
+    tags: list[str] = []
+    note: str = ""
+
+
+@router.post("/review")
+def save_review(body: ReviewBody):
+    """Record a manual verdict on one listing."""
+    if body.verdict not in (None, "good", "maybe", "bad"):
+        return {"error": f"unknown verdict {body.verdict!r}"}
+    return query.save_review(body.property_id, body.verdict, body.tags, body.note)
+
+
+@router.get("/reviews")
+def list_reviews():
+    rows = list(query.reviews().values())
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    tags: dict[str, int] = {}
+    for r in rows:
+        for t in (r["tags"] or "").split(","):
+            if t:
+                tags[t] = tags.get(t, 0) + 1
+    return {"reviews": rows, "counts": counts, "tags": tags}
 
 
 @router.get("/summary")

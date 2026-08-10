@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 
 from . import commute, zoning
-from .db import connect
+from .db import connect, init_db as init_db_conn
 
 # Filters is a plain dict with any of these optional keys:
 #   markets: [str]  categories: [str]  wards: [str]
@@ -114,6 +114,15 @@ def apply_floors(rows: list[dict], f: dict) -> list[dict]:
     return out
 
 
+def apply_verdicts(rows: list[dict], f: dict) -> list[dict]:
+    """`verdicts` may include the sentinel 'none' for not-yet-reviewed, which is
+    what the review queue asks for."""
+    want = f.get("verdicts")
+    if not want:
+        return rows
+    return [r for r in rows if (r.get("verdict") or "none") in want]
+
+
 def apply_budget(rows: list[dict], f: dict) -> list[dict]:
     if f.get("budget_yen") is None:
         return rows
@@ -124,6 +133,48 @@ def apply_budget(rows: list[dict], f: dict) -> list[dict]:
         if price is not None and cap is not None and price <= cap:
             out.append(r)
     return out
+
+
+def reviews() -> dict[str, dict]:
+    conn = connect()
+    try:
+        return {r["property_id"]: dict(r)
+                for r in conn.execute("SELECT * FROM listing_review")}
+    finally:
+        conn.close()
+
+
+def save_review(property_id: str, verdict: str | None,
+                tags: list[str] | None = None, note: str | None = None) -> dict:
+    """Record (or clear) a verdict. Clearing removes the row so an unreviewed
+    listing is indistinguishable from one never seen."""
+    from datetime import datetime as _dt
+    conn = init_db_conn()
+    try:
+        if verdict is None:
+            conn.execute("DELETE FROM listing_review WHERE property_id = ?", (property_id,))
+            conn.commit()
+            return {"property_id": property_id, "verdict": None}
+        row = (property_id, verdict, ",".join(tags or []), note or "",
+               _dt.now().isoformat())
+        conn.execute(
+            "INSERT OR REPLACE INTO listing_review "
+            "(property_id, verdict, tags, note, reviewed_at) VALUES (?,?,?,?,?)", row)
+        conn.commit()
+        return {"property_id": property_id, "verdict": verdict,
+                "tags": tags or [], "note": note or "", "reviewed_at": row[4]}
+    finally:
+        conn.close()
+
+
+def annotate_reviews(rows: list[dict]) -> list[dict]:
+    seen = reviews()
+    for r in rows:
+        rev = seen.get(r.get("property_id"))
+        r["verdict"] = rev["verdict"] if rev else None
+        r["review_tags"] = [t for t in (rev["tags"] or "").split(",") if t] if rev else []
+        r["review_note"] = rev["note"] if rev else None
+    return rows
 
 
 def annotate_capacity(rows: list[dict]) -> list[dict]:
@@ -220,7 +271,7 @@ _COLS = ", ".join("s." + c for c in (
     "address", "station_raw", "nearest_walk_min", "price_yen", "price_max_yen",
     "price_raw", "admin_fee_yen", "deposit_yen", "key_money_yen", "layout",
     "land_m2", "building_m2", "floors", "build_year", "age_years",
-    "property_label"))
+    "property_label", "image_url"))
 
 
 def search_db(f: dict) -> list[dict]:
@@ -283,13 +334,14 @@ def search_db(f: dict) -> list[dict]:
     # Era is filtered in Python, not SQL: the rule needs a build year that may
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
-    rows = annotate_capacity(commute.annotate(annotate_era(rows)))
+    rows = annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     if f.get("commute_max") is not None:
         rows = [r for r in rows if r["commute_min"] is not None
                 and r["commute_min"] <= f["commute_max"]]
     rows = apply_floors(apply_budget(rows, f), f)
+    rows = apply_verdicts(rows, f)
     rows = sort_rows(rows, f.get("sort"))
     limit = f.get("limit")
     return rows[:limit] if limit else rows
@@ -332,7 +384,7 @@ def map_points(f: dict) -> list[dict]:
     SELECT s.property_id, pd.lat, pd.lng, s.market, s.category, s.ward,
            s.price_yen, s.price_raw, s.url, s.title, s.address, s.layout,
            s.building_m2, s.land_m2, s.nearest_walk_min, s.station_raw,
-           s.property_label, s.build_year, s.age_years, s.scrape_date
+           s.property_label, s.image_url, s.build_year, s.age_years, s.scrape_date
     FROM listings_snapshot s
     JOIN latest l ON l.property_id = s.property_id AND l.d = s.scrape_date
     JOIN det ON det.property_id = s.property_id
@@ -341,8 +393,8 @@ def map_points(f: dict) -> list[dict]:
     """
     conn = connect()
     try:
-        rows = annotate_capacity(commute.annotate(annotate_era(
-            [dict(r) for r in conn.execute(sql, date_params + params).fetchall()])))
+        rows = annotate_reviews(annotate_capacity(commute.annotate(annotate_era(
+            [dict(r) for r in conn.execute(sql, date_params + params).fetchall()]))))
     finally:
         conn.close()
     if f.get("eras"):
@@ -350,7 +402,7 @@ def map_points(f: dict) -> list[dict]:
     if f.get("commute_max") is not None:
         rows = [r for r in rows if r["commute_min"] is not None
                 and r["commute_min"] <= f["commute_max"]]
-    return apply_floors(apply_budget(rows, f), f)
+    return apply_verdicts(apply_floors(apply_budget(rows, f), f), f)
 
 
 # --- on-demand detail enrichment (exact location) --------------------------

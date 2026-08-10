@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS listings_snapshot (
     -- Rent needs it: a flat and a house are both category='rent' but are not
     -- remotely the same product, and their size floors differ.
     property_label TEXT,
+    image_url     TEXT,
     address       TEXT,
     station_raw   TEXT,
     stations_json TEXT,
@@ -83,6 +84,17 @@ CREATE TABLE IF NOT EXISTS property_detail (
     n_specs      INTEGER,
     fetched_at   TEXT,
     PRIMARY KEY (property_id, scrape_date)
+);
+
+-- Manual verdicts. Keyed on property_id alone, not (property_id, date): a
+-- judgement about a place does not expire when the crawl re-runs, and it must
+-- survive the listing being relisted under a new price.
+CREATE TABLE IF NOT EXISTS listing_review (
+    property_id  TEXT PRIMARY KEY,
+    verdict      TEXT,          -- good | maybe | bad
+    tags         TEXT,          -- comma-separated, free-form
+    note         TEXT,
+    reviewed_at  TEXT
 );
 
 -- Transit time from a station to the Lycée Français. Timetables move rarely,

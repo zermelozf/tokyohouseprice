@@ -24,6 +24,16 @@ def _card_fields(card) -> dict:
     return fields
 
 
+def _image(node) -> str | None:
+    """The card's photo. SUUMO lazy-loads: `src` holds a base64 placeholder and
+    the real URL sits in `rel`, so reading `src` gets you a 1x1 gif."""
+    for img in node.select("img"):
+        url = img.get("rel") or img.get("data-src") or ""
+        if url.startswith("http"):
+            return url
+    return None
+
+
 def parse_page(html: str, ctx: dict) -> list[dict]:
     """Return a list of raw records from one sale search-results page."""
     soup = BeautifulSoup(html, "lxml")
@@ -45,6 +55,7 @@ def parse_page(html: str, ctx: dict) -> list[dict]:
             pid = pid or href.strip("/")
         records.append({
             "source": "suumo",
+            "image_url": _image(card),
             "market": ctx["market"],
             "category": ctx["category"],
             "ward": ctx["ward"],

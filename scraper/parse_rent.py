@@ -14,6 +14,16 @@ def _text(node) -> str | None:
     return node.get_text(strip=True) if node else None
 
 
+def _image(node) -> str | None:
+    """The building's photo. Lazy-loaded, so the real URL is in `rel` and `src`
+    only holds a base64 placeholder."""
+    for img in node.select("img"):
+        url = img.get("rel") or img.get("data-src") or ""
+        if url.startswith("http"):
+            return url
+    return None
+
+
 def parse_page(html: str, ctx: dict) -> list[dict]:
     soup = BeautifulSoup(html, "lxml")
     records: list[dict] = []
@@ -41,6 +51,7 @@ def parse_page(html: str, ctx: dict) -> list[dict]:
             floor_cell = row.select_one("td:nth-of-type(3)")
             rec = {
                 "source": "suumo",
+                "image_url": _image(building),
                 "market": ctx["market"],
                 "category": ctx["category"],
                 "ward": ctx["ward"],

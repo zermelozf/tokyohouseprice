@@ -891,3 +891,47 @@ td.commutecell b { color: #1e5b96; }
 .dualrange input[type="range"]::-moz-range-track { background: none; }
 .rangefoot { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; color: #666; }
 .rangefoot b { color: #222; font-size: 0.95rem; }
+
+/* --- manual review ------------------------------------------------------ */
+.reviewbar { flex-basis: 100%; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+             padding-bottom: 0.5rem; margin-bottom: 0.3rem; border-bottom: 1px solid #eef0f3; }
+.reviewbar .muted { font-size: 0.75rem; }
+.vfilter { display: flex; gap: 0.3rem; margin-left: auto; }
+.vfilter .chip { display: inline-flex; align-items: center; gap: 0.3rem; }
+.vfilter .chip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+.revmodal { max-width: 620px; }
+.revprog { font-size: 0.8rem; color: #555; font-variant-numeric: tabular-nums; }
+.revcard { border: 1px solid #e2e6ec; border-top-width: 3px; border-radius: 3px; overflow: hidden; }
+.revphoto { display: block; background: #f2f4f7; }
+.revphoto img { display: block; width: 100%; height: 260px; object-fit: cover; }
+.revphoto-none { height: 120px; display: flex; align-items: center; justify-content: center;
+                 color: #9aa1ab; font-size: 0.8rem; }
+.revfacts { padding: 0.7rem 0.85rem; font-size: 0.84rem; }
+.revprice { font-size: 1.1rem; font-weight: 700; color: #222; display: flex;
+            align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.revprice .muted { font-size: 0.8rem; font-weight: 400; }
+.verdictpill { color: #fff; border-radius: 2px; padding: 1px 7px; font-size: 0.7rem; }
+.revline { margin-top: 0.2rem; color: #444; }
+.revline.strong { color: #1e5b96; font-weight: 600; }
+.revtags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.7rem 0 0.5rem; }
+.revnote { width: 100%; padding: 0.4rem 0.5rem; margin-bottom: 0.4rem;
+           border: 1px solid #ddd; border-radius: 3px; font-size: 0.85rem; }
+.revactions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.5rem; }
+.revactions button { font-weight: 600; }
+.revactions kbd { font-size: 0.68rem; opacity: 0.75; margin-left: 0.3rem;
+                  border: 1px solid rgba(255,255,255,0.5); border-radius: 3px; padding: 0 3px; }
+.revbad   { background: #c2410c; box-shadow: none; }
+.revbad:hover { background: #9a3412; }
+.revmaybe { background: #ca8a04; box-shadow: none; }
+.revmaybe:hover { background: #a16207; }
+.revgood  { background: #15803d; box-shadow: none; }
+.revgood:hover { background: #166534; }
+.revhint { font-size: 0.73rem; margin: 0.6rem 0 0; }
+:host ::ng-deep .mappop .popimg { width: 100%; height: 110px; object-fit: cover;
+                                  border-radius: 3px; margin-bottom: 0.35rem; display: block; }
+:host ::ng-deep .mappop .revbtn {
+  margin-top: 0.35rem; margin-left: 0.3rem; background: #fff; color: #1e5b96;
+  border: 1px solid #1e5b96; box-shadow: none; padding: 0.15rem 0.5rem;
+  font-size: 0.75rem; border-radius: 3px; cursor: pointer; font-family: inherit;
+}

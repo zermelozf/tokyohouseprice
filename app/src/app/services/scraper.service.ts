@@ -31,6 +31,10 @@ export interface Stats {
 
 export interface Listing {
   property_id: string;
+  image_url?: string | null;
+  verdict?: Verdict | null;
+  review_tags?: string[];
+  review_note?: string | null;
   market: string;
   category: string;
   ward: string;
@@ -150,6 +154,11 @@ export interface MapPoint {
   // floors differ.
   property_label: string | null;
   station_raw: string | null;
+  image_url: string | null;
+  // Manual verdict, kept per property so it survives re-crawls and relistings.
+  verdict: Verdict | null;
+  review_tags: string[];
+  review_note: string | null;
   // How big a house the plot can legally carry (land only) — see scraper/zoning.
   capacity: PlotCapacity | null;
   // Door-to-school commute, precomputed per station (scraper/commute.py).
@@ -180,6 +189,15 @@ export interface PlotCapacity {
   max_floor_m2_largest: number | null;
   restrictions: string[];              // named by SUUMO, not quantified anywhere
 }
+
+export type Verdict = 'good' | 'maybe' | 'bad';
+
+/** Colours double as the map legend and the card border. */
+export const VERDICT_META: Record<Verdict, { label: string; color: string; icon: string }> = {
+  good:  { label: 'good',  color: '#15803d', icon: '♥' },
+  maybe: { label: 'maybe', color: '#ca8a04', icon: '?' },
+  bad:   { label: 'bad',   color: '#c2410c', icon: '✕' },
+};
 
 export type SeismicEra = 'kyu' | 'shin' | 'y2000';
 
@@ -441,7 +459,8 @@ export interface Filters {
   bld_min_buy?: number | null;    // sale: building floor (land is exempt)
   bld_min_rent?: number | null;       // rental flats
   bld_min_rent_house?: number | null; // rental houses
-  rent_max_yen?: number | null;       // monthly rent ceiling
+  rent_max_yen?: number | null;
+  verdicts?: string[];          // 'none' selects the not-yet-reviewed       // monthly rent ceiling
   age_max_known?: number | null;  // rows with no stated age are kept
   date_from?: string | null;   // crawled-time window, 'YYYY-MM-DD' inclusive
   date_to?: string | null;
@@ -538,6 +557,18 @@ export class ScraperService {
     return this.http.post<CompareResult>(`${this.base}/scraper/compare`,
       { property_ids, assumptions, scrape_date: scrape_date || null,
         anchor_index: anchor_index ?? null });
+  }
+
+  /** Record a manual verdict. verdict:null clears it. */
+  saveReview(property_id: string, verdict: Verdict | null,
+             tags: string[] = [], note = ''): Observable<any> {
+    return this.http.post(`${this.base}/scraper/review`,
+      { property_id, verdict, tags, note });
+  }
+
+  reviews(): Observable<{ reviews: any[]; counts: Record<string, number>;
+                          tags: Record<string, number> }> {
+    return this.http.get<any>(`${this.base}/scraper/reviews`);
   }
 
   crawlDates(): Observable<{ dates: CrawlDate[] }> {
