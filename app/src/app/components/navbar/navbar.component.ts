@@ -3,6 +3,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LanguageService } from '../../services/language.service';
 import { CommonModule } from '@angular/common';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
+// Same source of truth that gates the /scraper route: dev-routes.ts in local
+// builds, swapped for an empty dev-routes.prod.ts in deploy builds via
+// angular.json fileReplacements. (environment.prod.ts is NOT swapped in, so we
+// can't rely on environment.production here.)
+import { devRoutes } from '../../dev-routes';
 
 @Component({
   selector: 'app-navbar',
@@ -42,6 +47,16 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
               Rent vs Buy
             </a>
             
+            <!-- Local-only SUUMO scraper dashboard; hidden in production builds. -->
+            <a *ngIf="showScraper"
+               routerLink="/scraper"
+               class="navbar-item"
+               routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact: true}"
+               (click)="closeMenu()">
+              Scraper
+            </a>
+
             <div class="nav-item dropdown" (mouseleave)="closeBlogMenu()">
               <button class="navbar-item dropdown-toggle" (click)="toggleBlogMenu()">
                 Blog <span class="arrow-down" [class.open]="isBlogMenuOpen"></span>
@@ -355,6 +370,9 @@ export class NavbarComponent implements OnInit {
   currentLang: string;
   isMenuOpen = false;
   isBlogMenuOpen = false;
+  // Only show the link when the scraper route actually exists in this build
+  // (i.e. local dev). Empty devRoutes in deploy builds → link hidden.
+  showScraper = devRoutes.some(r => r.path === 'scraper');
 
   constructor(private languageService: LanguageService) {
     this.currentLang = this.languageService.getCurrentLang();

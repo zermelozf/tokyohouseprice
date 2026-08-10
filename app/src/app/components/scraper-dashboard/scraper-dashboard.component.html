@@ -1,0 +1,1345 @@
+<div class="scraper">
+  <header class="hd">
+    <h1>🏠 SUUMO Scraper</h1>
+    <span class="sub">local dev tool</span>
+    <span class="sub status" *ngIf="summary">
+      DB: {{ summary.distinct_properties || 0 }} properties · {{ summary.total_rows || 0 }} snapshots · last {{ summary.last_scrape || 'never' }}
+    </span>
+  </header>
+
+  <!-- live crawl indicator (manual or scheduled) -->
+  <div class="running-banner" *ngIf="liveStatus && liveStatus.state === 'running'">
+    <span class="dot"></span> Crawling now
+    <span class="src" *ngIf="liveStatus.source">· {{ liveStatus.source }}</span>
+    <span class="muted">· started {{ fmtWhen(liveStatus.started) }}</span>
+  </div>
+
+  <div class="api-error" *ngIf="apiError">{{ apiError }}</div>
+
+  <!-- tabs -->
+  <nav class="tabs">
+    <button [class.sel]="activeTab === 'crawlers'" (click)="activeTab = 'crawlers'">
+      Crawlers
+      <span class="tabdot" *ngIf="liveStatus && liveStatus.state === 'running'" title="a crawl is running"></span>
+    </button>
+    <button [class.sel]="activeTab === 'search'" (click)="activeTab = 'search'">Search crawled data</button>
+    <button [class.sel]="activeTab === 'report'" (click)="openDiffReport()">Report</button>
+    <button [class.sel]="activeTab === 'map'" (click)="openMap()">Map</button>
+  </nav>
+
+  <!-- ============ CRAWLERS TAB (default) ============ -->
+  <section class="card" *ngIf="activeTab === 'crawlers'">
+    <h2>Scheduled scrapers
+      <span class="muted normal" *ngIf="sched">{{ sched.jobs.length }} job{{ sched.jobs.length === 1 ? '' : 's' }} · checks every {{ sched.tick_seconds }}s</span>
+      <button class="ghost tiny" (click)="newJob()">+ New crawler</button>
+    </h2>
+    <p class="muted top0">Recurring crawls of a confirmed SUUMO URL. Runs are serialised: only one crawl (manual or scheduled) runs at a time.</p>
+
+    <!-- jobs table -->
+    <div class="tablewrap" *ngIf="sched && sched.jobs.length">
+      <table class="jobs">
+        <thead><tr>
+          <th></th><th>name</th><th>config</th><th>frequency</th>
+          <th>next run</th><th>last run</th><th>result</th><th></th>
+        </tr></thead>
+        <tbody>
+          <tr *ngFor="let j of sched.jobs" [class.disabled]="!j.enabled">
+            <td>
+              <span class="state" [class.on]="isRunning(j)"
+                    [class.paused]="!j.enabled"
+                    [title]="isRunning(j) ? 'running now' : (j.enabled ? 'scheduled' : 'paused')"></span>
+            </td>
+            <td class="jname">{{ j.name || '(unnamed)' }}</td>
+            <td class="jcfg">
+              <a [href]="j.url" target="_blank" rel="noopener" [title]="j.url">{{ shortUrl(j.url) }}</a>
+              <span class="muted">· {{ j.max_pages }}p</span>
+            </td>
+            <td>{{ fmtInterval(j.interval_minutes) }}</td>
+            <td>{{ j.enabled ? fmtWhen(j.next_run) : 'paused' }}</td>
+            <td>
+              <span *ngIf="j.last_status === 'ok'" class="ok">✓ {{ fmtWhen(j.last_run) }}</span>
+              <span *ngIf="j.last_status === 'error'" class="err" [title]="j.last_error || ''">✗ {{ fmtWhen(j.last_run) }}</span>
+              <span *ngIf="!j.last_status" class="muted">never</span>
+            </td>
+            <td>{{ j.last_status === 'ok' ? (j.last_listings ?? 0) + ' listings' : (j.last_status === 'error' ? 'failed' : '—') }}</td>
+            <td class="jactions">
+              <button class="ghost xtiny" (click)="runJobNow(j)" [disabled]="isRunning(j)" title="run now">▶</button>
+              <button class="ghost xtiny" (click)="toggleJobEnabled(j)" [title]="j.enabled ? 'pause' : 'resume'">{{ j.enabled ? '⏸' : '⏵' }}</button>
+              <button class="ghost xtiny" (click)="editJob(j)" title="edit">✎</button>
+              <button class="ghost xtiny danger" (click)="deleteJob(j)" title="delete">🗑</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" *ngIf="sched && !sched.jobs.length && !showJobForm">No crawlers yet — click <strong>+ New crawler</strong>.</p>
+
+    <!-- create / edit crawler form (with live preview) -->
+    <div class="jobform" *ngIf="showJobForm">
+      <h3>{{ editingId ? 'Edit crawler' : 'New crawler' }}</h3>
+
+      <div class="frow">
+        <label>Name</label>
+        <input [(ngModel)]="form.name" placeholder="e.g. nightly nakano condos">
+      </div>
+
+      <!-- start-from helper -->
+      <div class="frow">
+        <label>Start from a SUUMO search <span class="muted">(open, refine filters, copy the URL)</span></label>
+        <div class="links">
+          <a class="tile" *ngFor="let l of suumoLinks" [href]="l.url" target="_blank" rel="noopener">
+            <span class="jp">{{ l.label }}</span><small>{{ l.sub }}</small>
+            <button class="use" (click)="$event.preventDefault(); useStarterUrl(l.url)" title="use this URL">use ↴</button>
+          </a>
+        </div>
+      </div>
+
+      <!-- url + preview -->
+      <div class="frow">
+        <label>SUUMO search URL</label>
+        <input [(ngModel)]="form.url" placeholder="https://suumo.jp/jj/bukken/ichiran/…  (must contain /ichiran/)">
+        <div class="actions top">
+          <button class="ghost" (click)="previewCrawler()" [disabled]="urlPreviewing">⚡ Preview</button>
+          <span class="note">{{ urlPending }}</span>
+        </div>
+      </div>
+
+      <div class="frow">
+        <label>Frequency</label>
+        <div class="seg wrap">
+          <button *ngFor="let p of freqPresets"
+                  [class.sel]="!freqIsCustom && form.interval_minutes === p.minutes"
+                  (click)="setFreq(p.minutes)">{{ p.label }}</button>
+          <button [class.sel]="freqIsCustom" (click)="setCustomFreq()">Custom</button>
+          <input *ngIf="freqIsCustom" class="mins" type="number" min="1"
+                 [(ngModel)]="form.interval_minutes"> <span *ngIf="freqIsCustom" class="muted">min</span>
+        </div>
+      </div>
+
+      <div class="frow inline">
+        <div class="small"><label>Max pages</label><input type="number" min="1" [(ngModel)]="form.max_pages"></div>
+        <div class="small"><label>Delay min (s)</label><input type="number" min="0" step="0.5" [(ngModel)]="form.min_delay"></div>
+        <div class="small"><label>Delay max (s)</label><input type="number" min="0" step="0.5" [(ngModel)]="form.max_delay"></div>
+        <label class="chk"><input type="checkbox" [(ngModel)]="form.enabled"> enabled</label>
+      </div>
+
+      <div class="actions">
+        <button (click)="saveJob()">{{ editingId ? 'Save changes' : 'Create crawler' }}</button>
+        <button class="ghost" (click)="cancelJob()">Cancel</button>
+        <span class="note">{{ jobMsg }}</span>
+      </div>
+
+      <!-- preview results (kept below the buttons so a long list doesn't push them off-screen) -->
+      <div class="previewbox" *ngIf="previewRows.length">
+        <div class="muted"><strong>Preview</strong> · {{ previewMeta }} <span class="muted">(live — not saved)</span></div>
+        <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: previewRows, stats: previewStats }"></ng-container>
+      </div>
+    </div>
+
+    <p class="cfgline muted" *ngIf="config">
+      config · data: <code>{{ config.data_dir }}</code> · db: <code>{{ config.db_path }}</code> · default delay {{ config.default_min_delay }}–{{ config.default_max_delay }}s
+    </p>
+  </section>
+
+  <!-- ============ SEARCH TAB (already-crawled data) ============ -->
+  <section class="card" *ngIf="activeTab === 'search'">
+    <h2>Search crawled data <span class="muted normal">{{ searchMeta }}</span></h2>
+    <p class="muted top0">Query the listings already saved in the local DB (latest snapshot per property). Click <strong>📍 details</strong> on a row for its exact location and full spec sheet.</p>
+
+    <div class="actions searchbar">
+      <div class="small">
+        <label>crawled from</label>
+        <input type="date" [(ngModel)]="searchForm.date_from">
+      </div>
+      <div class="small">
+        <label>crawled to</label>
+        <input type="date" [(ngModel)]="searchForm.date_to">
+      </div>
+      <div class="small">
+        <label>category</label>
+        <select [(ngModel)]="searchForm.category">
+          <option value="">all</option>
+          <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
+        </select>
+      </div>
+      <div class="small">
+        <label>ward</label>
+        <select [(ngModel)]="searchForm.ward">
+          <option value="">all</option>
+          <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
+        </select>
+      </div>
+      <div class="small"><label>price min (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_min"></div>
+      <div class="small"><label>price max (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_max"></div>
+      <div class="small">
+        <label [title]="'Total budget — applied here, not in the crawl, because SUUMO\'s own price ceiling stops at 1億2千万. A plot is judged on this less a ' + budgetBuildM2 + 'm² build (' + fmtYen(landCeiling()) + ').'">budget</label>
+        <select [(ngModel)]="budgetYen">
+          <option [ngValue]="null">no limit</option>
+          <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
+        </select>
+      </div>
+        <div class="small">
+        <label title="Building floor: buy / rental flat / rental house. Land is exempt — a plot has no building. No rental flat in this catchment exceeds ~108m², so flats and houses need different floors.">min m² buy/flat/house</label>
+        <span class="dualnum">
+          <input type="number" step="10" [(ngModel)]="bldMinBuy">
+          <input type="number" step="10" [(ngModel)]="bldMinRent">
+          <input type="number" step="10" [(ngModel)]="bldMinRentHouse">
+        </span>
+        </div>
+        <div class="small">
+        <label title="Monthly rent ceiling. Enforced here as well as in the crawl, because tightening a crawl filter never removes rows earlier crawls already stored.">max rent</label>
+        <input type="number" step="10000" [(ngModel)]="rentMaxYen" (ngModelChange)="loadMap()">
+        </div>
+        <div class="small">
+        <label title="Max age in years. Listings with no stated age (新築, land) are kept.">max age</label>
+        <input type="number" step="5" [(ngModel)]="ageMaxKnown">
+        </div>
+      <div class="small">
+        <label title="door-to-school minutes: walk + train + walk to the Lycée">🎓 LFIT max</label>
+        <select [(ngModel)]="searchForm.commuteMax">
+          <option [ngValue]="null">any</option>
+          <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">{{ m }} min</option>
+        </select>
+      </div>
+      <div class="small"><label>limit</label><input type="number" min="1" [(ngModel)]="searchForm.limit"></div>
+      <button (click)="runSearch()">🔍 Search</button>
+      <span class="exportlinks" *ngIf="searchRows.length">
+        <span class="muted" title="download these results for Google My Maps (mymaps.google.com)">export</span>
+        <button class="linkbtn" (click)="exportCsv()"
+                title="CSV — every row. Import into My Maps with lat/lng as the position columns, or address for the rows without coordinates. Also opens in Sheets.">CSV</button>
+        <button class="linkbtn" (click)="exportKml()" [disabled]="!geocodedCount()"
+                [title]="geocodedCount()
+                  ? 'KML — ' + geocodedCount() + ' of ' + searchRows.length + ' rows have coordinates; layers coloured by category, popups with specs and links'
+                  : 'KML needs coordinates — none of these rows are detail-enriched yet'">KML</button>
+      </span>
+      <span class="exportnote" *ngIf="exportMsg">{{ exportMsg }}</span>
+    </div>
+
+    <div class="reviewbar" *ngIf="searchRows.length">
+      <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
+      <span class="muted">unreviewed first · keys 1/2/3</span>
+      <span class="muted" *ngIf="reviewedTotal()">
+        · {{ reviewedTotal() }} reviewed overall,
+        <b>{{ reviewedShown('search') }}</b> of them match these filters
+      </span>
+      <span class="vfilter">
+        <button type="button" class="chip" *ngFor="let v of VERDICTS"
+                [class.sel]="searchVerdicts.includes(v.key)" (click)="toggleSearchVerdict(v.key)"
+                [title]="'show only ' + v.label">
+          <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
+        </button>
+        <button type="button" class="chip" [class.sel]="searchVerdicts.includes('none')"
+                (click)="toggleSearchVerdict('none')" title="not yet reviewed">
+          <i style="background:#9ca3af"></i>unseen
+        </button>
+      </span>
+    </div>
+    <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: searchStats }"></ng-container>
+    <p class="muted" *ngIf="searched && !searchRows.length">No listings match — crawl some data first (Crawlers tab) or widen the filters.</p>
+  </section>
+
+  <!-- ============ REPORT TAB (what changed between two crawls) ============ -->
+  <section class="card" *ngIf="activeTab === 'report'">
+    <h2>Report — crawl diff
+      <span class="muted normal" *ngIf="diff">
+        {{ diff.counts.before }} → {{ diff.counts.after }} listings
+      </span>
+    </h2>
+    <p class="muted top0">Compares two crawl dates: what appeared, what stopped showing up, and which listings had their details edited.</p>
+
+    <div class="actions searchbar">
+      <div class="small">
+        <label>from</label>
+        <select [(ngModel)]="diffFrom" (ngModelChange)="loadDiff()">
+          <option *ngFor="let d of crawlDates" [value]="d.date">{{ d.date }} ({{ d.properties }})</option>
+        </select>
+      </div>
+      <div class="small">
+        <label>to</label>
+        <select [(ngModel)]="diffTo" (ngModelChange)="loadDiff()">
+          <option *ngFor="let d of crawlDates" [value]="d.date">{{ d.date }} ({{ d.properties }})</option>
+        </select>
+      </div>
+      <button (click)="loadDiff()" [disabled]="diffLoading">🔄 Refresh</button>
+      <span class="note" *ngIf="diffLoading">comparing…</span>
+      <span class="note" *ngIf="diffError">{{ diffError }}</span>
+    </div>
+
+    <ng-container *ngIf="diff && !diffLoading">
+      <!-- headline counts -->
+      <div class="diffcards">
+        <div class="diffcard new">
+          <b>{{ diff.counts.new }}</b><span>new</span>
+        </div>
+        <div class="diffcard gone">
+          <b>{{ diff.counts.delisted }}</b><span>delisted</span>
+        </div>
+        <div class="diffcard chg">
+          <b>{{ diff.counts.changed }}</b><span>changed</span>
+        </div>
+        <div class="diffcard relist" *ngIf="diff.counts.relisted">
+          <b>{{ diff.counts.relisted }}</b><span>relisted</span>
+        </div>
+        <div class="diffcard same">
+          <b>{{ diff.counts.unchanged }}</b><span>unchanged</span>
+        </div>
+        <div class="diffcard warn" *ngIf="diff.counts.gone_partial + diff.counts.gone_absent">
+          <b>{{ diff.counts.gone_partial + diff.counts.gone_absent }}</b><span>not re-crawled</span>
+        </div>
+      </div>
+
+      <!-- a narrower second crawl looks like a wave of delistings; say so plainly -->
+      <div class="scopewarn" *ngIf="diff.narrowed.length">
+        ⚠️ The <b>{{ diff.date_to }}</b> crawl was narrower than <b>{{ diff.date_from }}</b> —
+        {{ diff.narrowed.length }} search URL(s) returned fewer results or were not fetched at all.
+        Listings that only appeared under those URLs are counted as <i>not re-crawled</i>, not delisted.
+        <button type="button" class="linkbtn" (click)="showCoverage = !showCoverage">
+          {{ showCoverage ? 'hide' : 'show' }} coverage
+        </button>
+        <div class="tablewrap" *ngIf="showCoverage">
+          <table class="difftable">
+            <thead><tr><th>category</th><th>search URL</th><th class="num">{{ diff.date_from }}</th><th class="num">{{ diff.date_to }}</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let u of diff.search_urls">
+                <td>{{ u.category }}</td>
+                <td class="urlcell"><a [href]="u.url" target="_blank" rel="noopener">{{ u.url }}</a></td>
+                <td class="num">{{ u.from_cards }}</td>
+                <td class="num" [class.zero]="!u.to_cards">{{ u.to_cards }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- new listings -->
+      <h3 class="diffh">🆕 New listings <span class="muted normal">{{ diff['new'].length }}</span></h3>
+      <p class="muted top0" *ngIf="!diff['new'].length">Nothing appeared that wasn't already there on {{ diff.date_from }}.</p>
+      <div class="tablewrap" *ngIf="diff['new'].length">
+        <table class="difftable">
+          <thead><tr><th>ward</th><th>type</th><th class="num">price</th><th class="num">land m²</th><th class="num">bldg m²</th><th>layout</th><th class="num">walk</th><th>listing</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of diff['new']">
+                <td>{{ r.ward }}</td>
+                <td class="cattag">{{ catLabel(r.category) }}</td>
+                <td class="num">{{ r.price_raw || '—' }}</td>
+                <td class="num">{{ r.land_m2 || '—' }}</td>
+                <td class="num">{{ r.building_m2 || '—' }}</td>
+                <td>{{ r.layout || '—' }}</td>
+                <td class="num">{{ r.nearest_walk_min != null ? r.nearest_walk_min + '′' : '—' }}</td>
+                <td class="titlecell"><a [href]="r.url" target="_blank" rel="noopener"
+                    [title]="r.title || r.address">{{ r.title || r.address }}</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- delisted -->
+      <h3 class="diffh">🚫 Delisted <span class="muted normal">{{ diff.counts.delisted }}</span></h3>
+      <p class="muted top0" *ngIf="!goneWithScope('covered').length">
+        No listing disappeared from a search that was crawled just as thoroughly on {{ diff.date_to }}.
+      </p>
+      <div class="tablewrap" *ngIf="goneWithScope('covered').length">
+        <table class="difftable">
+          <thead><tr><th>ward</th><th>type</th><th class="num">last price</th><th class="num">land m²</th><th class="num">bldg m²</th><th>layout</th><th class="num">walk</th><th>listing</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of goneWithScope('covered')">
+                <td>{{ r.ward }}</td>
+                <td class="cattag">{{ catLabel(r.category) }}</td>
+                <td class="num">{{ r.price_raw || '—' }}</td>
+                <td class="num">{{ r.land_m2 || '—' }}</td>
+                <td class="num">{{ r.building_m2 || '—' }}</td>
+                <td>{{ r.layout || '—' }}</td>
+                <td class="num">{{ r.nearest_walk_min != null ? r.nearest_walk_min + '′' : '—' }}</td>
+                <td class="titlecell"><a [href]="r.url" target="_blank" rel="noopener"
+                    [title]="r.title || r.address">{{ r.title || r.address }}</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- relisted: same property, fresh SUUMO id -->
+      <ng-container *ngIf="diff.relisted?.length">
+        <h3 class="diffh">♻️ Relisted <span class="muted normal">{{ diff.counts.relisted }}</span></h3>
+        <p class="muted top0">
+          Same title and price re-posted under a new SUUMO id — the agent refreshing the listing
+          date, not a sale followed by a new listing. Counted here rather than as delisted + new.
+        </p>
+        <div class="tablewrap">
+          <table class="difftable">
+            <thead><tr><th>ward</th><th>type</th><th class="num">price</th><th class="num">land m²</th><th class="num">bldg m²</th><th>listing</th><th>old id</th><th>new id</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of diff.relisted">
+                <td>{{ r.to.ward }}</td>
+                <td class="cattag">{{ catLabel(r.to.category) }}</td>
+                <td class="num">{{ r.to.price_raw || '—' }}</td>
+                <td class="num">{{ r.to.land_m2 || '—' }}</td>
+                <td class="num">{{ r.to.building_m2 || '—' }}</td>
+                <td class="titlecell"><a [href]="r.to.url" target="_blank" rel="noopener"
+                    [title]="r.to.title || r.to.address">{{ r.to.title || r.to.address }}</a></td>
+                <td class="scopecell">{{ r.from.property_id }}</td>
+                <td class="scopecell">{{ r.to.property_id }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <!-- changed -->
+      <h3 class="diffh">✏️ Changed <span class="muted normal">{{ diff.counts.changed }}</span></h3>
+      <p class="muted top0" *ngIf="!diff.changed.length">Every listing seen on both dates is byte-identical.</p>
+      <div class="tablewrap" *ngIf="diff.changed.length">
+        <table class="difftable">
+          <thead><tr><th>ward</th><th>type</th><th class="num">price</th><th class="num">land m²</th><th class="num">bldg m²</th><th>listing</th><th>what changed</th></tr></thead>
+          <tbody>
+            <ng-container *ngFor="let r of diff.changed">
+              <tr>
+                <td>{{ r.ward }}</td>
+                <td class="cattag">{{ catLabel(r.category) }}</td>
+                <td class="num">{{ r.price_raw || '—' }}</td>
+                <td class="num">{{ r.land_m2 || '—' }}</td>
+                <td class="num">{{ r.building_m2 || '—' }}</td>
+                <td class="titlecell"><a [href]="r.url" target="_blank" rel="noopener"
+                    [title]="r.title || r.address">{{ r.title || r.address }}</a></td>
+                <td>
+                  <button type="button" class="linkbtn" (click)="toggleDiffRow(r.property_id)">
+                    {{ r.changes?.length }} field(s) — {{ diffOpen[r.property_id] ? 'hide' : 'show' }}
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="diffOpen[r.property_id]" class="changerow">
+                <td colspan="7">
+                  <div class="chg-line" *ngFor="let c of r.changes">
+                    <span class="chg-field">{{ c.label }}</span>
+                    <span class="chg-old">{{ changeValue(c, 'from') }}</span>
+                    <span class="chg-arrow">→</span>
+                    <span class="chg-new">{{ changeValue(c, 'to') }}</span>
+                    <span class="chg-delta" [class.up]="changeIsUp(c)" *ngIf="changeDelta(c)">{{ changeDelta(c) }}</span>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- not re-crawled -->
+      <ng-container *ngIf="diff.counts.gone_partial + diff.counts.gone_absent">
+        <h3 class="diffh">🕳️ Not re-crawled
+          <span class="muted normal">{{ diff.counts.gone_partial + diff.counts.gone_absent }}</span></h3>
+        <p class="muted top0">
+          Present on {{ diff.date_from }}, absent on {{ diff.date_to }} — but from a search that
+          returned nothing ({{ diff.counts.gone_absent }}) or fewer results
+          ({{ diff.counts.gone_partial }}) that day. These may still be listed; schedule the
+          matching URL to find out.
+        </p>
+        <div class="tablewrap">
+          <table class="difftable">
+            <thead><tr><th>ward</th><th>type</th><th class="num">last price</th><th class="num">land m²</th><th class="num">bldg m²</th><th>listing</th><th>why</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of goneNotCovered()">
+                <td>{{ r.ward }}</td>
+                <td class="cattag">{{ catLabel(r.category) }}</td>
+                <td class="num">{{ r.price_raw || '—' }}</td>
+                <td class="num">{{ r.land_m2 || '—' }}</td>
+                <td class="num">{{ r.building_m2 || '—' }}</td>
+                <td class="titlecell"><a [href]="r.url" target="_blank" rel="noopener"
+                    [title]="r.title || r.address">{{ r.title || r.address }}</a></td>
+                <td class="scopecell">{{ r.scope === 'absent' ? 'search not run' : 'search ran shallower' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </ng-container>
+  </section>
+
+  <!-- ============ MAP TAB (map of crawled listings with a location) ============ -->
+  <!-- [hidden] (not *ngIf) so the Leaflet container stays in the DOM across tab switches -->
+  <section class="card" [hidden]="activeTab !== 'map'">
+    <h2>Map
+      <span class="muted normal">{{ mapPoints.length }} located<span *ngIf="summary"> of {{ summary.distinct_properties || 0 }} crawled</span></span>
+    </h2>
+    <p class="muted top0">
+      Crawled listings with an exact location from their detail page. Enrichment runs after each crawl — properties not yet enriched won't appear.
+      <span *ngIf="mapForm.date">Showing what the <b>{{ mapForm.date }}</b> crawl saw.</span>
+      <span *ngIf="!mapForm.date">Showing the most recent snapshot of every property.</span>
+  <!-- Map controls.
+       One model for both modes: pick a section, see its options. Windowed, the
+       sections are a chip row with the open one below; fullscreen, the same
+       chips live in the FAB and open the same body in a floating panel. The
+       markup exists once and is rendered in whichever place is active. -->
+  <ng-template #controlChipsTpl>
+    <div class="ctl-chips">
+      <button type="button" class="chip" *ngFor="let s of controlSections"
+              [class.sel]="activeControl === s.key" (click)="openControl(s.key)"
+              [title]="s.hint">{{ s.icon }} {{ s.label }}</button>
+    </div>
+  </ng-template>
+
+  <ng-template #controlBodyTpl>
+    <div class="ctl-body" [ngSwitch]="activeControl">
+
+      <ng-container *ngSwitchCase="'filters'">
+        <div class="actions searchbar">
+        <div class="small">
+        <label>category</label>
+        <select [(ngModel)]="mapForm.category">
+        <option value="">all</option>
+        <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
+        </select>
+        </div>
+        <div class="small">
+        <label>ward</label>
+        <select [(ngModel)]="mapForm.ward">
+        <option value="">all</option>
+        <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
+        </select>
+        </div>
+        <div class="filterbar">
+          <label>saved</label>
+          <select (change)="loadFilter($any($event.target).value)">
+            <option value="">— load a saved filter —</option>
+            <option *ngFor="let f of savedFilters" [value]="f.name">{{ f.name }}</option>
+          </select>
+          <input class="fname" [(ngModel)]="filterName" placeholder="name this filter"
+                 (keyup.enter)="saveCurrentFilter()">
+          <button class="ghost tiny" (click)="saveCurrentFilter()" [disabled]="!filterName.trim()">save</button>
+          <button class="ghost tiny" (click)="copyShareLink()" title="a link that restores this exact view">
+            🔗 copy link</button>
+          <button class="ghost tiny" *ngIf="savedFilters.length"
+                  (click)="removeFilter(savedFilters[0].name)"
+                  [title]="'delete ' + savedFilters[0].name">🗑 {{ savedFilters[0].name }}</button>
+          <span class="note" *ngIf="shareMsg">{{ shareMsg }}</span>
+        </div>
+        <div class="reviewbar">
+          <button (click)="startReview(true)" [disabled]="!mapPoints.length">
+            🔍 Review {{ mapPoints.length }} shown
+          </button>
+          <span class="muted">unreviewed first · keys 1/2/3</span>
+          <span class="muted" *ngIf="reviewedTotal()">
+            · {{ reviewedTotal() }} reviewed overall,
+            <b>{{ reviewedShown('map') }}</b> of them match these filters
+          </span>
+          <span class="vfilter">
+            <button type="button" class="chip" *ngFor="let v of VERDICTS"
+                    [class.sel]="mapVerdicts.includes(v.key)" (click)="toggleMapVerdict(v.key)"
+                    [title]="'show only ' + v.label">
+              <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
+            </button>
+            <button type="button" class="chip" [class.sel]="mapVerdicts.includes('none')"
+                    (click)="toggleMapVerdict('none')" title="not yet reviewed">
+              <i style="background:#9ca3af"></i>unseen
+            </button>
+          </span>
+        </div>
+        <div class="rangebank">
+          <div class="rangerow" *ngFor="let spec of RANGE_SPECS">
+            <ng-container *ngIf="mapBounds[spec.key] as b">
+              <label [title]="spec.label + ' — bounds come from the data currently loaded'">
+                {{ spec.label }}<span class="rangeval">{{ rangeLabel(spec.key) }}</span>
+              </label>
+              <div class="dualrange">
+                <div class="track"></div>
+                <div class="fill"
+                     [style.left.%]="100 * (mapRanges[spec.key].lo - b.min) / (b.max - b.min || 1)"
+                     [style.right.%]="100 * (b.max - mapRanges[spec.key].hi) / (b.max - b.min || 1)"></div>
+                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
+                       [(ngModel)]="mapRanges[spec.key].lo"
+                       (ngModelChange)="mapRanges[spec.key].lo = $event > mapRanges[spec.key].hi ? mapRanges[spec.key].hi : $event; applyRanges()">
+                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
+                       [(ngModel)]="mapRanges[spec.key].hi"
+                       (ngModelChange)="mapRanges[spec.key].hi = $event < mapRanges[spec.key].lo ? mapRanges[spec.key].lo : $event; applyRanges()">
+              </div>
+            </ng-container>
+          </div>
+          <div class="rangefoot">
+            <b>{{ mapPoints.length }}</b> of {{ mapAll.length }} shown
+            <button class="ghost tiny" (click)="resetRanges()">reset ranges</button>
+          </div>
+        </div>
+        <button (click)="loadMap()">🔄 Refresh</button>
+        <div class="era-filter">
+        <span class="era-label" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06. No selection shows everything.">耐震基準</span>
+        <button type="button" class="chip" *ngFor="let e of eraList"
+        [class.sel]="mapEras.includes(e.key)" (click)="toggleEra(e.key)"
+        [title]="e.label"><i [style.background]="e.color"></i>{{ e.short }}</button>
+        <span class="note" *ngIf="!mapEras.length">all (incl. unknown year)</span>
+        </div>
+        <div class="legend" *ngIf="colorBy === 'category'">
+        <span class="lg" *ngFor="let c of catColors"><i [style.background]="c.color"></i>{{ c.label }}</span>
+        </div>
+        <div class="legend" *ngIf="colorBy === 'era'">
+        <span class="lg" *ngFor="let e of eraList"><i [style.background]="e.color"></i>{{ e.label }}</span>
+        <span class="lg"><i style="background:#9ca3af"></i>year unknown</span>
+        </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'poi'">
+        <div class="poibar-head">
+        <span class="poibar-title">Show nearby <span class="muted">(OpenStreetMap)</span></span>
+        <span class="poibar-actions">
+        <button class="ghost tiny" (click)="loadOsmPois()" [disabled]="osmLoading">📍 Load in view</button>
+        <button class="ghost tiny" (click)="clearOsmPois()">Clear</button>
+        <span class="note" *ngIf="osmMsg">{{ osmMsg }}</span>
+        </span>
+        </div>
+        <div class="poi-chips">
+        <button type="button" class="chip" [class.sel]="showRail" (click)="showRail = !showRail">🚃 Lines</button>
+        <button type="button" class="chip" *ngFor="let c of osmCats"
+        [class.sel]="c.enabled" (click)="c.enabled = !c.enabled">{{ c.label }}</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'census'">
+        <div class="poibar-head">
+        <span class="poibar-title">Census layers
+        <span class="muted">(令和2年国勢調査 小地域集計 — one at a time)</span></span>
+        <span class="poibar-actions">
+        <label class="opa">opacity
+        <input type="range" min="0.15" max="1" step="0.05"
+        [(ngModel)]="censusOpacity" (ngModelChange)="setCensusOpacity()">
+        </label>
+        <button class="ghost tiny" (click)="clearCensus()">Clear</button>
+        <span class="note" *ngIf="censusLoading">loading census data…</span>
+        <span class="note" *ngIf="censusMsg">{{ censusMsg }}</span>
+        </span>
+        </div>
+        <div class="census-row" *ngFor="let g of censusGroups()">
+        <span class="census-group">{{ g }}</span>
+        <div class="poi-chips">
+        <button type="button" class="chip" *ngFor="let c of censusIn(g)"
+        [class.sel]="activeCensus === c.key" (click)="toggleCensus(c)"
+        [title]="c.title">{{ c.label }}</button>
+        </div>
+        </div>
+        <div class="hazlegend" *ngIf="activeCensusLayer() as cl">
+        <div class="hazrow">
+        <span class="hazkey">{{ cl.legendTitle }}</span>
+        <span class="lg" *ngFor="let r of censusLegendRows(cl)"><i [style.background]="r.color"></i>{{ r.label }}</span>
+        </div>
+        <div class="hazrow note-sm">{{ cl.title }}. 2020 census, by 町丁 — hover a block for its value.</div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'hazard'">
+        <div class="poibar-head">
+        <span class="poibar-title">Hazard layers
+        <span class="muted">(ハザードマップポータル / 地理院タイル)</span></span>
+        <span class="poibar-actions">
+        <label class="opa">opacity
+        <input type="range" min="0.15" max="1" step="0.05"
+        [(ngModel)]="hazardOpacity" (ngModelChange)="setHazardOpacity()">
+        </label>
+        <button class="ghost tiny" (click)="clearHazards()">Clear</button>
+        </span>
+        </div>
+        <div class="poi-chips">
+        <button type="button" class="chip" *ngFor="let h of hazardLayers"
+        [class.sel]="h.enabled" (click)="toggleHazard(h)" [title]="h.title">{{ h.label }}</button>
+        </div>
+        <div class="hazlegend" *ngIf="activeHazards().length">
+        <div class="hazrow" *ngIf="hasHazardLegend('depth')">
+        <span class="hazkey">浸水深 / depth</span>
+        <span class="lg" *ngFor="let d of depthLegend"><i [style.background]="d.color"></i>{{ d.label }}</span>
+        </div>
+        <div class="hazrow" *ngIf="hasHazardLegend('landslide')">
+        <span class="hazkey">土砂災害 / landslide</span>
+        <span class="lg" *ngFor="let d of landslideLegend"><i [style.background]="d.color"></i>{{ d.label }}</span>
+        </div>
+        <!-- 土地条件図: 21 landform classes, collapsed by default -->
+        <ng-container *ngFor="let h of activeHazards()">
+        <div class="hazblock" *ngIf="h.legend === 'ground'">
+        <div class="hazrow">
+        <span class="hazkey">{{ h.label }}</span>
+        <span class="hazdesc">{{ h.title }}</span>
+        <button type="button" class="linkbtn" (click)="toggleLegend(h.key)">
+        {{ openLegends[h.key] ? 'hide' : 'show' }} all {{ groundLegend.length }} classes
+        </button>
+        <a [href]="h.link" target="_blank" rel="noopener">official PDF ↗</a>
+        </div>
+        <div class="swatchgrid" *ngIf="openLegends[h.key]">
+        <span class="sw" *ngFor="let g of groundLegend" [class.firm]="g.firm">
+        <i [style.background]="g.color"></i>
+        <b>{{ g.jp }}</b><em>{{ g.en }}</em>
+        </span>
+        </div>
+        <div class="hazrow note-sm" *ngIf="openLegends[h.key]">
+        Bold-edged swatches are the firmer ground. Artificial ground is drawn as hatching,
+        not a flat colour, so it has no swatch here: {{ groundHatched.join(' · ') }}.
+        </div>
+        </div>
+
+        <!-- 治水地形分類図: GSI publishes one legend sheet — show it inline -->
+        <div class="hazblock" *ngIf="h.legend === 'image'">
+        <div class="hazrow">
+        <span class="hazkey">{{ h.label }}</span>
+        <span class="hazdesc">{{ h.title }}</span>
+        <button type="button" class="linkbtn" (click)="toggleLegend(h.key)">
+        {{ openLegends[h.key] ? 'hide' : 'show' }} legend
+        </button>
+        <a [href]="h.link" target="_blank" rel="noopener">explainer ↗</a>
+        </div>
+        <div class="legendimg" *ngIf="openLegends[h.key]">
+        <img [src]="h.legendImg" alt="治水地形分類図 凡例" loading="lazy">
+        </div>
+        </div>
+
+        <!-- 傾斜量図: a continuous ramp, so a gradient bar is the legend -->
+        <div class="hazblock" *ngIf="h.legend === 'gradient'">
+        <div class="hazrow">
+        <span class="hazkey">{{ h.label }}</span>
+        <span class="rampwrap">
+        <span class="ramp"></span>
+        <span class="ramplabels"><span>緩やか / gentle</span><span>急峻 / steep</span></span>
+        </span>
+        <a [href]="h.link" target="_blank" rel="noopener">explainer ↗</a>
+        </div>
+        </div>
+        </ng-container>
+        <div class="hazrow note-sm" *ngIf="hiddenHazards().length">
+        ⚠️ Zoom in to see:
+        <span *ngFor="let h of hiddenHazards()">{{ h.label }} (zoom ≥ {{ h.minZoom }})&nbsp;</span>
+        </div>
+        <div class="hazrow note-sm">
+        Reference only — always check the ward's own hazard map before buying.
+        Grey/blank means no published data for that hazard here, not "safe".
+        </div>
+        </div>
+      </ng-container>
+
+    </div>
+  </ng-template>
+
+  <!-- Windowed: chips above the map, the open section directly beneath them. -->
+  <div class="ctl-bar" *ngIf="!mapFull">
+    <ng-container [ngTemplateOutlet]="controlChipsTpl"></ng-container>
+    <ng-container *ngIf="activeControl" [ngTemplateOutlet]="controlBodyTpl"></ng-container>
+  </div>
+
+    <div class="mapwrap" [class.fullscreen]="mapFull">
+      <button class="mapfull-btn" (click)="toggleMapFull()"
+              [title]="mapFull ? 'Exit fullscreen' : 'Fullscreen'"
+              [attr.aria-label]="mapFull ? 'Exit fullscreen' : 'Fullscreen'">{{ mapFull ? '✕' : '⛶' }}</button>
+      <div id="scraperMap"></div>
+
+      <!-- Fullscreen: the controls move into a floating panel so the map keeps
+           the whole viewport. Same template, rendered here instead of above. -->
+      <ng-container *ngIf="mapFull">
+        <div class="map-backdrop" *ngIf="mapFabOpen" (click)="closeFab()"></div>
+        <div class="map-fab">
+          <!-- The open section's controls, same body as the windowed view. -->
+          <div class="map-fab-panel" *ngIf="mapFabOpen && activeControl">
+            <div class="map-fab-head">
+              <span>{{ activeSection()?.icon }} {{ activeSection()?.label }}</span>
+              <button class="linkbtn" type="button" (click)="activeControl = null">back</button>
+            </div>
+            <ng-container [ngTemplateOutlet]="controlBodyTpl"></ng-container>
+          </div>
+
+          <!-- The section list, same chips as the windowed view. -->
+          <div class="map-fab-options" *ngIf="mapFabOpen">
+            <ng-container [ngTemplateOutlet]="controlChipsTpl"></ng-container>
+          </div>
+
+          <button class="map-fab-btn" type="button" (click)="toggleFab()"
+                  [attr.aria-expanded]="mapFabOpen" aria-label="Map layers and filters">
+            <span class="map-fab-icon" [class.rotated]="mapFabOpen">⚙</span>
+            <span class="map-fab-text">{{ mapFabOpen ? 'Close' : 'Layers & filters' }}</span>
+          </button>
+        </div>
+      </ng-container>
+    </div>
+  </section>
+
+  <!-- ============ shared results table (preview + search) ============ -->
+  <ng-template #resultsTpl let-rows="rows" let-stats="stats">
+    <div class="stats" *ngIf="stats">
+      <div class="stat"><div class="n">{{ stats.count }}</div><div class="l">count</div></div>
+      <div class="stat"><div class="n">{{ fmtYen(stats.median_price_yen) }}</div><div class="l">median price</div></div>
+      <div class="stat"><div class="n">{{ stats.median_price_per_m2 ? (stats.median_price_per_m2 | number) : '—' }}</div><div class="l">median ¥/m²</div></div>
+      <div class="stat"><div class="n">{{ stats.min_price_yen ? fmtYen(stats.min_price_yen) + ' – ' + fmtYen(stats.max_price_yen) : '—' }}</div><div class="l">range</div></div>
+    </div>
+    <div class="tablewrap" *ngIf="rows.length">
+      <table>
+        <thead><tr>
+          <th>type</th>
+          <th class="sortable" [class.sorted]="sortKey === 'price'" (click)="toggleSort('price')"
+              title="sort by price">price <span class="arrow">{{ sortArrow('price') }}</span></th>
+          <th class="sortable" [class.sorted]="sortKey === 'ppm2'" (click)="toggleSort('ppm2')"
+              title="sort by price per m²">¥/m² <span class="arrow">{{ sortArrow('ppm2') }}</span></th>
+          <th>layout</th>
+          <th class="sortable" [class.sorted]="sortKey === 'building_m2'" (click)="toggleSort('building_m2')"
+              title="sort by building area">bldg m² <span class="arrow">{{ sortArrow('building_m2') }}</span></th>
+          <th class="sortable" [class.sorted]="sortKey === 'land_m2'" (click)="toggleSort('land_m2')"
+              title="sort by land area">land m² <span class="arrow">{{ sortArrow('land_m2') }}</span></th>
+          <th class="sortable" [class.sorted]="sortKey === 'age_years'" (click)="toggleSort('age_years')"
+              title="sort by age">age <span class="arrow">{{ sortArrow('age_years') }}</span></th>
+          <th class="sortable" [class.sorted]="sortKey === 'walk'" (click)="toggleSort('walk')"
+              title="sort by walking minutes to the nearest station">walk <span class="arrow">{{ sortArrow('walk') }}</span></th>
+          <th class="sortable" [class.sorted]="sortKey === 'commute_min'" (click)="toggleSort('commute_min')"
+              title="door-to-school: walk to your station + train + walk to the Lycée Français">
+            🎓 LFIT <span class="arrow">{{ sortArrow('commute_min') }}</span></th>
+          <th>ward</th><th>address</th><th>link</th><th>details</th><th>compare</th><th>verdict</th>
+        </tr></thead>
+        <tbody>
+          <ng-container *ngFor="let r of sortRows(rows)">
+            <tr>
+              <td class="thumbcell">
+                <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
+                     class="rowthumb" [title]="r.title || ''">
+                <span class="cattag">{{ catLabel(r.category) }}</span>
+              </td>
+              <td>{{ fmtYen(r.price_yen) }}</td>
+              <td>{{ ppm2(r) }}</td>
+              <td class="layout"><span [title]="r.layout || ''">{{ r.layout || '—' }}</span></td>
+              <td>{{ r.building_m2 ?? '—' }}</td>
+              <td>{{ r.land_m2 ?? '—' }}</td>
+              <td>{{ r.age_years ?? '—' }}</td>
+              <td>{{ r.nearest_walk_min ?? '—' }}</td>
+              <td class="commutecell" [title]="commuteTip(r)">
+                <b *ngIf="r['commute_min'] != null">{{ r['commute_min'] }}′</b>
+                <span *ngIf="r['commute_min'] == null" class="muted">—</span>
+              </td>
+              <td>{{ r.ward }}</td>
+              <td class="addr">{{ r.address }}</td>
+              <td><a [href]="r.url" target="_blank" rel="noopener">open ↗</a></td>
+              <td>
+                <button class="ghost xtiny" (click)="getDetail(r)"
+                        [disabled]="detailState[r.property_id]?.loading"
+                        title="fetch exact location + full specs from the detail page">
+                  <ng-container *ngIf="detailState[r.property_id]?.loading">⏳</ng-container>
+                  <ng-container *ngIf="!detailState[r.property_id]?.loading">📍 {{ detailState[r.property_id]?.open ? 'hide' : 'details' }}</ng-container>
+                </button>
+              </td>
+              <td>
+                <button class="ghost xtiny" [class.sel]="isCompared(r.property_id)"
+                        (click)="toggleCompare(r)"
+                        title="pick two listings, then run the rent-vs-buy model on them">
+                  {{ isCompared(r.property_id) ? '✓ picked' : '⚖️ compare' }}
+                </button>
+              </td>
+              <td class="verdictcell">
+                <button type="button" class="vbtn bad" [class.on]="r['verdict'] === 'bad'"
+                        (click)="quickGrade(r, 'bad')" title="bad (click again to clear)">✕</button>
+                <button type="button" class="vbtn maybe" [class.on]="r['verdict'] === 'maybe'"
+                        (click)="quickGrade(r, 'maybe')" title="maybe">?</button>
+                <button type="button" class="vbtn good" [class.on]="r['verdict'] === 'good'"
+                        (click)="quickGrade(r, 'good')" title="good">♥</button>
+              </td>
+            </tr>
+            <tr class="detailrow" *ngIf="detailState[r.property_id]?.open">
+              <td [attr.colspan]="15">
+                <ng-container *ngIf="detailState[r.property_id] as st">
+                  <div class="err" *ngIf="st.error">⚠ {{ st.error }}</div>
+                  <ng-container *ngIf="st.data as d">
+                    <div class="locline">
+                      <a *ngIf="d.lat != null" [href]="mapsUrl(d)" target="_blank" rel="noopener" class="mapslink">
+                        📍 {{ d.lat }}, {{ d.lng }} — open in Google Maps ↗
+                      </a>
+                      <span class="muted" *ngIf="d.address">· {{ d.address }}</span>
+                      <span class="muted">· {{ specList(d).length }} fields<span *ngIf="d.cached"> · cached</span></span>
+                    </div>
+                    <div class="specs">
+                      <div class="spec" *ngFor="let e of specList(d)">
+                        <span class="k">{{ e.k }}</span><span class="v">{{ e.v }}</span>
+                      </div>
+                    </div>
+                  </ng-container>
+                </ng-container>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </ng-template>
+
+  <!-- ============ full detail modal (opened from a map popup) ============ -->
+  <div class="modal-backdrop" *ngIf="detailModal" (click)="closeDetails()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeDetails()" title="close">✕</button>
+      <ng-container *ngIf="detailModal.point as p">
+        <h3>{{ p.price_raw || fmtYen(p.price_yen) }} <span class="muted normal">· {{ p.category }}</span></h3>
+        <div class="muted mb">{{ detailModal.data?.address || p.address }}</div>
+
+        <div *ngIf="detailModal.loading" class="muted">loading full details…</div>
+        <div *ngIf="detailModal.error" class="err">⚠ {{ detailModal.error }}</div>
+
+        <ng-container *ngIf="detailModal.data as d">
+          <div class="locline">
+            <a *ngIf="d.lat != null" [href]="mapsUrl(d)" target="_blank" rel="noopener" class="mapslink">📍 {{ d.lat }}, {{ d.lng }} — Google Maps ↗</a>
+            <span class="muted">· {{ refPoi().icon }} {{ distanceToRef(p.lat, p.lng) | number:'1.1-1' }} km to {{ refPoi().name }} (approx.)</span>
+            <a [href]="routeUrl(d.lat != null ? d : p)" target="_blank" rel="noopener" class="mapslink"
+               [title]="'Google Maps route to ' + refPoi().name + ' (' + travelMode + ')'">· 🗺️ route ↗</a>
+            <span class="muted">· {{ specList(d).length }} fields</span>
+          </div>
+          <div class="keyfacts">
+            <div class="fact" *ngFor="let e of keyFacts(d)">
+              <span class="k">{{ e.label }}</span><span class="v">{{ e.value }}</span>
+            </div>
+          </div>
+          <details class="morefields" *ngIf="otherSpecs(d).length">
+            <summary>All scraped fields ({{ otherSpecs(d).length }})</summary>
+            <div class="specs modal-specs">
+              <div class="spec" *ngFor="let e of otherSpecs(d)">
+                <span class="k">{{ e.k }}</span><span class="v">{{ e.v }}</span>
+              </div>
+            </div>
+          </details>
+          <div class="mt"><a [href]="p.url" target="_blank" rel="noopener">open on SUUMO ↗</a></div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- ============ compare tray: two picks, then run the model ============ -->
+<div class="cmptray" *ngIf="compareSel.length && !compareOpen">
+  <span class="cmptray-title">⚖️ Compare</span>
+  <span class="cmpslot" *ngFor="let s of compareSel" [title]="s.label">
+    <b>{{ s.market === 'rent' ? 'rent' : (s.category === 'land' ? 'land' : 'buy') }}</b>
+    <span class="muted" *ngIf="s.price_raw">{{ s.price_raw }}</span>
+    <button class="linkbtn" (click)="toggleCompare({ property_id: s.property_id })"
+            title="remove from comparison">✕</button>
+  </span>
+  <span class="muted" *ngIf="compareSel.length < 2">pick at least one more listing</span>
+  <span class="muted" *ngIf="compareSel.length >= 2 && compareSel.length < COMPARE_MAX">
+    · up to {{ COMPARE_MAX }}</span>
+  <button *ngIf="compareSel.length >= 2 && !hasLandPick()" (click)="runCompare()">Run analysis</button>
+  <button class="ghost tiny" (click)="clearCompare()">clear</button>
+
+  <!-- A plot is not a home: confirm the house that would be built on it. -->
+  <div class="landask" *ngIf="hasLandPick() && compareSel.length >= 2">
+    <span class="landask-q">🏗️ A plot can’t be lived in — what would you build on it?</span>
+    <label>house size
+      <input type="number" min="20" max="500" step="10"
+             [(ngModel)]="compareAssumptions.land_build_m2"
+             (ngModelChange)="landSizeConfirmed = false"> m²
+    </label>
+    <label>build cost ¥/m²
+      <input type="number" step="10000" [(ngModel)]="compareAssumptions.build_cost_per_m2"
+             (ngModelChange)="landSizeConfirmed = false">
+    </label>
+    <span class="landask-cost">
+      = {{ fmtYen(compareAssumptions.land_build_m2 * compareAssumptions.build_cost_per_m2) }}
+      added to the plot price
+    </span>
+    <button (click)="confirmLandSize()">Confirm &amp; run</button>
+    <span class="note">the 建ぺい率 / 容積率 check is shown with the results</span>
+  </div>
+</div>
+
+<!-- ============ compare results ============ -->
+<div class="modal-backdrop" *ngIf="compareOpen" (click)="compareOpen = false">
+  <div class="modal cmpmodal" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <b>Rent vs buy — two listings, one model</b>
+      <button class="ghost tiny" (click)="compareOpen = false">✕ close</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted" *ngIf="compareLoading">Running the NPV model…</p>
+      <div class="err" *ngIf="compareError">⚠ {{ compareError }}</div>
+
+      <ng-container *ngIf="compareResult as res">
+        <!-- headline -->
+        <div class="cmpverdict">
+          <div class="cmpwin">
+            <span class="tag">{{ res.verdict.kind === 'rent_vs_buy' ? 'rent vs buy'
+              : res.verdict.kind === 'buy_vs_buy' ? 'buy vs buy' : 'rent vs rent' }}</span>
+            <b>{{ compareShort(res.options[res.verdict.cheaper_index]) }}</b> costs
+            <b>{{ fmtYen(res.verdict.pv_advantage) }}</b> less in present value
+            over {{ res.assumptions.simulation_years }} years<span
+              *ngIf="res.options.length > 2"> than the next best of the {{ res.options.length }}</span>.
+          </div>
+          <div class="note" *ngIf="res.verdict.baseline_note">{{ res.verdict.baseline_note }}</div>
+        </div>
+
+        <!-- two rents need no model: compare the monthly figure -->
+        <div class="rentonly" *ngIf="res.verdict.kind === 'rent_vs_rent'">
+          <b>Two rentals — no discounting needed.</b>
+          <span class="muted">One-off costs amortised over
+            {{ res.assumptions.simulation_years }} years.</span>
+          <table class="renttbl">
+            <tr><th></th><th *ngFor="let o of res.options">{{ o.price_raw }}</th></tr>
+            <tr><td>rent + 管理費</td>
+              <td *ngFor="let o of res.options">{{ fmtYen(o.derived['monthly_rent']) }}</td></tr>
+            <tr><td>renewal, per month</td>
+              <td *ngFor="let o of res.options">{{ fmtYen(o.derived['renewal_per_month']) }}</td></tr>
+            <tr><td>礼金 + 保証料 + moving</td>
+              <td *ngFor="let o of res.options">{{ fmtYen(o.derived['one_off_total']) }}</td></tr>
+            <tr class="tot"><td>effective monthly</td>
+              <td *ngFor="let o of res.options">{{ fmtYen(o.derived['effective_monthly']) }}</td></tr>
+          </table>
+        </div>
+
+        <!-- IRR: the headline, one curve per option against the anchor -->
+        <ng-container *ngIf="res.verdict.kind !== 'rent_vs_rent' && irrChart() as ic">
+          <div class="cmpchart">
+            <div class="cmpchart-title">
+              Return on choosing each option instead of
+              <b>{{ compareShort(res.options[res.verdict.anchor_index]) }}</b>, by exit year
+              <span class="anchorpick">
+                anchor:
+                <select [ngModel]="res.verdict.anchor_index"
+                        (ngModelChange)="setAnchor($event === null ? null : +$event)">
+                  <option *ngFor="let o of res.options; let i = index" [value]="i">
+                    {{ compareShort(o) }}
+                  </option>
+                </select>
+              </span>
+            </div>
+            <div class="anchorwarn" *ngIf="!res.verdict.irr_anchor_valid">
+              ⚠ {{ res.verdict.irr_anchor_note }}
+            </div>
+            <svg [attr.viewBox]="'0 0 ' + ic.w + ' ' + ic.h" class="cmpsvg">
+              <line *ngFor="let t of ic.yTicks" [attr.x1]="52" [attr.x2]="ic.w - 10"
+                    [attr.y1]="t.y" [attr.y2]="t.y" class="grid"></line>
+              <text *ngFor="let t of ic.yTicks" [attr.x]="48" [attr.y]="t.y + 3"
+                    class="tick" text-anchor="end">{{ t.label }}</text>
+              <text *ngFor="let t of ic.xTicks" [attr.x]="t.x" [attr.y]="ic.h - 8"
+                    class="tick" text-anchor="middle">{{ t.label }}</text>
+              <line [attr.x1]="52" [attr.x2]="ic.w - 10" [attr.y1]="ic.zeroY" [attr.y2]="ic.zeroY"
+                    class="zeroline"></line>
+              <line [attr.x1]="52" [attr.x2]="ic.w - 10" [attr.y1]="ic.hurdleY" [attr.y2]="ic.hurdleY"
+                    class="hurdleline"></line>
+              <text [attr.x]="ic.w - 12" [attr.y]="ic.hurdleY - 4" class="hurdlelbl"
+                    text-anchor="end">hurdle {{ ic.hurdlePct }}%</text>
+              <polyline *ngFor="let l of ic.lines" [attr.points]="l.pts" [attr.stroke]="l.color"
+                        fill="none" stroke-width="2"
+                        [attr.stroke-dasharray]="l.dashed ? '4 3' : null"></polyline>
+              <ng-container *ngFor="let l of ic.lines">
+                <circle *ngIf="l.peak" [attr.cx]="l.peak.x" [attr.cy]="l.peak.y" r="3.5"
+                        [attr.fill]="l.color" stroke="#fff" stroke-width="1.5"></circle>
+              </ng-container>
+            </svg>
+            <div class="legend">
+              <span class="lg" *ngFor="let l of ic.lines"><i [style.background]="l.color"></i>{{ l.label }}</span>
+            </div>
+            <div class="note">
+              Dot marks the peak — the exit year with the best rate. Above the hurdle line
+              the option beats leaving the money in your portfolio. Dashed curves free capital
+              instead of committing it, so their rate is a borrowing cost: lower is better there.
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- force an exit year, or let each option sit at its own best -->
+        <div class="sellbar" *ngIf="res.verdict.kind !== 'rent_vs_rent'">
+          <label>sell at</label>
+          <select [(ngModel)]="compareSellYear">
+            <option [ngValue]="null">each option's best year</option>
+            <option *ngFor="let y of sellYears()" [ngValue]="y">year {{ y }}</option>
+          </select>
+          <span class="muted">forcing a common year makes the options like-for-like;
+            their own peaks compare different holding periods.</span>
+        </div>
+
+        <!-- per-option cards -->
+        <div class="cmpcards">
+          <div class="cmpcard" *ngFor="let o of res.options; let i = index"
+               [class.win]="i === res.verdict.cheaper_index">
+            <div class="cmpcard-head">
+              <i [style.background]="COMPARE_COLORS[i % COMPARE_COLORS.length]"></i>
+              <span class="rankpill" *ngIf="res.options.length > 2"
+                    title="cheapest first, by present value of housing cost"
+                >#{{ res.verdict.ranking.indexOf(i) + 1 }}</span>
+              <b>{{ o.market === 'rent' ? 'RENT' : 'BUY' }}</b>
+              <span class="muted">{{ o.category }}</span>
+              <span class="erapill" *ngIf="o.era" [style.background]="eraColor(o.era)">
+                {{ eraShort(o.era) }}{{ o.era_approx ? ' ≈' : '' }}
+              </span>
+            </div>
+            <div class="cmpcard-title" [title]="o.title || ''">{{ o.title || o.property_id }}</div>
+            <div class="cmprow"><span>price</span>
+              <b>{{ o.price_raw || fmtYen(o.price_yen) }}</b></div>
+            <div class="cmprow"><span>size / layout</span>
+              <b>{{ o.building_m2 || o.land_m2 || '—' }} m² · {{ o.layout || '—' }}</b></div>
+            <div class="cmprow" [title]="commuteTip(o)">
+              <span>🎓 to LFIT</span>
+              <b *ngIf="o.commute_min != null">{{ o.commute_min }} min</b>
+              <b *ngIf="o.commute_min == null" class="dim">unknown</b>
+            </div>
+
+            <div class="cmprow big" *ngIf="monthlyAt(i) as m">
+              <span>monthly cash</span>
+              <b>{{ fmtYen(m.own) }}
+                <span class="delta" *ngIf="i !== res.verdict.anchor_index"
+                      [class.worse]="m.delta > 0" [class.better]="m.delta < 0">
+                  {{ m.delta > 0 ? '+' : '' }}{{ fmtYen(m.delta) }} vs anchor
+                </span>
+              </b>
+            </div>
+            <div class="cmprow"><span>cash on day one</span>
+              <b>{{ fmtYen(o.upfront_cash) }}</b></div>
+
+            <ng-container *ngIf="atExit(i) as ex">
+              <div class="cmprow"><span>sell in year</span><b>{{ exitYear(i) }}</b></div>
+              <div class="cmprow big"><span>NPV vs anchor</span>
+                <b [class.pos]="ex.npv > 0" [class.neg]="ex.npv < 0">{{ fmtYen(ex.npv) }}</b></div>
+              <div class="cmprow big"><span>IRR at that year</span>
+                <b [class.pos]="(ex.irr ?? -1) > res.verdict.hurdle_rate"
+                   [class.neg]="(ex.irr ?? 1) < res.verdict.hurdle_rate">
+                  {{ ex.irr != null ? (ex.irr * 100 | number:'1.1-2') + '%' : 'n/a' }}</b></div>
+              <div class="cmprow"><span>equity at sale</span><b>{{ fmtYen(equityAt(i)) }}</b></div>
+            </ng-container>
+
+            <div class="cmprow" *ngIf="res.verdict.irr_vs_anchor?.[i] as ir">
+              <span>best time to sell</span>
+              <b>{{ ir.peak_year != null
+                   ? 'year ' + ir.peak_year + ' · ' + (ir.peak_irr! * 100 | number:'1.1-2') + '%'
+                   : '—' }}</b>
+            </div>
+            <div class="cmprow" *ngIf="i === res.verdict.anchor_index">
+              <span></span><b class="dim">this is the anchor</b>
+            </div>
+
+            <div class="buildbox" *ngIf="o.buildable as bd"
+                 [class.bad]="bd.known && !bd.fits" [class.unknown]="!bd.known">
+              <div class="buildbox-head">
+                🏗️ modelled with a <b>{{ bd.want_m2 }} m²</b> house built on the plot
+              </div>
+              <div *ngIf="bd.known">
+                建ぺい率 {{ bd.coverage_pct }}% · 容積率 {{ bd.far_pct }}% on {{ bd.land_m2 }} m²
+                → max floor <b>{{ bd.max_floor_m2 | number:'1.0-0' }} m²</b>,
+                footprint {{ bd.max_footprint_m2 | number:'1.0-0' }} m²
+                <div *ngIf="bd.fits" class="okline">
+                  ✓ fits — needs {{ bd.storeys_needed }} storey{{ bd.storeys_needed === 1 ? '' : 's' }}
+                </div>
+                <div *ngIf="!bd.fits" class="badline">
+                  ⚠ does <b>not</b> fit: 容積率 caps this plot at
+                  {{ bd.max_floor_m2 | number:'1.0-0' }} m². The figures below still
+                  price a {{ bd.want_m2 }} m² house — lower the size to model something buildable.
+                </div>
+              </div>
+              <div *ngIf="!bd.known" class="badline">
+                ⚠ 建ぺい率 / 容積率 unknown for this plot — run “details” on it to fetch the
+                zoning, or treat the size as unchecked.
+              </div>
+            </div>
+            <details class="cmpderived">
+              <summary>how this listing was modelled</summary>
+              <div class="cmprow" *ngFor="let e of derivedList(o)"><span>{{ e.k }}</span><b>{{ e.v }}</b></div>
+            </details>
+            <a [href]="o.url" target="_blank" rel="noopener">open on SUUMO ↗</a>
+          </div>
+        </div>
+
+        <!-- crossover chart -->
+        <ng-container *ngIf="compareChart() as ch">
+          <div class="cmpchart">
+            <div class="cmpchart-title">
+              PV of housing cost if you move out at the end of year N
+              <span class="muted">— lower is better; a buy is credited its sale proceeds</span>
+            </div>
+            <svg [attr.viewBox]="'0 0 ' + ch.w + ' ' + ch.h" class="cmpsvg">
+              <line *ngFor="let t of ch.yTicks" [attr.x1]="62" [attr.x2]="ch.w - 10"
+                    [attr.y1]="t.y" [attr.y2]="t.y" class="grid"></line>
+              <text *ngFor="let t of ch.yTicks" [attr.x]="58" [attr.y]="t.y + 3"
+                    class="tick" text-anchor="end">{{ t.label }}</text>
+              <text *ngFor="let t of ch.xTicks" [attr.x]="t.x" [attr.y]="ch.h - 8"
+                    class="tick" text-anchor="middle">{{ t.label }}</text>
+              <polyline *ngFor="let l of ch.lines" [attr.points]="l.pts"
+                        [attr.stroke]="l.color" fill="none" stroke-width="2"></polyline>
+              <ng-container *ngIf="ch.cross as c">
+                <circle [attr.cx]="c.x" [attr.cy]="c.y" r="4" class="crossdot"></circle>
+                <text [attr.x]="c.x + 7" [attr.y]="c.y - 7" class="crosslbl">crossover · yr {{ c.year }}</text>
+              </ng-container>
+            </svg>
+            <div class="legend">
+              <span class="lg" *ngFor="let l of ch.lines"><i [style.background]="l.color"></i>{{ l.label }}</span>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- the article's own metric, when the pair is genuinely rent vs buy -->
+        <div class="cmpnpv" *ngIf="res.verdict.buy_vs_rent as bvr">
+          <b>Buy-vs-rent differential</b> <span class="muted">(same metric as the rent-or-buy article)</span>
+          <div class="cmprow"><span>NPV at year {{ res.assumptions.simulation_years }}</span>
+            <b>{{ fmtYen(bvr.npv_at_horizon) }}</b></div>
+          <div class="cmprow"><span>IRR of buying vs renting</span>
+            <b>{{ bvr.irr_at_horizon != null ? (bvr.irr_at_horizon * 100 | number:'1.1-1') + ' %' : '—' }}</b></div>
+          <div class="cmprow"><span>break-even</span>
+            <b>{{ bvr.breakeven_year != null ? 'year ' + bvr.breakeven_year : 'never within the horizon' }}</b></div>
+        </div>
+
+        <!-- stepping up the ladder: the multi-option form of an IRR decision -->
+        <div class="cmpladder" *ngIf="res.verdict.steps?.length">
+          <div class="cmpladder-head">
+            Is the step up worth it?
+            <span class="muted">— return on the <b>extra</b> capital each bigger option needs,
+              against your {{ (res.verdict.hurdle_rate * 100) | number:'1.1-2' }}% hurdle</span>
+          </div>
+          <div class="stepline" *ngFor="let st of res.verdict.steps"
+               [class.good]="st.clears_hurdle === true" [class.bad]="st.clears_hurdle === false">
+            <span class="steparrow">
+              {{ compareShort(res.options[st.from_index]) }} → {{ compareShort(res.options[st.to_index]) }}
+            </span>
+            <span class="stepcap">+{{ fmtYen(st.extra_capital) }} capital</span>
+            <span class="stepirr">
+              {{ st.incremental_irr == null ? 'no IRR' : ((st.incremental_irr * 100 | number:'1.1-2') + '%') }}
+            </span>
+            <span class="stepverdict">
+              {{ st.clears_hurdle == null ? '—' : (st.clears_hurdle ? '✓ clears it' : '✗ below hurdle') }}
+            </span>
+          </div>
+          <div class="note">
+            An IRR is always a return on choosing one thing <em>instead of</em> another, so it
+            needs a baseline. Here each rung is measured against the rung below it, and the
+            timing figures on each card are measured against renting
+            ({{ res.verdict.baseline_source }}) — the counterfactual to owning at all.
+            Ranking options by their own IRR would favour whichever ties up least capital,
+            regardless of how much value it creates. Incremental IRR asks the decision
+            question instead, and always agrees with the PV ranking above.
+          </div>
+        </div>
+
+        <!-- assumptions -->
+        <details class="cmpassume" [open]="compareAssumptionsOpen">
+          <summary>Assumptions <span class="muted">— shared by both sides; edit and re-run</span></summary>
+          <div class="cmpgrid">
+            <label>loan rate %<input type="number" step="0.1" [ngModel]="asPct(compareAssumptions.loan_rate)"
+              (ngModelChange)="setPct('loan_rate', $event)"></label>
+            <label>loan term yr<input type="number" [(ngModel)]="compareAssumptions.loan_term"></label>
+            <label>down payment %<input type="number" step="1" [ngModel]="asPct(compareAssumptions.down_payment_pct)"
+              (ngModelChange)="setPct('down_payment_pct', $event)"></label>
+            <label>broker fee %<input type="number" step="0.1" [ngModel]="asPct(compareAssumptions.broker_fee_pct)"
+              (ngModelChange)="setPct('broker_fee_pct', $event)"></label>
+            <label>maintenance %/yr<input type="number" step="0.1" [ngModel]="asPct(compareAssumptions.maintenance_rate)"
+              (ngModelChange)="setPct('maintenance_rate', $event)"></label>
+            <label title="Land growth ABOVE rent inflation. 0 = land tracks rents and gross yields stay flat. Anything higher is a bet on yield compression.">
+              land vs rents %<input type="number" step="0.5" [ngModel]="asPct(compareAssumptions.land_spread_vs_rent)"
+              (ngModelChange)="setPct('land_spread_vs_rent', $event)"></label>
+            <label title="The one inflation number: rents, ownership costs and land all key off it. The loan rate stays nominal on purpose — that fixed contract is the real benefit of owning.">
+              inflation %<input type="number" step="0.5" [ngModel]="asPct(compareAssumptions.rent_inflation)"
+              (ngModelChange)="setPct('rent_inflation', $event)"></label>
+            <label title="REAL return on the money you would otherwise invest. The nominal discount rate is derived from this plus inflation — holding it nominal made high inflation look like a windfall for buying.">
+              opportunity cost, real %<input type="number" step="0.5" [ngModel]="asPct(compareAssumptions.opportunity_cost_real)"
+              (ngModelChange)="setPct('opportunity_cost_real', $event)"></label>
+            <label title="不動産取得税 + 登録免許税 + 司法書士 + 印紙税">
+              acquisition costs %<input type="number" step="0.5" [ngModel]="asPct(compareAssumptions.acquisition_cost_pct)"
+              (ngModelChange)="setPct('acquisition_cost_pct', $event)"></label>
+            <label title="融資手数料 / 保証料 charged at drawdown">
+              loan fee %<input type="number" step="0.1" [ngModel]="asPct(compareAssumptions.loan_upfront_fee_pct)"
+              (ngModelChange)="setPct('loan_upfront_fee_pct', $event)"></label>
+            <label title="住宅ローン控除: credit on the year-end balance">
+              mortgage credit yr<input type="number" [(ngModel)]="compareAssumptions.mortgage_credit_years"></label>
+            <label title="譲渡所得税 within 5 years of purchase">
+              CGT short %<input type="number" step="0.1" [ngModel]="asPct(compareAssumptions.cgt_short_rate)"
+              (ngModelChange)="setPct('cgt_short_rate', $event)"></label>
+            <label title="譲渡所得税 after 5 years">
+              CGT long %<input type="number" step="0.1" [ngModel]="asPct(compareAssumptions.cgt_long_rate)"
+              (ngModelChange)="setPct('cgt_long_rate', $event)"></label>
+            <label title="3,000万円特別控除 for a primary residence">
+              CGT exemption ¥<input type="number" step="1000000" [(ngModel)]="compareAssumptions.cgt_exemption"></label>
+            <label title="礼金, charged on move-in">
+              key money mo<input type="number" step="0.5" [(ngModel)]="compareAssumptions.key_money_months"></label>
+            <label title="haircut on the sale for time on market / negotiation">
+              sale haircut %<input type="number" step="0.5" [ngModel]="asPct(compareAssumptions.sale_discount_pct)"
+              (ngModelChange)="setPct('sale_discount_pct', $event)"></label>
+            <label>horizon yr<input type="number" [(ngModel)]="compareAssumptions.simulation_years"></label>
+            <label title="replacement cost of the building as new — drives the land/building split">
+              build cost ¥/m²<input type="number" step="10000" [(ngModel)]="compareAssumptions.build_cost_per_m2"></label>
+            <label *ngIf="compareResult?.verdict?.kind === 'buy_vs_buy'"
+                   title="only lets the engine run for buy-vs-buy; cancels out of the difference">
+              baseline rent ¥/mo<input type="number" step="10000" [(ngModel)]="compareAssumptions.baseline_monthly_rent"></label>
+          </div>
+          <p class="muted taxnote">
+            Land growth is entered as a <b>spread over rent inflation</b>, currently
+            {{ asPct(compareAssumptions.land_spread_vs_rent) }}% + {{ asPct(compareAssumptions.rent_inflation) }}%
+            = <b>{{ asPct(compareAssumptions.land_spread_vs_rent + compareAssumptions.rent_inflation) }}%/yr</b>.
+            A positive spread means the property outgrows the rent it produces, so gross
+            yields fall for the whole horizon — a real bet, worth making on purpose.
+            Inflation drives rents, ownership costs and land together; the real
+            opportunity cost is held fixed so the nominal discount rate moves with it
+            (currently <b>{{ asPct((1 + compareAssumptions.opportunity_cost_real) * (1 + compareAssumptions.rent_inflation) - 1) }}%</b>
+            nominal). Only the loan rate stays nominal — a fixed-rate mortgage is a
+            nominal contract, and inflation eroding it is a genuine benefit of owning,
+            not an artifact. Property tax rates:
+            <b>固定資産税 1.4% + 都市計画税 0.3%</b> on 70% of the current value, fixed in
+            <code>npv.py</code>. Each buy card shows the yen amount under
+            “how this listing was modelled”. Note the 住宅用地の特例 (⅙ / ⅓ assessment
+            on small residential land) is <b>not</b> applied, so tax is overstated
+            for a typical home.
+          </p>
+          <button (click)="runCompare()">Re-run with these</button>
+        </details>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- ============ manual review: one card at a time ============ -->
+<div class="modal-backdrop" *ngIf="reviewOpen" (click)="reviewOpen = false">
+  <div class="modal revmodal" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="reviewOpen = false" title="close (Esc)">✕</button>
+    <div class="revhead">
+      <b>Review</b>
+      <span class="revprog">{{ reviewIndex + 1 }} / {{ reviewQueue.length }}</span>
+      <span class="muted" *ngIf="reviewCounts">
+        {{ reviewCounts['good'] || 0 }} good · {{ reviewCounts['maybe'] || 0 }} maybe
+        · {{ reviewCounts['bad'] || 0 }} bad
+      </span>
+    </div>
+
+    <div class="revbody" *ngIf="reviewCard as c">
+      <div class="revgallery">
+        <img *ngIf="reviewPhotos.length" [src]="reviewPhotos[reviewPhotoIndex]" alt="" loading="lazy">
+        <div class="revphoto-none" *ngIf="!reviewPhotos.length">
+          {{ reviewPhotosLoading ? 'loading photos…' : 'no photos on this listing' }}
+        </div>
+        <button class="galnav prev" *ngIf="reviewPhotos.length > 1"
+                (click)="photoStep(-1)" title="previous photo (←)">‹</button>
+        <button class="galnav next" *ngIf="reviewPhotos.length > 1"
+                (click)="photoStep(1)" title="next photo (→)">›</button>
+        <span class="galcount" *ngIf="reviewPhotos.length">
+          {{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}
+          <span *ngIf="reviewPhotosLoading">· loading…</span>
+        </span>
+      </div>
+
+      <div class="revside">
+        <div class="revprice">
+          {{ c.price_raw || fmtYen(c.price_yen) }}
+          <span class="verdictpill" *ngIf="verdictMeta(c.verdict) as m"
+                [style.background]="m.color">{{ m.icon }} {{ m.label }}</span>
+        </div>
+        <div class="revline muted">{{ c.property_label || c.category }}</div>
+        <div class="revline">
+          {{ c.layout || '—' }} ·
+          {{ c.building_m2 ? c.building_m2 + ' m²' : (c.land_m2 ? c.land_m2 + ' m² land' : '—') }}
+          <span *ngIf="c.build_year_est"> · built {{ c.build_year_est }}</span>
+        </div>
+        <div class="revline strong" *ngIf="c.commute_min != null">
+          🎓 {{ c.commute_min }} min to LFIT
+          <span class="muted">{{ c.commute_walk_min }}′ to {{ c.commute_from }},
+            {{ c.commute_transit_min }}′ train</span>
+        </div>
+        <div class="revline" *ngIf="c.capacity as cap">
+          🏗️ fits {{ cap.max_floor_m2 }} m², {{ cap.max_footprint_m2 }} m² footprint
+        </div>
+        <div class="revline muted">{{ c.address }}</div>
+        <a [href]="c.url" target="_blank" rel="noopener">open the full listing on SUUMO ↗</a>
+
+        <label class="revlabel">why — click any that apply</label>
+        <div class="revtags">
+          <button type="button" class="chip" *ngFor="let t of QUICK_TAGS"
+                  [class.sel]="hasQuickTag(t)" (click)="toggleQuickTag(t)">{{ t }}</button>
+        </div>
+        <input class="revnote" [(ngModel)]="reviewTagInput"
+               placeholder="…or type your own, comma separated">
+        <input class="revnote" [(ngModel)]="reviewNote" placeholder="note (optional)">
+      </div>
+    </div>
+
+    <div class="revactions" *ngIf="reviewCard">
+      <button class="revbad" (click)="grade('bad')">✕ bad <kbd>1</kbd></button>
+      <button class="revmaybe" (click)="grade('maybe')">? maybe <kbd>2</kbd></button>
+      <button class="revgood" (click)="grade('good')">♥ good <kbd>3</kbd></button>
+      <button class="ghost" (click)="nextCard()">skip <kbd>space</kbd></button>
+      <button class="ghost tiny" (click)="nextCard(-1)">← back</button>
+      <button class="ghost tiny" *ngIf="reviewCard?.verdict" (click)="grade(null)">clear</button>
+      <span class="muted revhint">← → browse photos · saves as you go</span>
+    </div>
+  </div>
+</div>

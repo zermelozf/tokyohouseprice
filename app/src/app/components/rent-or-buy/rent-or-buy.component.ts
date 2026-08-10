@@ -30,17 +30,21 @@ interface NpvParams {
     fully_amortized_age: number;
     appreciation_rate: number;
     maintenance_rate: number;
+    property_tax_rate?: number;
   };
   loan: {
     principal: number;
     down_payment: number;
     yearly_interest: number;
     term: number;
+    upfront_fee?: number;
   };
   rent: {
     monthly_rent: number;
     renewal_fee_months: number;
     inflation_rate: number;
+    key_money_months?: number;
+    guarantee_months?: number;
   };
   bank_interest_rate: number;
   simulation_years: number;
@@ -609,18 +613,26 @@ export class RentOrBuyComponent implements AfterViewInit, OnDestroy {
         house_age: this.buy.buildingAge,
         fully_amortized_age: this.buy.amortizationPeriod,
         appreciation_rate: this.macro.landAppreciation / 100,
-        maintenance_rate: this.buy.maintenance / 100
+        maintenance_rate: this.buy.maintenance / 100,
+        // Was collected by the form and written into the share URL, but never
+        // sent — the slider moved and nothing changed.
+        property_tax_rate: this.buy.propertyTax / 100
       },
       loan: {
         principal: principal,
         down_payment: downPayment,
         yearly_interest: this.loan.loanRate / 100,
-        term: this.loan.loanPeriod
+        term: this.loan.loanPeriod,
+        // 融資手数料 — collected by the form, previously never sent.
+        upfront_fee: principal * (this.loan.loanFee / 100)
       },
       rent: {
         monthly_rent: this.rent.monthlyRent * 10000,
         renewal_fee_months: this.rent.renewal,
-        inflation_rate: this.macro.inflationRate / 100
+        inflation_rate: this.macro.inflationRate / 100,
+        // 礼金 and 保証料 are entered in 万円; the model wants them in months.
+        key_money_months: this.rent.monthlyRent ? this.rent.giftMoney / this.rent.monthlyRent : 0,
+        guarantee_months: this.rent.monthlyRent ? this.rent.guarantee / this.rent.monthlyRent : 0
       },
       bank_interest_rate: 0.01,
       simulation_years: this.macro.simulationYears,
