@@ -18,6 +18,7 @@ pt = joblib.load('model/proptrans.pkl')
 origins = [
     "http://localhost",
     "http://localhost:4200",
+    "http://stellar-dev",
     "https://tokyohouseprice.web.app"
 ]
 app = FastAPI(title="Tokyo Housing Price Prediction API")

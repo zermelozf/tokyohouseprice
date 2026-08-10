@@ -61,7 +61,62 @@ CREATE TABLE IF NOT EXISTS listings_snapshot (
 
 CREATE INDEX IF NOT EXISTS idx_snap_query
     ON listings_snapshot (market, category, ward, scrape_date);
+
+-- Detail-page enrichment. Same snapshot model as listings_snapshot: one row per
+-- (property, scrape_date) — re-scraping the same day updates the row, a new day
+-- inserts a new snapshot (time series). Holds the exact geocoded location the
+-- list pages lack, plus the full detail spec table (every 重要事項/takken-relevant
+-- label→value pair) as JSON so we can promote fields to a model without re-scraping.
+CREATE TABLE IF NOT EXISTS property_detail (
+    property_id  TEXT NOT NULL,
+    scrape_date  TEXT NOT NULL,
+    url          TEXT,
+    lat          REAL,
+    lng          REAL,
+    address      TEXT,
+    title        TEXT,
+    specs_json   TEXT,        -- full {label: value} map from the detail page
+    n_specs      INTEGER,
+    fetched_at   TEXT,
+    PRIMARY KEY (property_id, scrape_date)
+);
+
+-- Transit time from a station to the Lycée Français. Timetables move rarely,
+-- so this is fetched once and cached; `via` records which of the walkable
+-- stations gave the best total.
+-- Every station within reach, from OpenStreetMap. Fetched once; the commute
+-- job walks this list.
+CREATE TABLE IF NOT EXISTS station_catalog (
+    station      TEXT PRIMARY KEY,
+    lat          REAL,
+    lng          REAL,
+    distance_km  REAL,
+    fetched_at   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS station_commute (
+    station             TEXT PRIMARY KEY,
+    via                 TEXT,
+    transit_min         INTEGER,
+    transfers           INTEGER,
+    fare_yen            INTEGER,
+    walk_from_dest_min  INTEGER,
+    total_min           INTEGER,
+    -- 0 = coarse (one destination), 1 = refined against all of them.
+    refined             INTEGER DEFAULT 0,
+    fetched_at          TEXT
+);
 """
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Drop the old single-row property_detail (keyed on property_id only) so it
+    is recreated with the (property_id, scrape_date) snapshot schema. It's a
+    re-fetchable cache, so dropping it loses nothing permanent."""
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(property_detail)").fetchall()]
+    if cols and "scrape_date" not in cols:
+        conn.execute("DROP TABLE property_detail")
+        conn.commit()
 
 
 def connect() -> sqlite3.Connection:
@@ -74,6 +129,7 @@ def connect() -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection | None = None) -> sqlite3.Connection:
     conn = conn or connect()
+    _migrate(conn)
     conn.executescript(SCHEMA)
     conn.commit()
     return conn

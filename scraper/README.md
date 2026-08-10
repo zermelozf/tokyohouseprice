@@ -95,6 +95,94 @@ not depend on the API/dashboard being up). On macOS use `launchd` (native) or cr
 For `launchd`, create a `~/Library/LaunchAgents/com.suumo.crawl.plist` with a
 `StartCalendarInterval` that runs the same `python -m scraper crawl …` command.
 
+## Daily report email
+
+`daily-report` mails the morning summary: which crawlers ran, the diff against
+the previous crawl (new / delisted / changed), and a PNG of that day's listings
+on a map. It reads the SQLite DB directly, so it needs neither the API nor the
+dev server running, and it renders the map without a browser (basemap tiles +
+Pillow) so it is safe to run from cron.
+
+```bash
+# Are the credentials visible and the sender verified? Sends nothing.
+python -m scraper daily-report --check
+
+# Build it without sending — writes the HTML and the map PNG for inspection.
+python -m scraper daily-report --dry-run --out /tmp/report.html
+
+# Send it.
+python -m scraper daily-report
+```
+
+### Where the credentials go
+
+In a project-local `.env` at the repo root — git-ignored, so nothing machine-wide
+and nothing committed:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+$EDITOR .env          # fill in AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+python -m scraper daily-report --check
+```
+
+`scraper/config.py` loads it into `os.environ` before anything reads a variable,
+so boto3 and every other consumer pick it up with no extra wiring. Real
+environment variables always win over the file, which keeps one-off overrides
+working:
+
+```bash
+REPORT_TO_EMAIL=someone@else.com python -m scraper daily-report
+```
+
+`.env.example` is tracked and documents every variable — keep real values out of
+it. Point somewhere else with `SUUMO_ENV_FILE=/path/to/other.env` if needed.
+
+The IAM user needs `ses:SendRawEmail`, plus the read-only `ses:GetIdentity*`,
+`ses:GetSendQuota` and `ses:GetAccountSendingEnabled` that `--check` uses.
+
+Delivery is AWS SES in **eu-west-1** — the same account and region datakokoro's
+Firebase Trigger Email extension already delivers through
+(`email-smtp.eu-west-1.amazonaws.com`). Two transports, because SES API and SES
+SMTP take different credentials and you may only hold one of them:
+
+| variable | default | notes |
+|---|---|---|
+| `REPORT_TO_EMAIL` | `arnaud.rachez@…,ms.estelle.dumas@…` | recipients, comma-separated |
+| `REPORT_FROM_EMAIL` | `contact@linalgo.com` | must be a **verified** SES identity in this region |
+| `REPORT_DASHBOARD_URL` | `http://stellar-dev/tokyohouseprice/scraper` | where the map image links |
+| `SUUMO_ENV_FILE` | `<repo>/.env` | project-local config file |
+| `AWS_SES_REGION_NAME` | `eu-west-1` | verification is per-region |
+| `REPORT_TRANSPORT` | `ses` | `ses` = boto3 API, `smtp` = SES SMTP endpoint |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | boto3 chain | for `REPORT_TRANSPORT=ses` |
+| `SMTP_USER` / `SMTP_PASSWORD` | — | for `REPORT_TRANSPORT=smtp` |
+| `SMTP_HOST` / `SMTP_PORT` | `email-smtp.<region>.amazonaws.com` / `465` | |
+
+An SES **SMTP password is derived from** an IAM secret key — they are not the
+same string, and having one does not give you the other. Use `smtp` when what
+you have is the credential pair the Trigger Email extension was configured with;
+use `ses` when you have the IAM access key and secret.
+
+SES rejects any sender that is not a verified identity, and verification is
+per-region — an address verified in `us-east-1` will not send from `eu-west-1`.
+`--check` reports exactly that, along with whether the account is still in the
+SES sandbox (where the *recipient* must be verified too).
+
+
+```
+# cron — daily 08:00. No env vars on the line: `cd` into the repo and .env is
+# picked up from there.
+0 8 * * * ./.venv/bin/python -m scraper daily-report >> scraper/data/report.log 2>&1
+```
+
+Note the ordering: the crawlers currently run at ~12:15–12:35, so an 08:00
+report covers **the previous day's** crawl (it always reports the newest crawl
+in the DB). To have the morning mail describe that same morning, move the
+crawler jobs earlier than 08:00 in the dashboard's Crawlers tab.
+
+If SES is still in sandbox mode the recipient must also be a verified identity;
+sending to arbitrary addresses needs production access on the account.
+
 ## Fetching backend (anti-bot)
 
 Default is a direct, polite (2–4s delay, retries/backoff) `httpx` request. If you

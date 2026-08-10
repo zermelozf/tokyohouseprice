@@ -10,6 +10,24 @@
 .hd .sub { color: #666; font-size: 0.8rem; }
 .hd .status { margin-left: auto; }
 
+/* tab bar */
+.tabs {
+  display: flex; gap: 0.4rem; margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+.tabs button {
+  background: none; border: none; box-shadow: none; cursor: pointer;
+  padding: 0.7rem 1.1rem; font-size: 0.95rem; font-weight: 600; font-family: inherit;
+  color: #888; border-bottom: 2px solid transparent; border-radius: 0;
+  margin-bottom: -1px; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.tabs button:hover { color: #FF69B4; background: none; transform: none; box-shadow: none; }
+.tabs button.sel { color: #FF1493; border-bottom-color: #FF69B4; }
+.tabdot {
+  width: 8px; height: 8px; border-radius: 50%; background: #2f9e44;
+  animation: pulse 1.4s infinite;
+}
+
 .card {
   background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 1.5rem; margin-bottom: 1.5rem;
@@ -73,7 +91,22 @@ th, td { text-align: left; padding: 0.55rem 0.6rem; white-space: nowrap; }
 th { color: #666; font-weight: 600; position: sticky; top: 0; background: #f8f9fa; border-bottom: 1px solid #eee; }
 td { border-bottom: 1px solid #f0f0f0; }
 tbody tr:hover { background: #fafbfc; }
-td.addr { white-space: normal; max-width: 260px; color: #666; }
+/* clickable numeric headers (asc → desc → unsorted) */
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: #333; background: #f1f3f5; }
+th.sortable.sorted { color: #1a73e8; }
+/* reserve the arrow's space so the header doesn't shift width when sorted */
+th.sortable .arrow { display: inline-block; width: 0.75em; font-size: 0.7rem; }
+/* A definite width (not max-width, which auto-layout tables ignore) bounds this
+   wrapping column so the 12-col table doesn't balloon past the card. */
+td.addr { white-space: normal; width: 200px; word-break: break-word; color: #666; }
+
+/* Layout can be long (e.g. 3LDK+S納戸) — truncate with ellipsis, full text on
+   hover. A fixed-width inline-block is what reliably forces the ellipsis. */
+td.layout span {
+  display: inline-block; width: 68px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
+}
 
 a { color: #ec4899; text-decoration: none; }
 a:hover { color: #db2777; text-decoration: underline; }
@@ -87,4 +120,736 @@ a:hover { color: #db2777; text-decoration: underline; }
   padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem;
 }
 
-@media (max-width: 768px) { .scraper { padding: 1rem; } }
+/* live crawl banner */
+.running-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: #eef7ff; border: 1px solid #cfe6ff; color: #1e5b96;
+  padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem;
+}
+.running-banner .src { font-weight: 600; }
+.running-banner .dot {
+  width: 9px; height: 9px; border-radius: 50%; background: #2f9e44;
+  box-shadow: 0 0 0 0 rgba(47, 158, 68, 0.5); animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(47, 158, 68, 0.5); }
+  70% { box-shadow: 0 0 0 7px rgba(47, 158, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(47, 158, 68, 0); }
+}
+
+/* scheduled jobs table */
+table.jobs td, table.jobs th { vertical-align: middle; }
+table.jobs tr.disabled td { color: #aaa; }
+table.jobs .jname { font-weight: 600; color: #333; }
+table.jobs tr.disabled .jname { color: #aaa; }
+table.jobs .jcfg { color: #666; white-space: nowrap; }
+.state {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: #4CAF50;  /* scheduled/active */
+}
+.state.on { background: #2f9e44; animation: pulse 1.4s infinite; }
+.state.paused { background: #ccc; }
+.ok { color: #2f9e44; }
+.err { color: #d6336c; cursor: help; }
+.jactions { white-space: nowrap; }
+button.xtiny {
+  padding: 0.25rem 0.5rem; font-size: 0.85rem; line-height: 1; margin-left: 0.2rem;
+  box-shadow: none;
+}
+button.xtiny.danger { color: #d6336c; border-color: #f3c0d1; }
+button.xtiny.danger:hover { background: #fdf0f4; }
+
+/* job create/edit form */
+.jobform {
+  margin-top: 1.25rem; padding: 1.25rem; border: 1px solid #eee;
+  border-radius: 8px; background: #fbfcfd;
+}
+.jobform h3 { margin: 0 0 1rem; font-size: 0.95rem; color: #333; }
+.frow { margin-bottom: 1rem; }
+.frow > label { font-weight: 500; }
+.frow input[type="text"], .frow input:not([type]) {
+  width: 100%; padding: 0.55rem; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 0.9rem; color: #333;
+}
+.frow.inline { display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; }
+.frow.inline .small { width: 120px; }
+.frow.inline .small input { width: 100%; }
+.chk { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #444; margin: 0; }
+.chk input { width: auto; }
+
+/* segmented toggles + chips */
+.seg { display: inline-flex; gap: 0.3rem; flex-wrap: wrap; align-items: center; }
+.seg.wrap { display: flex; }
+.seg button {
+  background: #fff; color: #555; border: 1px solid #ddd; box-shadow: none;
+  padding: 0.4rem 0.8rem; font-size: 0.83rem; border-radius: 6px; font-weight: 500;
+}
+.seg button:hover { background: #fdf2f8; border-color: #FF69B4; color: #FF69B4; transform: none; }
+.seg button.sel { background: #FF69B4; color: #fff; border-color: #FF69B4; }
+.seg .mins { width: 80px; padding: 0.4rem; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip {
+  background: #fff; color: #555; border: 1px solid #ddd; box-shadow: none;
+  padding: 0.3rem 0.7rem; font-size: 0.8rem; border-radius: 999px; font-weight: 500;
+}
+.chip:hover { background: #fdf2f8; border-color: #FF69B4; color: #FF69B4; transform: none; }
+.chip.sel { background: #FF69B4; color: #fff; border-color: #FF69B4; }
+
+/* crawler-form preview + starter tiles */
+.actions.top { margin-top: 0.6rem; }
+.previewbox {
+  margin: 0 0 1rem; padding: 1rem; border: 1px solid #eee; border-radius: 8px;
+  background: #fff;
+}
+.previewbox > .muted { margin-bottom: 0.6rem; }
+.tile { position: relative; }
+.tile .use {
+  margin-top: 0.35rem; align-self: flex-start; background: #fff; color: #FF69B4;
+  border: 1px solid #FF69B4; box-shadow: none; padding: 0.15rem 0.5rem;
+  font-size: 0.72rem; border-radius: 5px;
+}
+.tile .use:hover { background: #fdf2f8; transform: none; box-shadow: none; }
+
+/* search-tab filter bar */
+.searchbar select {
+  width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 0.9rem; color: #333; background: #fff; font-family: inherit;
+}
+.searchbar select:focus { outline: none; border-color: #FF69B4; }
+.searchbar input[type="date"] {
+  width: 100%; padding: 0.45rem 0.5rem; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 0.9rem; color: #333; background: #fff; font-family: inherit;
+}
+.searchbar input[type="date"]:focus { outline: none; border-color: #FF69B4; }
+.searchbar .small { width: 150px; }
+
+/* Report map */
+.mapwrap { height: 620px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+#scraperMap { height: 100%; width: 100%; }
+/* export links — deliberately quiet: small text links, and the confirmation
+   line only appears once something has actually been downloaded. */
+.exportlinks { display: inline-flex; gap: 0.55rem; align-self: center; }
+.exportlinks .linkbtn:disabled { color: #bbb; cursor: default; text-decoration: none; }
+.exportnote { flex-basis: 100%; font-size: 0.75rem; color: #888; }
+/* 耐震基準 filter: chips carry their map colour so the swatch doubles as legend.
+   The control bar is a wrap-flex row sized for 150px select columns, so the
+   chip row and the legend each claim a full line instead of being squeezed in
+   beside the selects. */
+.searchbar .era-filter, .searchbar .legend { flex-basis: 100%; margin-left: 0; }
+.era-filter { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.era-filter .era-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: #888; cursor: help;
+}
+.era-filter .chip { display: inline-flex; align-items: center; gap: 0.35rem; }
+.era-filter .chip i {
+  width: 9px; height: 9px; border-radius: 50%; display: inline-block;
+}
+.era-filter .note { font-size: 0.75rem; color: #999; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center; margin-left: auto; }
+.legend .lg { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: #666; }
+.legend .lg i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+/* popup + POI markers are created by Leaflet, outside view encapsulation */
+:host ::ng-deep .mappop { font-size: 0.82rem; line-height: 1.5; }
+:host ::ng-deep .poi-icon {
+  font-size: 18px; line-height: 22px; text-align: center;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35));
+}
+:host ::ng-deep .poi-label {
+  background: rgba(255,255,255,0.9); border: 1px solid #d0d0d0; color: #333;
+  font-size: 0.72rem; font-weight: 600; padding: 1px 5px; border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+:host ::ng-deep .poi-label::before { display: none; }   /* hide tooltip arrow */
+:host ::ng-deep .osm-icon {
+  font-size: 13px; line-height: 16px; text-align: center; opacity: 0.7;
+}
+/* listing dots ride above the POI icons and get a soft shadow so they pop */
+:host ::ng-deep .listing-dot { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45)); }
+
+/* stacked listings at one address: a count badge that fans out on click */
+:host ::ng-deep .cluster-dot { background: none; border: none; }
+:host ::ng-deep .cluster-dot span {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  color: #fff; font-size: 12px; font-weight: 700;
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  border: 2.5px solid #fff; box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  cursor: pointer; transition: transform 0.12s ease;
+}
+:host ::ng-deep .cluster-dot:hover span { transform: scale(1.15); }
+:host ::ng-deep .census-tip {
+  font-size: 0.78rem; line-height: 1.45; padding: 5px 8px;
+  border: none; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+:host ::ng-deep .census-tip-v { font-size: 0.95rem; font-weight: 600; color: #222; }
+:host ::ng-deep .census-tip-k { color: #888; }
+/* nearby-POI toolbar (chip toggles) */
+.poibar {
+  margin-top: 0.9rem; padding: 0.85rem 1rem; border: 1px solid #eee;
+  border-radius: 8px; background: #fbfcfd;
+}
+.poibar-head {
+  display: flex; align-items: center; gap: 0.5rem 0.9rem; flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+.poibar-title { font-weight: 600; color: #444; font-size: 0.9rem; }
+.poibar-actions { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
+.poi-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.poi-chips .chip { padding: 0.34rem 0.75rem; }
+
+/* --- Report tab: crawl-to-crawl diff --- */
+.diffcards { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1rem 0 0.4rem; }
+.diffcard {
+  flex: 1 1 7rem; padding: 0.6rem 0.8rem; border: 1px solid #eee;
+  border-radius: 8px; background: #fbfcfd; text-align: center;
+}
+.diffcard b { display: block; font-size: 1.5rem; line-height: 1.1; color: #222; }
+.diffcard span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: #888; }
+.diffcard.new  { border-color: #b7e3c6; background: #f2fbf5; }
+.diffcard.gone { border-color: #f3c2c2; background: #fdf4f4; }
+.diffcard.chg  { border-color: #ffd9a8; background: #fffaf2; }
+.diffcard.warn { border-color: #e2d4a8; background: #fdfaf0; }
+.diffcard.relist { border-color: #c3d5f0; background: #f4f8fd; }
+
+.scopewarn {
+  margin: 0.8rem 0; padding: 0.7rem 0.9rem; font-size: 0.82rem; line-height: 1.55;
+  border: 1px solid #ecdfae; border-radius: 8px; background: #fdfaf0; color: #6b5a2a;
+}
+.scopewarn b { color: #4a3f1c; }
+
+.diffh { margin: 1.4rem 0 0.5rem; font-size: 0.95rem; }
+.diffh .normal { font-weight: 400; }
+
+.difftable { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.difftable th {
+  text-align: left; font-weight: 600; color: #888; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 0.35rem 0.5rem; border-bottom: 1px solid #eee; white-space: nowrap;
+}
+.difftable td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #f4f4f4; vertical-align: top; }
+.difftable .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.difftable .num.zero { color: #c0392b; font-weight: 600; }
+/* Agent copy: long, low-information, so it trails the numbers and is clipped
+   to one line. The full text stays available as the link's tooltip. */
+.difftable .titlecell {
+  max-width: 22rem; width: 22rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.difftable .titlecell a {
+  display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #888; font-size: 0.76rem; text-decoration: none;
+}
+.difftable .titlecell a:hover { color: #FF69B4; text-decoration: underline; }
+.difftable td.num { font-variant-numeric: tabular-nums; }
+.difftable .urlcell { max-width: 30rem; word-break: break-all; }
+.difftable .urlcell a { color: #999; font-size: 0.72rem; }
+.difftable .scopecell { color: #a08a4a; white-space: nowrap; }
+
+.changerow td { background: #fbfcfd; }
+.chg-line {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem;
+  padding: 0.15rem 0; font-size: 0.8rem;
+}
+.chg-field { min-width: 7rem; color: #888; font-size: 0.75rem; }
+.chg-old { color: #999; text-decoration: line-through; }
+.chg-arrow { color: #bbb; }
+.chg-new { color: #222; font-weight: 600; }
+.chg-delta { color: #178a4c; font-size: 0.75rem; }
+.chg-delta.up { color: #c0392b; }
+
+/* census bar: chips grouped by theme, one row per group */
+.census-row { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.4rem; }
+.census-group {
+  flex: 0 0 6.5rem; font-size: 0.7rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: #999;
+}
+
+/* hazard-layer bar: opacity slider + swatch legends for the active layers */
+.opa { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: #666; }
+.opa input[type="range"] { width: 96px; accent-color: #FF69B4; }
+.hazlegend { margin-top: 0.7rem; border-top: 1px dashed #e3e6ea; padding-top: 0.6rem; }
+.hazrow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.8rem; margin-top: 0.35rem; }
+.hazkey { font-size: 0.78rem; font-weight: 600; color: #555; min-width: 8.5rem; }
+.hazdesc { font-size: 0.78rem; color: #666; }
+.hazrow .lg { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: #666; }
+.hazrow .lg i {
+  width: 13px; height: 13px; border-radius: 3px; display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.hazrow a { font-size: 0.78rem; color: #FF69B4; }
+.note-sm { font-size: 0.75rem; color: #888; display: block; margin-top: 0.55rem; }
+.hazblock { margin-top: 0.5rem; }
+.linkbtn {
+  background: none; border: none; box-shadow: none; padding: 0; margin: 0;
+  font-size: 0.78rem; font-family: inherit; color: #FF69B4; cursor: pointer;
+  text-decoration: underline;
+}
+.linkbtn:hover { background: none; color: #FF1493; transform: none; box-shadow: none; }
+
+/* 土地条件図 class list — swatch + Japanese name + English gloss */
+.swatchgrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.3rem 0.9rem; margin: 0.6rem 0 0.2rem;
+}
+.sw { display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.76rem; line-height: 1.35; }
+.sw i {
+  width: 15px; height: 15px; flex: none; border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.18); align-self: center;
+}
+.sw.firm i { border: 2px solid #555; }
+.sw b { font-weight: 600; color: #444; }
+.sw em { font-style: normal; color: #888; }
+
+/* GSI ships one legend sheet for 治水地形分類図 — it's tall, so cap + scroll */
+.legendimg {
+  margin: 0.6rem 0; max-height: 340px; overflow: auto;
+  border: 1px solid #e3e6ea; border-radius: 6px; background: #fff; padding: 0.4rem;
+}
+.legendimg img { display: block; width: 100%; max-width: 380px; height: auto; }
+
+/* 傾斜量図 is a continuous white→black ramp */
+.rampwrap { display: inline-flex; flex-direction: column; gap: 0.15rem; }
+.ramp {
+  display: block; width: 190px; height: 12px; border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: linear-gradient(to right, #ffffff, #000000);
+}
+.ramplabels { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; }
+
+/* map fullscreen */
+.mapwrap { position: relative; }
+.mapfull-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 1200;
+  width: 34px; height: 34px; padding: 0; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; color: #333; border: 1px solid #ccc;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); font-size: 1rem; line-height: 1;
+  cursor: pointer; box-sizing: border-box;
+}
+.mapfull-btn:hover {
+  background: #f8f9fa; color: #FF1493; transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.mapwrap.fullscreen {
+  position: fixed; inset: 0; z-index: 3000; width: 100vw;
+  height: 100vh; height: 100dvh; max-height: none; border: none; border-radius: 0;
+}
+
+/* --- map controls: one chip row + one open section, in both layouts --- */
+.ctl-bar { margin-top: 0.9rem; }
+.ctl-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ctl-chips .chip { padding: 0.4rem 0.85rem; font-size: 0.82rem; }
+.ctl-body {
+  margin-top: 0.7rem; padding: 0.85rem 1rem;
+  border: 1px solid #eee; border-radius: 8px; background: #fbfcfd;
+  animation: fabFadeInUp 0.2s ease;
+}
+/* Sections keep their internals but lose the frame — .ctl-body provides it. */
+.ctl-body .poibar { margin: 0; padding: 0; border: none; background: none; }
+.ctl-body .searchbar { margin: 0; }
+
+/* --- fullscreen floating controls (same pattern as the rent-or-buy FAB) --- */
+.map-fab {
+  position: absolute; right: 16px; bottom: 16px; z-index: 1200;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  max-height: calc(100% - 32px);
+}
+.map-fab-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 20px; border: none; border-radius: 8px;
+  background-color: #FF69B4; color: #fff;
+  font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.map-fab-btn:hover {
+  background-color: #FF1493; transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+.map-fab-btn:active { transform: translateY(0); }
+.map-fab-icon { display: inline-flex; transition: transform 0.3s ease; font-size: 16px; }
+.map-fab-icon.rotated { transform: rotate(90deg); }
+
+/* The section list: same chips, stacked so each reads as a distinct option. */
+.map-fab-options { animation: fabFadeInUp 0.25s ease; }
+.map-fab-options .ctl-chips { flex-direction: column; align-items: stretch; gap: 8px; }
+.map-fab-options .chip {
+  justify-content: flex-start; padding: 11px 18px; font-size: 14px;
+  border-radius: 8px; background: #fff; border: 1px solid #e0e0e0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+}
+.map-fab-options .chip.sel { background: #FF69B4; border-color: #FF69B4; color: #fff; }
+
+.map-fab-panel {
+  /* Scrolls internally: the hazard legends alone can outgrow a phone screen. */
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 210px);
+  overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 14px 14px;
+  border: 1px solid #e6e6e6; border-radius: 10px;
+  background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  animation: fabFadeInUp 0.25s ease; text-align: left;
+}
+.map-fab-head {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin: 0 -14px 0.2rem; padding: 10px 14px;
+  background: #fff; border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem; font-weight: 600; color: #444;
+}
+/* Inside the panel the frame comes from the panel itself. */
+.map-fab-panel .ctl-body {
+  margin: 0; padding: 0.6rem 0 0; border: none; background: none; animation: none;
+}
+
+.map-backdrop {
+  position: absolute; inset: 0; z-index: 1100;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  animation: fabFadeIn 0.25s ease;
+}
+
+@keyframes fabFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fabFadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .map-fab { right: 12px; bottom: 12px; left: 12px; align-items: stretch; }
+  .map-fab-panel { width: auto; }
+}
+
+/* "See all details" button inside a Leaflet popup (outside encapsulation) */
+:host ::ng-deep .allbtn {
+  display: block; margin-top: 0.55rem; background: #FF69B4; color: #fff; border: none;
+  border-radius: 5px; padding: 0.35rem 0.7rem; font-size: 0.78rem; font-weight: 500;
+  cursor: pointer; font-family: inherit;
+}
+:host ::ng-deep .allbtn:hover { background: #FF1493; }
+
+/* full detail modal */
+/* Above .mapwrap.fullscreen (3000) — a modal opened from a map popup was
+   rendering *behind* the map whenever the map was fullscreen. */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 4000;
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+}
+.modal {
+  background: #fff; border-radius: 10px; max-width: 760px; width: 100%;
+  max-height: 86vh; overflow: auto; padding: 1.5rem 1.75rem; position: relative;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.3);
+}
+.modal h3 { margin: 0 0 0.25rem; font-size: 1.15rem; color: #333; }
+.modal h3 .normal { font-weight: 400; color: #888; font-size: 0.9rem; }
+.modal .mb { margin-bottom: 0.75rem; }
+.modal .mt { margin-top: 1rem; }
+.modal .err { color: #d6336c; font-size: 0.9rem; }
+.modal-close {
+  position: absolute; top: 0.6rem; right: 0.6rem; background: none; border: none;
+  box-shadow: none; color: #999; font-size: 1.05rem; cursor: pointer; padding: 0.25rem 0.5rem;
+}
+.modal-close:hover { color: #333; background: none; transform: none; box-shadow: none; }
+.modal-specs { margin-top: 0.75rem; }
+
+/* curated "key facts" grid in the detail modal */
+.keyfacts {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0 1.4rem; margin-top: 0.9rem;
+}
+.keyfacts .fact {
+  display: flex; gap: 0.6rem; font-size: 0.85rem; padding: 0.45rem 0;
+  border-bottom: 1px solid #eee;
+}
+.keyfacts .fact .k { flex: 0 0 46%; color: #666; font-weight: 600; }
+.keyfacts .fact .v { flex: 1; color: #222; word-break: break-word; }
+.morefields { margin-top: 1rem; }
+.morefields > summary {
+  cursor: pointer; color: #FF69B4; font-size: 0.85rem; font-weight: 500;
+  list-style: revert;
+}
+.morefields > summary:hover { color: #FF1493; }
+
+.cfgline { margin: 1rem 0 0; font-size: 0.78rem; word-break: break-word; }
+.cfgline code {
+  background: #f4f4f6; padding: 0.05rem 0.35rem; border-radius: 3px;
+  font-size: 0.9em; word-break: break-all;
+}
+
+/* A definite width (not max-width) is what actually forces the ellipsis inside
+   an auto-layout table cell; max-width gets ignored and the URL overflows. */
+table.jobs .jcfg a {
+  display: inline-block; width: 240px; max-width: 46vw; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
+}
+
+/* expandable property detail row (on-demand location + full specs) */
+tr.detailrow > td { background: #fbfcfd; padding: 0.9rem 1rem; white-space: normal; }
+.locline { margin-bottom: 0.7rem; font-size: 0.85rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+.mapslink { font-weight: 600; }
+.specs {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.15rem 1.2rem;
+}
+.spec {
+  display: flex; gap: 0.6rem; font-size: 0.8rem; padding: 0.25rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.spec .k { color: #888; flex: 0 0 42%; }
+.spec .v { color: #333; flex: 1; word-break: break-word; }
+.detailrow .err { color: #d6336c; font-size: 0.85rem; }
+
+/* --- responsive --- */
+@media (max-width: 768px) {
+  .scraper { padding: 1rem; }
+  .card { padding: 1.1rem; }
+  .hd { gap: 0.4rem 1rem; }
+  .hd h1 { font-size: 1.35rem; }
+  .hd .status { margin-left: 0; flex-basis: 100%; }
+
+  /* stack action rows; let buttons and their labels breathe */
+  .actions { align-items: stretch; }
+  .actions .sep { display: none; }
+  .actions .small { width: 100%; }
+
+  /* form: inputs already full-width; make the numeric row stack cleanly */
+  .frow.inline { gap: 0.75rem; }
+  .frow.inline .small { width: calc(50% - 0.5rem); }
+
+  /* wide tables scroll horizontally rather than break the page */
+  .tablewrap { max-height: 60vh; }
+  table.jobs .jcfg a { width: 150px; }
+
+  /* shorter map on phones (fullscreen still overrides — higher specificity) */
+  .mapwrap { height: 62vh; }
+}
+
+@media (max-width: 480px) {
+  .card h2 { flex-wrap: wrap; }
+  .card h2 .normal { flex-basis: 100%; }
+  button.tiny { margin-left: 0; }
+  .frow.inline .small { width: 100%; }
+  .stats { gap: 1rem; }
+  .stat .n { font-size: 1.2rem; }
+}
+
+/* --- compare tray + results -------------------------------------------
+   Squared-off panels: this is a data readout, and rounded pills made the
+   numbers read as chat bubbles rather than a table. */
+.cmptray {
+  /* Between the fullscreen map (3000) and the modal (4000), so the tray stays
+     reachable while picking listings off a fullscreen map. */
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 1rem; z-index: 3500;
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  background: #fff; border: 1px solid #d8dde3; border-radius: 6px;
+  padding: 0.55rem 0.9rem; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.16);
+  max-width: min(94vw, 900px);
+}
+.cmptray-title {
+  font-size: 0.72rem; font-weight: 700; color: #444;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.cmpslot {
+  display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem;
+  background: #f7f8fa; border: 1px solid #e2e6ec; border-radius: 3px;
+  padding: 0.22rem 0.4rem 0.22rem 0.55rem;
+}
+.cmpslot b {
+  color: #555; text-transform: uppercase; font-size: 0.64rem;
+  letter-spacing: 0.05em; border-right: 1px solid #dde2e8; padding-right: 0.45rem;
+}
+.cmptray .muted { font-size: 0.78rem; }
+
+.cmpmodal { max-width: 940px; border-radius: 4px; padding: 0; }
+.cmpmodal .modal-body { padding: 1.1rem 1.4rem 1.4rem; }
+/* This modal has a header row rather than the detail modal's floating x. */
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.9rem 1.4rem; border-bottom: 1px solid #e6e9ee; background: #fafbfc;
+}
+.modal-head b { font-size: 0.95rem; color: #222; letter-spacing: -0.01em; }
+.modal-head button.tiny { margin-left: 0; flex: none; }
+.modal-body { min-width: 0; }   /* let flex/svg children shrink instead of overflowing */
+
+/* Figures line up column-wise only with tabular numerals. */
+.cmpmodal .cmprow b, .cmpmodal .cmpcard, .cmpverdict { font-variant-numeric: tabular-nums; }
+
+.cmpverdict {
+  background: #f5faf6; border: 1px solid #cfe6d6; border-left: 3px solid #15803d;
+  border-radius: 3px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.88rem;
+}
+.cmpwin { line-height: 1.55; }
+.cmpverdict .tag {
+  display: inline-block; background: #15803d; color: #fff; border-radius: 2px;
+  padding: 1px 7px; font-size: 0.64rem; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-right: 0.5rem; vertical-align: 1px;
+}
+.cmpverdict .note { font-size: 0.75rem; color: #6b7280; margin-top: 0.4rem; }
+
+.cmpcards { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.cmpcard {
+  flex: 1 1 20rem; min-width: 0; border: 1px solid #e2e6ec; border-radius: 3px;
+  border-top: 2px solid #e2e6ec; padding: 0.75rem 0.85rem;
+  background: #fff; font-size: 0.8rem;
+}
+.cmpcard.win { border-color: #bfe0c8; border-top-color: #15803d; background: #fcfefc; }
+.cmpcard-head {
+  display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.4rem;
+  margin-bottom: 0.45rem; border-bottom: 1px solid #eef0f3;
+}
+.cmpcard-head i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.cmpcard-head b { font-size: 0.68rem; letter-spacing: 0.06em; color: #444; }
+.cmpcard-title {
+  font-weight: 600; font-size: 0.84rem; margin-bottom: 0.5rem; color: #222;
+  /* Two lines then ellipsis: SUUMO titles are marketing copy and run long. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.erapill { color: #fff; border-radius: 2px; padding: 1px 5px; font-size: 0.64rem; }
+.cmprow {
+  display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;
+  padding: 0.22rem 0; border-bottom: 1px solid #f4f6f8;
+}
+.cmprow span {
+  color: #8a919b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.cmprow b.dim { color: #9aa1ab; font-weight: 400; }
+.cmprow b { color: #222; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.cmprow span { flex: 0 1 auto; min-width: 0; }
+.cmprow.big {
+  padding: 0.45rem 0; margin-top: 0.2rem;
+  border-top: 1px solid #e2e6ec; border-bottom: 1px solid #e2e6ec;
+}
+.cmprow.big b { font-size: 1.05rem; }
+.cmpderived { margin: 0.6rem 0 0.4rem; }
+.cmpderived summary { font-size: 0.74rem; color: #8a919b; cursor: pointer; }
+.cmpderived .cmprow span { text-transform: none; letter-spacing: 0; }
+
+.cmpchart { margin-top: 1.2rem; }
+.cmpchart-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: #222; }
+.cmpsvg { width: 100%; height: auto; background: #fcfdfe; border: 1px solid #e6e9ee; border-radius: 3px; }
+.cmpsvg .grid { stroke: #eef0f3; stroke-width: 1; }
+.cmpsvg .tick { font-size: 9px; fill: #9aa1ab; }
+.cmpsvg .crossdot { fill: #fff; stroke: #333; stroke-width: 2; }
+.cmpsvg .crosslbl { font-size: 10px; fill: #333; font-weight: 600; }
+
+.cmpnpv {
+  margin-top: 1.2rem; padding: 0.75rem 0.9rem; border: 1px solid #e2e6ec;
+  border-radius: 3px; background: #fbfcfd; font-size: 0.8rem;
+}
+.cmpassume { margin-top: 1.2rem; font-size: 0.8rem; }
+.cmpassume summary { cursor: pointer; font-weight: 600; color: #222; }
+.cmpgrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem; margin: 0.7rem 0;
+}
+.cmpgrid label {
+  display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.7rem;
+  color: #8a919b; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.cmpgrid input { padding: 0.32rem 0.4rem; font-size: 0.82rem; border-radius: 3px; }
+:host ::ng-deep .mappop .cmpbtn {
+  margin-top: 0.4rem; background: #FF69B4; color: #fff; border: 1px solid #FF69B4;
+  box-shadow: none; padding: 0.25rem 0.6rem; font-size: 0.75rem;
+  border-radius: 3px; cursor: pointer; font-family: inherit;
+}
+:host ::ng-deep .mappop .cmpbtn.on { background: #fff; color: #15803d; border-color: #15803d; }
+.rankpill {
+  background: #eef0f3; color: #555; border-radius: 2px;
+  padding: 1px 6px; font-size: 0.66rem; font-weight: 700;
+}
+.taxnote { font-size: 0.76rem; line-height: 1.5; margin: 0.4rem 0 0.7rem; }
+.taxnote code { background: #f1f3f5; padding: 0 3px; border-radius: 3px; }
+
+/* land: confirm what gets built before the numbers mean anything */
+.landask {
+  flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+  border-top: 1px solid #eef0f3; margin-top: 0.15rem; padding-top: 0.55rem;
+  font-size: 0.78rem;
+}
+.landask-q { font-weight: 600; color: #222; }
+.landask label {
+  display: inline-flex; align-items: center; gap: 0.3rem; margin: 0;
+  font-size: 0.72rem; color: #8a919b; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.landask input { width: 6.5rem; padding: 0.25rem 0.35rem; font-size: 0.82rem; border-radius: 3px; }
+.landask-cost { font-size: 0.78rem; color: #444; font-variant-numeric: tabular-nums; }
+.landask .note { font-size: 0.72rem; }
+
+.buildbox {
+  margin: 0.5rem 0; padding: 0.5rem 0.6rem; border-radius: 3px;
+  background: #f6f9fc; border: 1px solid #dce6ef; font-size: 0.75rem; line-height: 1.5;
+}
+.buildbox.bad, .buildbox.unknown { background: #fff9f0; border-color: #f0dcc0; }
+.buildbox-head { margin-bottom: 0.2rem; }
+.buildbox .okline { color: #15803d; margin-top: 0.2rem; }
+.buildbox .badline { color: #b45309; margin-top: 0.2rem; }
+
+/* step-up ladder (incremental IRR) */
+.cmpladder {
+  margin-top: 1.2rem; padding: 0.75rem 0.9rem; border: 1px solid #e2e6ec;
+  border-radius: 3px; background: #fbfcfd; font-size: 0.8rem;
+}
+.cmpladder-head { font-weight: 600; color: #222; margin-bottom: 0.5rem; }
+.cmpladder-head .muted { font-weight: 400; }
+.stepline {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline;
+  padding: 0.35rem 0.5rem; border-left: 3px solid #d5dbe2; margin-bottom: 0.3rem;
+  background: #fff; font-variant-numeric: tabular-nums;
+}
+.stepline.good { border-left-color: #15803d; }
+.stepline.bad { border-left-color: #c2410c; }
+.steparrow { flex: 1 1 14rem; min-width: 0; color: #222; }
+.stepcap, .stepirr { color: #555; }
+.stepirr { font-weight: 700; }
+.stepverdict { margin-left: auto; font-size: 0.76rem; }
+.stepline.good .stepverdict { color: #15803d; }
+.stepline.bad .stepverdict { color: #c2410c; }
+.cmpladder .note { font-size: 0.72rem; color: #8a919b; margin-top: 0.5rem; }
+
+.cmpsvg .zeroline { stroke: #b6bdc6; stroke-width: 1; }
+.cmpsvg .hurdleline { stroke: #15803d; stroke-width: 1; stroke-dasharray: 3 3; }
+.cmpsvg .hurdlelbl { font-size: 9px; fill: #15803d; }
+.anchorpick { float: right; font-weight: 400; font-size: 0.75rem; color: #8a919b; }
+.anchorpick select { font-size: 0.75rem; padding: 0.1rem 0.2rem; max-width: 14rem; }
+.anchorwarn {
+  background: #fff9f0; border: 1px solid #f0dcc0; color: #b45309;
+  padding: 0.4rem 0.6rem; border-radius: 3px; font-size: 0.74rem; margin: 0.35rem 0;
+}
+.cmpchart .note { font-size: 0.72rem; color: #8a919b; margin-top: 0.4rem; line-height: 1.5; }
+.rentonly {
+  border: 1px solid #e2e6ec; border-radius: 3px; padding: 0.75rem 0.9rem;
+  background: #fbfcfd; font-size: 0.82rem; margin-bottom: 1rem;
+}
+.renttbl { width: 100%; margin-top: 0.5rem; font-variant-numeric: tabular-nums; }
+.renttbl th, .renttbl td { text-align: right; padding: 0.25rem 0.4rem; }
+.renttbl th:first-child, .renttbl td:first-child {
+  text-align: left; color: #8a919b; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.renttbl tr.tot td { border-top: 1px solid #d5dbe2; font-weight: 700; font-size: 0.95rem; }
+
+.sellbar {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  margin: 0.9rem 0 0.6rem; padding: 0.5rem 0.7rem; border: 1px solid #e2e6ec;
+  border-radius: 3px; background: #fbfcfd; font-size: 0.8rem;
+}
+.sellbar label {
+  margin: 0; font-size: 0.72rem; color: #8a919b;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.sellbar select { padding: 0.2rem 0.3rem; font-size: 0.8rem; border-radius: 3px; }
+.sellbar .muted { font-size: 0.73rem; flex: 1 1 16rem; }
+.cmprow b .delta { display: block; font-size: 0.72rem; font-weight: 500; }
+.cmprow b .delta.worse { color: #c2410c; }
+.cmprow b .delta.better { color: #15803d; }
+.cmprow b.pos { color: #15803d; }
+.cmprow b.neg { color: #c2410c; }
+.difftable td.cattag { white-space: nowrap; color: #555; }
+td.commutecell { text-align: right; }
+td.commutecell b { color: #1e5b96; }

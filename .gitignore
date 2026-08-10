@@ -8,3 +8,8 @@ data/
 scraper/__pycache__/*
 scraper/data/
 .DS_Store
+scripts/raw/
+.env
+
+# Raw statistics archives re-downloaded by scripts/fetch_map_data.py
+scripts/raw/

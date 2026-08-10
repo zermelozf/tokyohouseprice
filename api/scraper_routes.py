@@ -6,6 +6,7 @@ scraper/requirements.txt) installed in the local environment.
 """
 from __future__ import annotations
 
+import re
 import sys
 import threading
 from datetime import datetime
@@ -21,9 +22,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scraper import gold, preview, query  # noqa: E402
-from scraper.config import ALL_CATEGORIES, CATEGORIES, WARDS  # noqa: E402
+from scraper import detail, gold, preview, query  # noqa: E402
+from scraper.config import (  # noqa: E402
+    ALL_CATEGORIES, CATEGORIES, DATA_DIR, DB_PATH, WARDS,
+)
+from scraper.db import init_db  # noqa: E402
 from scraper.pipeline import crawl, crawl_url  # noqa: E402
+import scraper_scheduler as scheduler  # noqa: E402
+from scraper_compare import CompareRequest, compare  # noqa: E402
+
+# Ensure all tables (incl. the on-demand property_detail cache added later)
+# exist on an already-created DB, before any endpoint touches them.
+init_db().close()
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
@@ -41,6 +51,15 @@ class Filters(BaseModel):
     layout: Optional[str] = None
     walk_max: Optional[int] = None
     age_max: Optional[int] = None
+    eras: list[str] = []              # 耐震基準 tiers; see query.ERAS
+    commute_max: Optional[int] = None # door-to-school minutes; see scraper.commute
+    # Total budget. Applied here because SUUMO's own ceiling stops at 1億2千万.
+    # For land it is reduced by the cost of the house you would have to build.
+    budget_yen: Optional[int] = None
+    budget_build_m2: int = 130
+    budget_build_cost_m2: int = 250_000
+    date_from: Optional[str] = None   # crawled-time window, 'YYYY-MM-DD' inclusive
+    date_to: Optional[str] = None
     sort: Optional[str] = None
     limit: int = 300
 
@@ -67,6 +86,20 @@ class CrawlUrlBody(BaseModel):
     max_pages: int = 5
 
 
+class JobBody(BaseModel):
+    """A recurring scheduled crawl. `mode` picks categories+wards or a pasted URL."""
+    name: str = ""
+    mode: str = "categories"          # "categories" | "url"
+    categories: list[str] = []        # empty -> all categories
+    wards: list[str] = []
+    url: str = ""
+    max_pages: int = 5
+    min_delay: float = 2.0
+    max_delay: float = 4.0
+    interval_minutes: int = 1440      # daily
+    enabled: bool = True
+
+
 def _stats(rows: list[dict]) -> dict:
     prices = [r["price_yen"] for r in rows if r.get("price_yen")]
     ppm2 = []
@@ -89,7 +122,31 @@ def options():
         "wards": list(WARDS),
         "categories": [{"key": k, "market": v["market"], "label": v["label"]}
                        for k, v in CATEGORIES.items()],
+        "eras": [{"key": k, "label": v["label"]} for k, v in query.ERAS.items()],
     }
+
+
+@router.post("/commute/refresh")
+def commute_refresh(only_missing: bool = True):
+    """Fetch and cache the school commute for every station seen in the crawl."""
+    from scraper import commute
+    return {"added": commute.refresh(only_missing=only_missing),
+            "table": list(commute.table().values())}
+
+
+@router.get("/commute")
+def commute_table():
+    from scraper import commute
+    return {"destination": commute.LFIT,
+            "walkable_stations": commute.DESTINATIONS,
+            "stations": sorted(commute.table().values(), key=lambda r: r["total_min"])}
+
+
+@router.post("/compare")
+def compare_listings(body: CompareRequest):
+    """Rent-vs-buy / buy-vs-buy on two picked listings, through the same NPV
+    engine as the rent-or-buy article (see scraper_compare)."""
+    return compare(body)
 
 
 @router.get("/summary")
@@ -97,10 +154,29 @@ def summary():
     return query.db_summary()
 
 
+@router.get("/crawl-dates")
+def crawl_dates():
+    """Every crawl date on record, newest first — the Report tab's date pickers."""
+    return {"dates": query.crawl_dates()}
+
+
+@router.get("/diff")
+def crawl_diff(date_from: str, date_to: str):
+    """What changed between two crawls: new, gone and edited listings."""
+    return query.crawl_diff(date_from, date_to)
+
+
 @router.post("/search")
 def search(f: Filters):
     rows = query.search_db(f.model_dump())
     return {"stats": _stats(rows), "rows": rows}
+
+
+@router.post("/map")
+def map_points(f: Filters):
+    """Crawled listings that have an enriched exact location, for the Report map."""
+    points = query.map_points(f.model_dump())
+    return {"points": points, "mapped": len(points)}
 
 
 @router.post("/preview")
@@ -133,30 +209,69 @@ def trends(market: Optional[str] = None, category: Optional[str] = None,
     return gold.trends(market, category, ward)
 
 
-# --- background crawl launcher (interactive use only) -----------------------
+class DetailBody(BaseModel):
+    url: str
+
+
+@router.post("/detail")
+def detail_endpoint(body: DetailBody):
+    """On-demand: fetch one property's detail page for its exact coordinates.
+
+    Cached in property_detail so each property is fetched at most once. A single
+    lightweight GET — runs independently of the (serialised) crawlers.
+    """
+    url = body.url.strip()
+    if not url:
+        return {"error": "no url"}
+    m = re.search(r"/((?:nc|jnc)_[0-9]+)/", url)
+    pid = m.group(1) if m else None
+    today = datetime.now().strftime("%Y-%m-%d")
+    cached = query.get_detail(pid, today) if pid else None  # today's snapshot
+    if cached and cached.get("lat") is not None:
+        return {**cached, "cached": True}
+    try:
+        res = detail.scrape_detail(url)
+    except Exception as exc:
+        return {"error": f"fetch failed: {exc}"}
+    if res.get("lat") is None and not res.get("specs"):
+        return {**res, "error": "no data found on the detail page", "cached": False}
+    query.save_detail(res, scrape_date=today)  # cache coords + full spec map for today
+    out = {**res, "cached": False}
+    if res.get("lat") is None:
+        out["error"] = "coordinates not found (specs captured)"
+    return out
+
+
+# --- background crawl launcher ---------------------------------------------
+# A single lock serialises ALL crawling (manual buttons + scheduled jobs) so we
+# never hammer SUUMO with two crawls at once. `_job` mirrors whatever crawl is
+# currently running for the dashboard's live status panel.
+_crawl_lock = threading.Lock()
 _job = {"state": "idle", "started": None, "finished": None,
-        "summary": None, "error": None}
+        "summary": None, "error": None, "source": None}
 
 
 def _run_crawl(cats: list[str], wards: list[str], max_pages: int) -> None:
-    _job.update(state="running", started=datetime.now().isoformat(),
-                finished=None, summary=None, error=None)
-    try:
-        summaries = crawl(cats, wards, max_pages=max_pages)
-        _job.update(state="done", finished=datetime.now().isoformat(), summary=summaries)
-    except Exception as exc:  # surface, don't crash the server
-        _job.update(state="error", finished=datetime.now().isoformat(), error=str(exc))
+    with _crawl_lock:
+        _job.update(state="running", started=datetime.now().isoformat(),
+                    finished=None, summary=None, error=None, source="manual")
+        try:
+            summaries = crawl(cats, wards, max_pages=max_pages)
+            _job.update(state="done", finished=datetime.now().isoformat(), summary=summaries)
+        except Exception as exc:  # surface, don't crash the server
+            _job.update(state="error", finished=datetime.now().isoformat(), error=str(exc))
 
 
 def _run_crawl_url(url: str, max_pages: int) -> None:
-    _job.update(state="running", started=datetime.now().isoformat(),
-                finished=None, summary=None, error=None)
-    try:
-        summary = crawl_url(url, max_pages=max_pages)
-        _job.update(state="done", finished=datetime.now().isoformat(),
-                    summary=[summary])
-    except Exception as exc:
-        _job.update(state="error", finished=datetime.now().isoformat(), error=str(exc))
+    with _crawl_lock:
+        _job.update(state="running", started=datetime.now().isoformat(),
+                    finished=None, summary=None, error=None, source="manual")
+        try:
+            summary = crawl_url(url, max_pages=max_pages)
+            _job.update(state="done", finished=datetime.now().isoformat(),
+                        summary=[summary])
+        except Exception as exc:
+            _job.update(state="error", finished=datetime.now().isoformat(), error=str(exc))
 
 
 @router.post("/crawl")
@@ -184,3 +299,78 @@ def start_crawl_url(body: CrawlUrlBody):
 @router.get("/crawl/status")
 def crawl_status():
     return _job
+
+
+@router.get("/config")
+def config():
+    """Static scraper configuration shown on the dashboard's Config panel."""
+    return {
+        "data_dir": str(DATA_DIR),
+        "db_path": str(DB_PATH),
+        "jobs_path": scheduler.state()["jobs_path"],
+        "default_min_delay": 2.0,
+        "default_max_delay": 4.0,
+        "wards": list(WARDS),
+        "categories": [{"key": k, "market": v["market"], "label": v["label"]}
+                       for k, v in CATEGORIES.items()],
+    }
+
+
+# --- scheduled recurring crawls --------------------------------------------
+
+def _run_scheduled(job: dict) -> list[dict]:
+    """Runner injected into the scheduler. Serialised with manual crawls via the
+    shared lock, and mirrored into `_job` so the live status panel shows it too."""
+    with _crawl_lock:
+        _job.update(state="running", started=datetime.now().isoformat(),
+                    finished=None, summary=None, error=None,
+                    source=f"schedule:{job.get('name') or job['id']}")
+        try:
+            if job.get("mode") == "url":
+                if not (job.get("url") or "").strip():
+                    raise ValueError("job has no URL")
+                summary = [crawl_url(job["url"].strip(), max_pages=job["max_pages"],
+                                     min_delay=job["min_delay"], max_delay=job["max_delay"])]
+            else:
+                cats = job.get("categories") or ALL_CATEGORIES
+                if not job.get("wards"):
+                    raise ValueError("job has no wards")
+                summary = crawl(cats, job["wards"], max_pages=job["max_pages"],
+                                min_delay=job["min_delay"], max_delay=job["max_delay"])
+            _job.update(state="done", finished=datetime.now().isoformat(), summary=summary)
+            return summary
+        except Exception as exc:
+            _job.update(state="error", finished=datetime.now().isoformat(), error=str(exc))
+            raise
+
+
+@router.get("/jobs")
+def list_jobs():
+    return scheduler.state()
+
+
+@router.post("/jobs")
+def create_job(body: JobBody):
+    return scheduler.create(body.model_dump())
+
+
+@router.patch("/jobs/{job_id}")
+def update_job(job_id: str, body: JobBody):
+    job = scheduler.update(job_id, body.model_dump())
+    return job if job is not None else {"error": "job not found"}
+
+
+@router.delete("/jobs/{job_id}")
+def delete_job(job_id: str):
+    return {"deleted": scheduler.delete(job_id)}
+
+
+@router.post("/jobs/{job_id}/run")
+def run_job(job_id: str):
+    job = scheduler.trigger(job_id)
+    return job if job is not None else {"error": "job not found"}
+
+
+# Load persisted jobs and start the background scheduler loop as soon as the
+# router is imported (i.e. only when ENABLE_SCRAPER=1).
+scheduler.start(_run_scheduled)

@@ -1,8 +1,43 @@
-"""Static catalog: Tokyo ward codes, SUUMO category endpoints, and paths."""
+"""Static catalog: Tokyo ward codes, SUUMO category endpoints, and paths.
+
+Also loads the project-local `.env` (see `load_env`) before anything reads
+`os.environ`, so credentials stay scoped to this repo rather than living in a
+machine-wide config.
+"""
 from __future__ import annotations
 
 import os
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+ENV_FILE = Path(os.environ.get("SUUMO_ENV_FILE", PROJECT_ROOT / ".env"))
+
+
+def load_env(path: Path = ENV_FILE) -> list[str]:
+    """Read `KEY=value` lines from a project-local .env into os.environ.
+
+    Real environment variables always win, so a cron line or a one-off
+    `FOO=bar python -m scraper …` can still override the file. Returns the keys
+    it set, for `--check` to report. No dependency on python-dotenv: the format
+    here is deliberately just `KEY=value`, `#` comments and blank lines.
+    """
+    if not path.exists():
+        return []
+
+    applied = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+            applied.append(key)
+    return applied
+
+
+LOADED_ENV_KEYS = load_env()
 
 # --- storage layout (medallion) --------------------------------------------
 DATA_DIR = Path(os.environ.get("SUUMO_DATA_DIR", Path(__file__).resolve().parent / "data"))
