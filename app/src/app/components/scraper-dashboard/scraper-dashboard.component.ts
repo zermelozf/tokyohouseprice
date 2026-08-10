@@ -92,7 +92,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // defaults to yesterday→today (set in ngOnInit).
   searchForm = { category: '', ward: '', price_min: null as number | null,
                  price_max: null as number | null, limit: 300,
-                 date_from: '', date_to: '' };
+                 date_from: '', date_to: '', commuteMax: null as number | null };
+  searchVerdicts: string[] = [];
   // Total budget, shared by Search and Map. SUUMO's own price ceiling stops at
   // 1億2千万, so this cannot live in the crawl URL — without it the dashboard
   // shows listings the crawler already refuses to fetch details for.
@@ -196,6 +197,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   filterState(): any {
     return {
       mapForm: { ...this.mapForm },
+      searchForm: { ...this.searchForm },
+      searchVerdicts: [...this.searchVerdicts],
       ranges: JSON.parse(JSON.stringify(this.mapRanges)),
       mapEras: [...this.mapEras],
       mapVerdicts: [...this.mapVerdicts],
@@ -210,6 +213,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   applyFilterState(st: any, reload = true): void {
     if (!st) return;
     if (st.mapForm) this.mapForm = { ...this.mapForm, ...st.mapForm };
+    if (st.searchForm) this.searchForm = { ...this.searchForm, ...st.searchForm };
+    if (st.searchVerdicts) this.searchVerdicts = st.searchVerdicts;
     this.mapEras = st.mapEras ?? this.mapEras;
     this.mapVerdicts = st.mapVerdicts ?? this.mapVerdicts;
     for (const k of ['budgetYen','budgetBuildM2','bldMinBuy','bldMinRent',
@@ -280,7 +285,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // A verdict is a judgement about a place, so it is kept per property and
   // survives re-crawls, price changes and relistings under a new id.
   reviewOpen = false;
-  reviewQueue: MapPoint[] = [];
+  // Search rows and map points are annotated identically server-side, so the
+  // review card works on either without a wrapper.
+  reviewQueue: any[] = [];
   reviewIndex = 0;
   reviewNote = '';
   reviewTagInput = '';
@@ -305,10 +312,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   }
 
   /** Start a review session over what the map is currently showing. */
-  startReview(onlyUnreviewed = true): void {
-    const pool = onlyUnreviewed ? this.mapPoints.filter(p => !p.verdict) : this.mapPoints;
+  startReview(onlyUnreviewed = true, source: 'map' | 'search' = 'map'): void {
+    const all = source === 'search' ? this.searchRows : this.mapPoints;
+    const pool = onlyUnreviewed ? all.filter((p: any) => !p.verdict) : all;
     if (!pool.length) return;
-    this.reviewQueue = [...pool];
+    this.reviewQueue = [...pool] as any[];
     this.reviewIndex = 0;
     this.reviewNote = '';
     this.reviewTagInput = '';
@@ -316,7 +324,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     this.loadPhotos();
   }
 
-  get reviewCard(): MapPoint | null {
+  get reviewCard(): any | null {
     return this.reviewQueue[this.reviewIndex] ?? null;
   }
 
@@ -360,7 +368,13 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
         card.review_tags = tags;
         card.review_note = note;
         this.loadReviewCounts();
-        this.renderMarkers();      // the map badge updates as you go
+        // Keep the other surface in step: the same property may be on screen
+        // in both the table and the map.
+        const twin = this.mapPoints.find(m => m.property_id === card.property_id);
+        if (twin) { twin.verdict = v; twin.review_tags = tags; twin.review_note = note; }
+        const row: any = this.searchRows.find(r => r.property_id === card.property_id);
+        if (row) { row.verdict = v; row.review_tags = tags; row.review_note = note; }
+        if (this.map) this.renderMarkers();
       },
       error: () => {},
     });
@@ -391,6 +405,28 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   loadReviewCounts(): void {
     this.api.reviews().subscribe({
       next: r => this.reviewCounts = r.counts || {},
+      error: () => {},
+    });
+  }
+
+  toggleSearchVerdict(key: string): void {
+    this.searchVerdicts = this.searchVerdicts.includes(key)
+      ? this.searchVerdicts.filter(v => v !== key)
+      : [...this.searchVerdicts, key];
+    this.runSearch();
+  }
+
+  /** Grade straight from the results table, without opening the card. */
+  quickGrade(row: any, v: Verdict | null): void {
+    this.api.saveReview(row.property_id, row.verdict === v ? null : v,
+                        row.review_tags || [], row.review_note || '').subscribe({
+      next: () => {
+        row.verdict = row.verdict === v ? null : v;
+        this.loadReviewCounts();
+        const twin = this.mapPoints.find(m => m.property_id === row.property_id);
+        if (twin) twin.verdict = row.verdict;
+        if (this.map) this.renderMarkers();
+      },
       error: () => {},
     });
   }
@@ -2395,6 +2431,8 @@ ${folders}
       bld_min_rent_house: this.bldMinRentHouse,
       rent_max_yen: this.rentMaxYen,
       age_max_known: this.ageMaxKnown,
+      commute_max: s.commuteMax,
+      verdicts: [...this.searchVerdicts],
       date_from: s.date_from || null,
       date_to: s.date_to || null,
       limit: s.limit || 300,

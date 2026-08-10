@@ -973,3 +973,16 @@ td.commutecell b { color: #1e5b96; }
                                         border: 1px solid #ddd; border-radius: 3px; }
 .filterbar .fname { width: 11rem; }
 .filterbar .note { font-size: 0.75rem; color: #15803d; }
+
+/* results table: photo + inline grading */
+td.thumbcell { white-space: nowrap; }
+.rowthumb { width: 54px; height: 38px; object-fit: cover; border-radius: 3px;
+            vertical-align: middle; margin-right: 0.4rem; background: #eef0f3; }
+td.verdictcell { white-space: nowrap; }
+.vbtn { background: #fff; border: 1px solid #dde2e8; color: #9aa1ab; box-shadow: none;
+        padding: 0.15rem 0.4rem; font-size: 0.8rem; border-radius: 3px; margin-right: 2px;
+        line-height: 1.2; }
+.vbtn:hover { transform: none; box-shadow: none; }
+.vbtn.bad.on   { background: #c2410c; border-color: #c2410c; color: #fff; }
+.vbtn.maybe.on { background: #ca8a04; border-color: #ca8a04; color: #fff; }
+.vbtn.good.on  { background: #15803d; border-color: #15803d; color: #fff; }

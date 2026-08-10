@@ -194,6 +194,13 @@
         <label title="Max age in years. Listings with no stated age (新築, land) are kept.">max age</label>
         <input type="number" step="5" [(ngModel)]="ageMaxKnown">
         </div>
+      <div class="small">
+        <label title="door-to-school minutes: walk + train + walk to the Lycée">🎓 LFIT max</label>
+        <select [(ngModel)]="searchForm.commuteMax">
+          <option [ngValue]="null">any</option>
+          <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">{{ m }} min</option>
+        </select>
+      </div>
       <div class="small"><label>limit</label><input type="number" min="1" [(ngModel)]="searchForm.limit"></div>
       <button (click)="runSearch()">🔍 Search</button>
       <span class="exportlinks" *ngIf="searchRows.length">
@@ -208,6 +215,21 @@
       <span class="exportnote" *ngIf="exportMsg">{{ exportMsg }}</span>
     </div>
 
+    <div class="reviewbar" *ngIf="searchRows.length">
+      <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
+      <span class="muted">unreviewed first · keys 1/2/3</span>
+      <span class="vfilter">
+        <button type="button" class="chip" *ngFor="let v of VERDICTS"
+                [class.sel]="searchVerdicts.includes(v.key)" (click)="toggleSearchVerdict(v.key)"
+                [title]="'show only ' + v.label">
+          <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
+        </button>
+        <button type="button" class="chip" [class.sel]="searchVerdicts.includes('none')"
+                (click)="toggleSearchVerdict('none')" title="not yet reviewed">
+          <i style="background:#9ca3af"></i>unseen
+        </button>
+      </span>
+    </div>
     <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: searchStats }"></ng-container>
     <p class="muted" *ngIf="searched && !searchRows.length">No listings match — crawl some data first (Crawlers tab) or widen the filters.</p>
   </section>
@@ -750,12 +772,16 @@
           <th class="sortable" [class.sorted]="sortKey === 'commute_min'" (click)="toggleSort('commute_min')"
               title="door-to-school: walk to your station + train + walk to the Lycée Français">
             🎓 LFIT <span class="arrow">{{ sortArrow('commute_min') }}</span></th>
-          <th>ward</th><th>address</th><th>link</th><th>details</th><th>compare</th>
+          <th>ward</th><th>address</th><th>link</th><th>details</th><th>compare</th><th>verdict</th>
         </tr></thead>
         <tbody>
           <ng-container *ngFor="let r of sortRows(rows)">
             <tr>
-              <td>{{ r.category }}</td>
+              <td class="thumbcell">
+                <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
+                     class="rowthumb" [title]="r.title || ''">
+                <span class="cattag">{{ catLabel(r.category) }}</span>
+              </td>
               <td>{{ fmtYen(r.price_yen) }}</td>
               <td>{{ ppm2(r) }}</td>
               <td class="layout"><span [title]="r.layout || ''">{{ r.layout || '—' }}</span></td>
@@ -785,9 +811,17 @@
                   {{ isCompared(r.property_id) ? '✓ picked' : '⚖️ compare' }}
                 </button>
               </td>
+              <td class="verdictcell">
+                <button type="button" class="vbtn bad" [class.on]="r['verdict'] === 'bad'"
+                        (click)="quickGrade(r, 'bad')" title="bad (click again to clear)">✕</button>
+                <button type="button" class="vbtn maybe" [class.on]="r['verdict'] === 'maybe'"
+                        (click)="quickGrade(r, 'maybe')" title="maybe">?</button>
+                <button type="button" class="vbtn good" [class.on]="r['verdict'] === 'good'"
+                        (click)="quickGrade(r, 'good')" title="good">♥</button>
+              </td>
             </tr>
             <tr class="detailrow" *ngIf="detailState[r.property_id]?.open">
-              <td [attr.colspan]="14">
+              <td [attr.colspan]="15">
                 <ng-container *ngIf="detailState[r.property_id] as st">
                   <div class="err" *ngIf="st.error">⚠ {{ st.error }}</div>
                   <ng-container *ngIf="st.data as d">
