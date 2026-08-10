@@ -93,6 +93,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   searchForm = { category: '', ward: '', price_min: null as number | null,
                  price_max: null as number | null, limit: 300,
                  date_from: '', date_to: '' };
+  // Total budget, shared by Search and Map. SUUMO's own price ceiling stops at
+  // 1億2千万, so this cannot live in the crawl URL — without it the dashboard
+  // shows listings the crawler already refuses to fetch details for.
+  budgetYen: number | null = 200_000_000;
+  budgetBuildM2 = 130;
+  readonly budgetOptions = [100_000_000, 150_000_000, 200_000_000, 250_000_000, 300_000_000];
   searchRows: Listing[] = [];
   searchStats: Stats | null = null;
   searchMeta = '';
@@ -923,6 +929,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       wards: this.mapForm.ward ? [this.mapForm.ward] : [],
       eras: [...this.mapEras],
       commute_max: this.mapForm.commuteMax,
+      budget_yen: this.budgetYen,
+      budget_build_m2: this.budgetBuildM2,
       limit: 5000,
     };
     // Pinning both bounds to one day narrows "latest snapshot per property" to
@@ -1512,6 +1520,11 @@ ${folders}
              hurdlePct: (hurdle * 100).toFixed(2), yTicks, xTicks, w, h };
   }
 
+  /** What a land listing may cost, once the house you must build is paid for. */
+  landCeiling(): number {
+    return (this.budgetYen ?? 0) - this.budgetBuildM2 * 250_000;
+  }
+
   /** Break down the school commute for a tooltip. */
   commuteTip(r: any): string {
     if (r?.commute_min == null) return 'no cached commute for this listing\u2019s stations';
@@ -1885,6 +1898,8 @@ ${folders}
       wards: s.ward ? [s.ward] : [],
       price_min: s.price_min ?? null,
       price_max: s.price_max ?? null,
+      budget_yen: this.budgetYen,
+      budget_build_m2: this.budgetBuildM2,
       date_from: s.date_from || null,
       date_to: s.date_to || null,
       limit: s.limit || 300,

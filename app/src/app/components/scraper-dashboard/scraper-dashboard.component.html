@@ -171,6 +171,13 @@
       </div>
       <div class="small"><label>price min (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_min"></div>
       <div class="small"><label>price max (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_max"></div>
+      <div class="small">
+        <label [title]="'Total budget — applied here, not in the crawl, because SUUMO\'s own price ceiling stops at 1億2千万. A plot is judged on this less a ' + budgetBuildM2 + 'm² build (' + fmtYen(landCeiling()) + ').'">budget</label>
+        <select [(ngModel)]="budgetYen">
+          <option [ngValue]="null">no limit</option>
+          <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
+        </select>
+      </div>
       <div class="small"><label>limit</label><input type="number" min="1" [(ngModel)]="searchForm.limit"></div>
       <button (click)="runSearch()">🔍 Search</button>
       <span class="exportlinks" *ngIf="searchRows.length">
@@ -444,6 +451,13 @@
         <select [(ngModel)]="mapForm.ward">
         <option value="">all</option>
         <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
+        </select>
+        </div>
+        <div class="small">
+        <label [title]="'Total budget. Applied here, not in the crawl — SUUMO\'s own ceiling stops at 1億2千万. A plot is judged on this less the cost of a ' + budgetBuildM2 + 'm² build.'">budget</label>
+        <select [(ngModel)]="budgetYen" (ngModelChange)="loadMap()">
+        <option [ngValue]="null">no limit</option>
+        <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
         </select>
         </div>
         <div class="small">

@@ -320,6 +320,41 @@ def get_detail(property_id: str, scrape_date: str | None = None) -> dict | None:
         conn.close()
 
 
+_NEXT_UPDATE_KEYS = ("次回更新予定日", "情報提供日")
+
+
+def detail_fresh_until(property_id: str) -> str | None:
+    """The date SUUMO says it will next refresh this listing, from the most
+    recent detail snapshot — 'YYYY-MM-DD', or None if unknown.
+
+    Detail pages carry 次回更新予定日, typically a week out. Re-fetching before
+    then buys nothing: the page is guaranteed not to have been refreshed.
+    """
+    import json as _json
+    import re as _re
+    conn = connect()
+    try:
+        row = conn.execute(
+            "SELECT specs_json FROM property_detail WHERE property_id = ? "
+            "ORDER BY scrape_date DESC LIMIT 1", (property_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    specs = {k.rstrip(":").strip(): v
+             for k, v in (_json.loads(row["specs_json"] or "{}")).items()}
+    for key in _NEXT_UPDATE_KEYS:
+        raw = specs.get(key)
+        if not raw:
+            continue
+        m = (_re.search(r"(\d{4})年(\d{1,2})月(\d{1,2})日", raw)
+             or _re.search(r"(\d{4})/(\d{1,2})/(\d{1,2})", raw))
+        if m:
+            y, mo, dy = map(int, m.groups())
+            return f"{y:04d}-{mo:02d}-{dy:02d}"
+    return None
+
+
 def save_detail(d: dict, scrape_date: str | None = None) -> None:
     """Upsert a detail snapshot on (property_id, scrape_date): same day updates,
     new day inserts a new snapshot (time series)."""

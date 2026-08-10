@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from . import bronze, silver, parse_sale, parse_rent, suumo_url, normalize, detail, query
 from . import commute
@@ -24,6 +24,10 @@ ENRICH_COMMUTE_MAX_MIN = 40
 # the detail fetch on it too, or the expensive half of the crawl is spent on
 # properties that were never candidates.
 ENRICH_BUDGET_YEN = 200_000_000
+# How long a detail snapshot is trusted when the page publishes no
+# 次回更新予定日 (sale pages generally do not). Chosen to match the median lead
+# time SUUMO gives on the pages that do state one.
+DETAIL_MAX_AGE_DAYS = 7
 
 
 def _worth_enriching(pids: list[str], commute_max: int | None,
@@ -58,6 +62,20 @@ def _worth_enriching(pids: list[str], commute_max: int | None,
     return keep
 
 
+def _fetched_within(property_id: str, today: str, days: int) -> bool:
+    """Was this property's detail fetched in the last `days`? Coordinates never
+    move and spec edits are rare, so a recent snapshot is as good as a new one."""
+    cutoff = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=days)).strftime("%Y-%m-%d")
+    conn = query.connect()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM property_detail WHERE property_id = ? AND scrape_date >= ? "
+            "LIMIT 1", (property_id, cutoff)).fetchone()
+    finally:
+        conn.close()
+    return row is not None
+
+
 def enrich_details(fetcher: Fetcher, scraped: dict[str, str], scrape_date: str,
                    commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
                    budget_yen: int | None = ENRICH_BUDGET_YEN) -> int:
@@ -73,8 +91,22 @@ def enrich_details(fetcher: Fetcher, scraped: dict[str, str], scrape_date: str,
     if skipped:
         log.info("enrich: skipping %d listing(s) beyond %s min or over ¥%s",
                  skipped, commute_max, f"{budget_yen:,}" if budget_yen else "—")
+    stale = 0
     for pid, url in scraped.items():
-        if not pid or not url or pid not in near or query.get_detail(pid, scrape_date):
+        if not pid or not url or pid not in near:
+            continue
+        if query.get_detail(pid, scrape_date):
+            continue                       # already done today
+        # SUUMO states when it will next refresh a listing (次回更新予定日,
+        # typically a week out). Before that date the page cannot have changed,
+        # so re-fetching it is guaranteed waste.
+        fresh_until = query.detail_fresh_until(pid)
+        if fresh_until:
+            if fresh_until > scrape_date:
+                stale += 1
+                continue
+        elif _fetched_within(pid, scrape_date, DETAIL_MAX_AGE_DAYS):
+            stale += 1
             continue
         try:
             res = detail.scrape_detail(url, fetcher=fetcher)
@@ -82,6 +114,8 @@ def enrich_details(fetcher: Fetcher, scraped: dict[str, str], scrape_date: str,
             done += 1
         except Exception as exc:  # keep going; enrichment is best-effort
             log.warning("enrich %s failed: %s", pid, exc)
+    if stale:
+        log.info("enrich: %d listing(s) still fresh per 次回更新予定日", stale)
     return done
 
 

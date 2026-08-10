@@ -405,6 +405,11 @@ export interface Filters {
   age_max?: number | null;
   eras?: string[];             // 耐震基準 tiers; empty = no era filter
   commute_max?: number | null; // door-to-school minutes
+  // Total budget, applied here because SUUMO's own ceiling stops at 1億2千万.
+  // Land is judged on the budget less the cost of the house you must build.
+  budget_yen?: number | null;
+  budget_build_m2?: number;
+  budget_build_cost_m2?: number;
   date_from?: string | null;   // crawled-time window, 'YYYY-MM-DD' inclusive
   date_to?: string | null;
   sort?: string | null;
