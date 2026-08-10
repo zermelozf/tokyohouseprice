@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from . import commute, zoning
+from . import commute, hazard, zoning
 from .db import connect, init_db as init_db_conn
 
 # Filters is a plain dict with any of these optional keys:
@@ -334,7 +334,7 @@ def search_db(f: dict) -> list[dict]:
     # Era is filtered in Python, not SQL: the rule needs a build year that may
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
-    rows = annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))))
+    rows = hazard.annotate(annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows)))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     if f.get("commute_max") is not None:
@@ -393,8 +393,8 @@ def map_points(f: dict) -> list[dict]:
     """
     conn = connect()
     try:
-        rows = annotate_reviews(annotate_capacity(commute.annotate(annotate_era(
-            [dict(r) for r in conn.execute(sql, date_params + params).fetchall()]))))
+        rows = hazard.annotate(annotate_reviews(annotate_capacity(commute.annotate(annotate_era(
+            [dict(r) for r in conn.execute(sql, date_params + params).fetchall()])))))
     finally:
         conn.close()
     if f.get("eras"):

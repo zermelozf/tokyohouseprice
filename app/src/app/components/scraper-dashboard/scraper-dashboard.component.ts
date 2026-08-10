@@ -92,8 +92,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // defaults to yesterday→today (set in ngOnInit).
   searchForm = { category: '', ward: '', price_min: null as number | null,
                  price_max: null as number | null, limit: 300,
-                 date_from: '', date_to: '', commuteMax: null as number | null };
-  searchVerdicts: string[] = [];
+                 date_from: '', date_to: '' };
   // Total budget, shared by Search and Map. SUUMO's own price ceiling stops at
   // 1億2千万, so this cannot live in the crawl URL — without it the dashboard
   // shows listings the crawler already refuses to fetch details for.
@@ -144,8 +143,17 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // Report tab: Leaflet map of crawled listings that have an exact location.
   // `date` empty means "latest snapshot of every property"; a specific crawl
   // date pins the map to what that day's crawl actually saw.
-  mapForm: { category: string; ward: string; date: string; commuteMax: number | null } =
-    { category: '', ward: '', date: '', commuteMax: 40 };
+  // Criteria shared by the Map and the Search tab. They were duplicated, so
+  // narrowing the map left the table showing something else — and a saved
+  // preset could only ever restore half of it.
+  shared = {
+    category: '' as string,
+    ward: '' as string,
+    commuteMax: 40 as number | null,
+    verdicts: [] as string[],
+  };
+  // Map-only: which crawl date to draw.
+  mapForm: { date: string } = { date: '' };
   // 耐震基準 tiers to show; empty = all (including listings with no known year).
   mapEras: SeismicEra[] = [];
   // What the dots encode. Era colouring answers "how much of this street is
@@ -191,17 +199,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // is what makes a search shareable.
   savedFilters: { name: string; filters: any; created: string }[] = [];
   filterName = '';
+  /** Which saved preset is showing, so it can be re-selected or deleted. */
+  activeFilter = '';
   shareMsg = '';
 
   /** Everything that decides what the map shows. */
   filterState(): any {
     return {
+      shared: { ...this.shared, verdicts: [...this.shared.verdicts] },
       mapForm: { ...this.mapForm },
       searchForm: { ...this.searchForm },
-      searchVerdicts: [...this.searchVerdicts],
       ranges: JSON.parse(JSON.stringify(this.mapRanges)),
       mapEras: [...this.mapEras],
-      mapVerdicts: [...this.mapVerdicts],
       budgetYen: this.budgetYen, budgetBuildM2: this.budgetBuildM2,
       bldMinBuy: this.bldMinBuy, bldMinRent: this.bldMinRent,
       bldMinRentHouse: this.bldMinRentHouse,
@@ -212,11 +221,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   applyFilterState(st: any, reload = true): void {
     if (!st) return;
+    if (st.shared) this.shared = { ...this.shared, ...st.shared,
+                                   verdicts: st.shared.verdicts ?? this.shared.verdicts };
     if (st.mapForm) this.mapForm = { ...this.mapForm, ...st.mapForm };
     if (st.searchForm) this.searchForm = { ...this.searchForm, ...st.searchForm };
-    if (st.searchVerdicts) this.searchVerdicts = st.searchVerdicts;
     this.mapEras = st.mapEras ?? this.mapEras;
-    this.mapVerdicts = st.mapVerdicts ?? this.mapVerdicts;
     for (const k of ['budgetYen','budgetBuildM2','bldMinBuy','bldMinRent',
                      'bldMinRentHouse','rentMaxYen','ageMaxKnown','colorBy'] as const) {
       if (st[k] !== undefined) (this as any)[k] = st[k];
@@ -224,7 +233,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     // Ranges are applied after the reload, since their bounds depend on the
     // data that comes back.
     this.pendingRanges = st.ranges || null;
-    if (reload) this.loadMap(); else this.applyPendingRanges();
+    // Both tabs move together, so a restored preset is not half-applied.
+    this.runSearch();
+    if (reload && this.map) this.loadMap(); else this.applyPendingRanges();
   }
 
   private pendingRanges: any = null;
@@ -258,7 +269,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   loadFilter(name: string): void {
     const f = this.savedFilters.find(x => x.name === name);
-    if (f) { this.applyFilterState(f.filters); this.shareMsg = `loaded "${name}"`; }
+    if (f) { this.applyFilterState(f.filters); this.activeFilter = name;
+             this.shareMsg = `loaded "${name}"`; }
   }
 
   removeFilter(name: string): void {
@@ -302,7 +314,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     .map(([key, m]) => ({ key: key as Verdict, ...m }));
   // Which verdicts the map shows. Default hides nothing; the point of the
   // status badge is to stop you reopening the same rejects, not to hide them.
-  mapVerdicts: string[] = [];
+
   readonly QUICK_TAGS = ['bright', 'dark', 'noisy', 'main road', 'narrow street',
                          'good layout', 'odd layout', 'needs work', 'nice street',
                          'no parking', 'steep', 'overlooked'];
@@ -407,7 +419,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
    * without this you see "3 bad" next to one pin and assume something broke. */
   reviewedShown(source: 'map' | 'search' = 'map'): number {
     const rows: any[] = source === 'search' ? this.searchRows : this.mapPoints;
-    return rows.filter(r => r.verdict).length;
+    return rows.filter((r: any) => r.verdict).length;
   }
 
   reviewedTotal(): number {
@@ -421,11 +433,17 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleSearchVerdict(key: string): void {
-    this.searchVerdicts = this.searchVerdicts.includes(key)
-      ? this.searchVerdicts.filter(v => v !== key)
-      : [...this.searchVerdicts, key];
+  toggleVerdict(key: string): void {
+    this.shared.verdicts = this.shared.verdicts.includes(key)
+      ? this.shared.verdicts.filter(v => v !== key)
+      : [...this.shared.verdicts, key];
+    this.refreshBoth();
+  }
+
+  /** Apply the shared criteria wherever they are showing. */
+  refreshBoth(): void {
     this.runSearch();
+    if (this.map) this.loadMap();
   }
 
   /** Grade straight from the results table, without opening the card. */
@@ -443,12 +461,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleMapVerdict(key: string): void {
-    this.mapVerdicts = this.mapVerdicts.includes(key)
-      ? this.mapVerdicts.filter(v => v !== key)
-      : [...this.mapVerdicts, key];
-    this.loadMap();
-  }
+
 
   // --- map range filters ---------------------------------------------------
   // The map loads once and filters in the browser: a slider has to respond to
@@ -1316,13 +1329,14 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   loadMap(): void {
     const f: Filters = {
-      categories: this.mapForm.category ? [this.mapForm.category] : [],
-      wards: this.mapForm.ward ? [this.mapForm.ward] : [],
+      categories: this.shared.category ? [this.shared.category] : [],
+      wards: this.shared.ward ? [this.shared.ward] : [],
       eras: [...this.mapEras],
       // Numeric cuts are the sliders' job — the server sends everything in
       // scope so the ranges can span the real data.
       age_max_known: this.ageMaxKnown,
-      verdicts: [...this.mapVerdicts],
+      commute_max: this.shared.commuteMax,
+      verdicts: [...this.shared.verdicts],
       limit: 5000,
     };
     // Pinning both bounds to one day narrows "latest snapshot per property" to
@@ -1960,6 +1974,32 @@ ${folders}
              hurdlePct: (hurdle * 100).toFixed(2), yTicks, xTicks, w, h };
   }
 
+  /** Ground risk, as one line. Bands are coloured because the numbers alone
+   * (ARV 1.81, AVS 199) mean nothing without a scale. */
+  hazardLine(p: any, html = true): string {
+    const h = p?.hazard;
+    if (!h) return '';
+    const band = (b: string | null) =>
+      b === 'high' ? '#c2410c' : b === 'medium' ? '#ca8a04' : '#15803d';
+    const bits: string[] = [];
+    if (h.shaking) bits.push(html
+      ? `<b style="color:${band(h.shaking)}">揺れやすさ ${this.esc(h.shaking)}</b>`
+        + `<span style="color:#666"> (増幅率 ${this.esc(h.arv)})</span>`
+      : `揺れやすさ ${h.shaking} (${h.arv})`);
+    if (h.liquefaction) bits.push(html
+      ? `<b style="color:${band(h.liquefaction)}">液状化 ${this.esc(h.liquefaction)}</b>`
+        + `<span style="color:#666"> (${this.esc(h.landform)})</span>`
+      : `液状化 ${h.liquefaction} (${h.landform})`);
+    if (h.elevation_m != null) bits.push(`標高 ${h.elevation_m} m`);
+    if (h.quake6_30yr != null) bits.push(`震度6弱 30年 ${(h.quake6_30yr * 100).toFixed(0)}%`);
+    return bits.join(' · ');
+  }
+
+  hazardBandColor(b: string | null | undefined): string {
+    return b === 'high' ? '#c2410c' : b === 'medium' ? '#ca8a04'
+         : b === 'low' ? '#15803d' : '#9aa1ab';
+  }
+
   /** Where to check the restrictions this tool cannot compute.
    *
    * 高度地区, 日影規制 and absolute height caps are municipal designations: not
@@ -2296,6 +2336,10 @@ ${folders}
       ${this.verdictBadge(p)}${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.property_label || p.category)}<br>
       ${bits}<br>
       ${capLine}<span style="color:#1e5b96">${commute}</span><br>
+      ${this.hazardLine(p) ? `<span>🌊 ${this.hazardLine(p)}</span>`
+          + (p.hazard_map_url ? ` <a href="${esc(p.hazard_map_url)}" target="_blank"
+               rel="noopener" title="浸水 and 土砂災害 are not computed — check them here"
+               >hazard map ↗</a>` : '') + '<br>' : ''}
       <span style="color:#666">${esc(p.address || '')}</span><br>
       ${actions}
     </div>`;
@@ -2437,8 +2481,8 @@ ${folders}
   runSearch(): void {
     const s = this.searchForm;
     const f: Filters = {
-      categories: s.category ? [s.category] : [],
-      wards: s.ward ? [s.ward] : [],
+      categories: this.shared.category ? [this.shared.category] : [],
+      wards: this.shared.ward ? [this.shared.ward] : [],
       price_min: s.price_min ?? null,
       price_max: s.price_max ?? null,
       budget_yen: this.budgetYen,
@@ -2448,8 +2492,8 @@ ${folders}
       bld_min_rent_house: this.bldMinRentHouse,
       rent_max_yen: this.rentMaxYen,
       age_max_known: this.ageMaxKnown,
-      commute_max: s.commuteMax,
-      verdicts: [...this.searchVerdicts],
+      commute_max: this.shared.commuteMax,
+      verdicts: [...this.shared.verdicts],
       date_from: s.date_from || null,
       date_to: s.date_to || null,
       limit: s.limit || 300,

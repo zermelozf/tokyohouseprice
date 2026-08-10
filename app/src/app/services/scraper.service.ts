@@ -162,6 +162,8 @@ export interface MapPoint {
   review_note: string | null;
   // How big a house the plot can legally carry (land only) — see scraper/zoning.
   capacity: PlotCapacity | null;
+  hazard: Hazard | null;
+  hazard_map_url: string | null;
   // Door-to-school commute, precomputed per station (scraper/commute.py).
   commute_min: number | null;
   commute_from: string | null;
@@ -173,6 +175,18 @@ export interface MapPoint {
   era: SeismicEra | null;
   build_year_est: number | null;   // stated year, else derived from 築N年
   era_approx: boolean;             // derived year, or a year on a revision boundary
+}
+
+/** Ground and earthquake risk at the listing's own coordinates. 浸水 and
+ *  土砂災害 are not computed — hazard_map_url points at the map for those. */
+export interface Hazard {
+  arv: number | null;              // 表層地盤増幅率 = 揺れやすさ
+  shaking: 'low' | 'medium' | 'high' | null;
+  avs30: number | null;
+  landform: string | null;         // 微地形分類
+  liquefaction: 'low' | 'medium' | 'high' | null;
+  elevation_m: number | null;
+  quake6_30yr: number | null;      // P(震度6弱+) in 30 years
 }
 
 export interface PlotCapacity {

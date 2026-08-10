@@ -986,3 +986,23 @@ td.verdictcell { white-space: nowrap; }
 .vbtn.bad.on   { background: #c2410c; border-color: #c2410c; color: #fff; }
 .vbtn.maybe.on { background: #ca8a04; border-color: #ca8a04; color: #fff; }
 .vbtn.good.on  { background: #15803d; border-color: #15803d; color: #fff; }
+
+/* ground risk */
+.hazbox { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; align-items: center;
+          margin: 0.6rem 0 0.3rem; padding: 0.5rem 0.6rem; background: #f7f9fb;
+          border: 1px solid #e2e6ec; border-radius: 3px; font-size: 0.78rem; }
+.hazitem { display: inline-flex; align-items: center; gap: 0.3rem; }
+.hazitem i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.hazitem .muted { font-size: 0.72rem; }
+.hazlink { font-size: 0.75rem; }
+
+/* The shared filter bar: presets on the left, the criteria both tabs obey on
+   the right. */
+.filterbar .fload { max-width: 12rem; }
+.sharedbits { display: flex; align-items: center; gap: 0.3rem;
+              flex-wrap: wrap; margin-left: auto; }
+.sharedbits select { padding: 0.22rem 0.3rem; font-size: 0.78rem;
+                     border: 1px solid #ddd; border-radius: 3px; background: #fff; }
+.sharedbits .chip { display: inline-flex; align-items: center; gap: 0.25rem;
+                    padding: 0.24rem 0.5rem; }
+.sharedbits .chip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }

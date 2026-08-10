@@ -1,3 +1,49 @@
+<!-- One filter bar, rendered on both the Map and the Search tab. The criteria it
+     holds are shared state, so narrowing one tab narrows the other and a saved
+     preset restores the whole view rather than half of it. -->
+<ng-template #filterBarTpl>
+  <div class="filterbar">
+    <select class="fload" [(ngModel)]="activeFilter" (ngModelChange)="loadFilter($event)">
+      <option value="">— saved filters —</option>
+      <option *ngFor="let f of savedFilters" [value]="f.name">{{ f.name }}</option>
+    </select>
+    <input class="fname" [(ngModel)]="filterName" placeholder="name this view"
+           (keyup.enter)="saveCurrentFilter()">
+    <button class="ghost tiny" (click)="saveCurrentFilter()"
+            [disabled]="!filterName.trim()" title="save every filter on both tabs">save</button>
+    <button class="ghost tiny" (click)="copyShareLink()"
+            title="a link that restores this exact view">🔗</button>
+    <button class="ghost tiny" *ngIf="activeFilter" (click)="removeFilter(activeFilter)"
+            [title]="'delete ' + activeFilter">🗑</button>
+    <span class="note" *ngIf="shareMsg">{{ shareMsg }}</span>
+
+    <span class="sharedbits">
+      <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
+        <option value="">all types</option>
+        <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
+      </select>
+      <select [(ngModel)]="shared.ward" (ngModelChange)="refreshBoth()">
+        <option value="">all wards</option>
+        <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
+      </select>
+      <select [(ngModel)]="shared.commuteMax" (ngModelChange)="refreshBoth()"
+              title="door-to-school minutes: walk + train + walk to the Lycée">
+        <option [ngValue]="null">🎓 any</option>
+        <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">🎓 ≤{{ m }} min</option>
+      </select>
+      <button type="button" class="chip" *ngFor="let v of VERDICTS"
+              [class.sel]="shared.verdicts.includes(v.key)" (click)="toggleVerdict(v.key)"
+              [title]="'show only ' + v.label">
+        <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
+      </button>
+      <button type="button" class="chip" [class.sel]="shared.verdicts.includes('none')"
+              (click)="toggleVerdict('none')" title="not yet reviewed">
+        <i style="background:#9ca3af"></i>unseen
+      </button>
+    </span>
+  </div>
+</ng-template>
+
 <div class="scraper">
   <header class="hd">
     <h1>🏠 SUUMO Scraper</h1>
@@ -155,20 +201,6 @@
         <label>crawled to</label>
         <input type="date" [(ngModel)]="searchForm.date_to">
       </div>
-      <div class="small">
-        <label>category</label>
-        <select [(ngModel)]="searchForm.category">
-          <option value="">all</option>
-          <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
-        </select>
-      </div>
-      <div class="small">
-        <label>ward</label>
-        <select [(ngModel)]="searchForm.ward">
-          <option value="">all</option>
-          <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
-        </select>
-      </div>
       <div class="small"><label>price min (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_min"></div>
       <div class="small"><label>price max (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_max"></div>
       <div class="small">
@@ -194,13 +226,6 @@
         <label title="Max age in years. Listings with no stated age (新築, land) are kept.">max age</label>
         <input type="number" step="5" [(ngModel)]="ageMaxKnown">
         </div>
-      <div class="small">
-        <label title="door-to-school minutes: walk + train + walk to the Lycée">🎓 LFIT max</label>
-        <select [(ngModel)]="searchForm.commuteMax">
-          <option [ngValue]="null">any</option>
-          <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">{{ m }} min</option>
-        </select>
-      </div>
       <div class="small"><label>limit</label><input type="number" min="1" [(ngModel)]="searchForm.limit"></div>
       <button (click)="runSearch()">🔍 Search</button>
       <span class="exportlinks" *ngIf="searchRows.length">
@@ -215,23 +240,13 @@
       <span class="exportnote" *ngIf="exportMsg">{{ exportMsg }}</span>
     </div>
 
+    <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
     <div class="reviewbar" *ngIf="searchRows.length">
       <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
       <span class="muted">unreviewed first · keys 1/2/3</span>
       <span class="muted" *ngIf="reviewedTotal()">
         · {{ reviewedTotal() }} reviewed overall,
         <b>{{ reviewedShown('search') }}</b> of them match these filters
-      </span>
-      <span class="vfilter">
-        <button type="button" class="chip" *ngFor="let v of VERDICTS"
-                [class.sel]="searchVerdicts.includes(v.key)" (click)="toggleSearchVerdict(v.key)"
-                [title]="'show only ' + v.label">
-          <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
-        </button>
-        <button type="button" class="chip" [class.sel]="searchVerdicts.includes('none')"
-                (click)="toggleSearchVerdict('none')" title="not yet reviewed">
-          <i style="background:#9ca3af"></i>unseen
-        </button>
       </span>
     </div>
     <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: searchStats }"></ng-container>
@@ -481,36 +496,7 @@
 
       <ng-container *ngSwitchCase="'filters'">
         <div class="actions searchbar">
-        <div class="small">
-        <label>category</label>
-        <select [(ngModel)]="mapForm.category">
-        <option value="">all</option>
-        <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
-        </select>
-        </div>
-        <div class="small">
-        <label>ward</label>
-        <select [(ngModel)]="mapForm.ward">
-        <option value="">all</option>
-        <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
-        </select>
-        </div>
-        <div class="filterbar">
-          <label>saved</label>
-          <select (change)="loadFilter($any($event.target).value)">
-            <option value="">— load a saved filter —</option>
-            <option *ngFor="let f of savedFilters" [value]="f.name">{{ f.name }}</option>
-          </select>
-          <input class="fname" [(ngModel)]="filterName" placeholder="name this filter"
-                 (keyup.enter)="saveCurrentFilter()">
-          <button class="ghost tiny" (click)="saveCurrentFilter()" [disabled]="!filterName.trim()">save</button>
-          <button class="ghost tiny" (click)="copyShareLink()" title="a link that restores this exact view">
-            🔗 copy link</button>
-          <button class="ghost tiny" *ngIf="savedFilters.length"
-                  (click)="removeFilter(savedFilters[0].name)"
-                  [title]="'delete ' + savedFilters[0].name">🗑 {{ savedFilters[0].name }}</button>
-          <span class="note" *ngIf="shareMsg">{{ shareMsg }}</span>
-        </div>
+        <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
         <div class="reviewbar">
           <button (click)="startReview(true)" [disabled]="!mapPoints.length">
             🔍 Review {{ mapPoints.length }} shown
@@ -519,17 +505,6 @@
           <span class="muted" *ngIf="reviewedTotal()">
             · {{ reviewedTotal() }} reviewed overall,
             <b>{{ reviewedShown('map') }}</b> of them match these filters
-          </span>
-          <span class="vfilter">
-            <button type="button" class="chip" *ngFor="let v of VERDICTS"
-                    [class.sel]="mapVerdicts.includes(v.key)" (click)="toggleMapVerdict(v.key)"
-                    [title]="'show only ' + v.label">
-              <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
-            </button>
-            <button type="button" class="chip" [class.sel]="mapVerdicts.includes('none')"
-                    (click)="toggleMapVerdict('none')" title="not yet reviewed">
-              <i style="background:#9ca3af"></i>unseen
-            </button>
           </span>
         </div>
         <div class="rangebank">
@@ -873,6 +848,22 @@
             <a [href]="routeUrl(d.lat != null ? d : p)" target="_blank" rel="noopener" class="mapslink"
                [title]="'Google Maps route to ' + refPoi().name + ' (' + travelMode + ')'">· 🗺️ route ↗</a>
             <span class="muted">· {{ specList(d).length }} fields</span>
+          </div>
+          <div class="hazbox" *ngIf="detailModal.point?.hazard as h">
+            <span class="hazitem" *ngIf="h.shaking">
+              <i [style.background]="hazardBandColor(h.shaking)"></i>
+              揺れやすさ <b>{{ h.shaking }}</b> <span class="muted">増幅率 {{ h.arv }}</span>
+            </span>
+            <span class="hazitem" *ngIf="h.liquefaction">
+              <i [style.background]="hazardBandColor(h.liquefaction)"></i>
+              液状化 <b>{{ h.liquefaction }}</b> <span class="muted">{{ h.landform }}</span>
+            </span>
+            <span class="hazitem" *ngIf="h.elevation_m != null">
+              <i style="background:#9aa1ab"></i>標高 <b>{{ h.elevation_m }} m</b>
+            </span>
+            <a *ngIf="detailModal.point?.hazard_map_url"
+               [href]="detailModal.point!.hazard_map_url!" target="_blank" rel="noopener"
+               class="hazlink">🌊 浸水・土砂災害 ↗</a>
           </div>
           <div class="keyfacts">
             <div class="fact" *ngFor="let e of keyFacts(d)">
@@ -1319,6 +1310,30 @@
           🏗️ fits {{ cap.max_floor_m2 }} m², {{ cap.max_footprint_m2 }} m² footprint
         </div>
         <div class="revline muted">{{ c.address }}</div>
+
+        <div class="hazbox" *ngIf="c.hazard as h">
+          <span class="hazitem" *ngIf="h.shaking">
+            <i [style.background]="hazardBandColor(h.shaking)"></i>
+            揺れやすさ <b>{{ h.shaking }}</b>
+            <span class="muted">増幅率 {{ h.arv }}</span>
+          </span>
+          <span class="hazitem" *ngIf="h.liquefaction">
+            <i [style.background]="hazardBandColor(h.liquefaction)"></i>
+            液状化 <b>{{ h.liquefaction }}</b>
+            <span class="muted">{{ h.landform }}</span>
+          </span>
+          <span class="hazitem" *ngIf="h.elevation_m != null">
+            <i style="background:#9aa1ab"></i>標高 <b>{{ h.elevation_m }} m</b>
+          </span>
+          <span class="hazitem" *ngIf="h.quake6_30yr != null">
+            <i style="background:#9aa1ab"></i>震度6弱 30年
+            <b>{{ (h.quake6_30yr * 100) | number:'1.0-0' }}%</b>
+          </span>
+        </div>
+        <a *ngIf="c.hazard_map_url" [href]="c.hazard_map_url" target="_blank" rel="noopener"
+           class="hazlink" title="浸水 and 土砂災害 are not computed here — check them on the map">
+          🌊 浸水・土砂災害 は地図で確認 ↗</a>
+
         <a [href]="c.url" target="_blank" rel="noopener">open the full listing on SUUMO ↗</a>
 
         <label class="revlabel">why — click any that apply</label>

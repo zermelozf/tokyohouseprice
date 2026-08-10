@@ -238,6 +238,14 @@ def delete_filter(name: str):
     return {"deleted": n > 0}
 
 
+@router.post("/hazard/refresh")
+def hazard_refresh():
+    """Fill the ground-risk cache for every listing that has coordinates."""
+    from scraper import hazard
+    pts = [(p["lat"], p["lng"]) for p in query.map_points({"limit": 100000})]
+    return {"meshes_added": hazard.refresh(pts), "cached": len(hazard.table())}
+
+
 @router.get("/summary")
 def summary():
     return query.db_summary()

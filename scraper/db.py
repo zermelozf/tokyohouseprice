@@ -87,6 +87,19 @@ CREATE TABLE IF NOT EXISTS property_detail (
     PRIMARY KEY (property_id, scrape_date)
 );
 
+-- Ground/earthquake risk per 250m mesh (the resolution J-SHIS publishes at),
+-- so listings in the same mesh genuinely share a value.
+CREATE TABLE IF NOT EXISTS hazard_cache (
+    mesh_key     TEXT PRIMARY KEY,
+    meshcode     TEXT,
+    arv          REAL,      -- 表層地盤増幅率 = 揺れやすさ
+    avs30        REAL,
+    landform     TEXT,      -- 微地形分類, the basis for liquefaction risk
+    elevation_m  REAL,
+    quake6_30yr  REAL,      -- P(震度6弱+) within 30 years
+    fetched_at   TEXT
+);
+
 -- Named filter presets. The map carries a lot of state (eight ranges plus a
 -- dozen scalars), so retyping it is the main friction in coming back to a
 -- search you had already tuned.
