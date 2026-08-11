@@ -909,9 +909,13 @@ td.commutecell b { color: #1e5b96; }
            border-bottom: 1px solid #e6e9ee; background: #fafbfc; }
 .revhead .muted { font-size: 0.76rem; margin-left: auto; padding-right: 1.6rem; }
 @media (max-width: 860px) { .revbody { grid-template-columns: 1fr; } }
-.revgallery { position: relative; background: #10151b; border-radius: 3px; overflow: hidden;
-              min-height: 340px; display: flex; align-items: center; justify-content: center; }
-.revgallery img { width: 100%; height: 420px; object-fit: contain; display: block; }
+/* The gallery is a window on the filmstrip: no centring flexbox and no fixed
+   image height, both of which fought the track's own sizing. Its height comes
+   from .sheet-gallery, and the slides fill it. */
+.revgallery { position: relative; background: #10151b; border-radius: 3px;
+              overflow: hidden; }
+.revphoto-none { position: absolute; inset: 0; display: flex;
+                 align-items: center; justify-content: center; }
 .galnav { position: absolute; top: 50%; transform: translateY(-50%);
           background: rgba(0,0,0,0.45); color: #fff; border: none; box-shadow: none;
           width: 34px; height: 52px; font-size: 1.5rem; line-height: 1; padding: 0;
@@ -1164,7 +1168,10 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 /* Filmstrip: the neighbouring photos sit either side, so a drag reveals the
    real next image rather than animating a blank. */
 .revgallery { position: relative; overflow: hidden; }
-.galtrack { display: flex; width: 300%; height: 100%; will-change: transform; }
+/* The track is one container wide with three slides that each take all of it,
+   so translateX(-100%) moves exactly one photo. With a 300%-wide track it
+   moved three, landing past the end — a black panel. */
+.galtrack { display: flex; width: 100%; height: 100%; will-change: transform; }
 .galtrack.gliding { transition: transform 0.18s cubic-bezier(0.22, 0.7, 0.3, 1); }
-.galtrack img { width: 33.3333%; height: 100%; object-fit: contain;
-                flex: none; pointer-events: none; }
+.galtrack img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: contain;
+                pointer-events: none; }
