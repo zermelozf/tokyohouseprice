@@ -146,8 +146,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   // Criteria shared by the Map and the Search tab. They were duplicated, so
   // narrowing the map left the table showing something else — and a saved
   // preset could only ever restore half of it.
+  /** Type is a multi-select: 賃貸 is one SUUMO category but three products,
+   * and "a rental house or a plot" is a normal thing to want. Rent kinds are
+   * held apart from categories because they filter on a different field. */
+  readonly RENT_KINDS = [
+    { key: 'mansion', label: '賃貸マンション' },
+    { key: 'apart',   label: '賃貸アパート' },
+    { key: 'house',   label: '賃貸一戸建て' },
+  ];
+
   shared = {
-    category: '' as string,
+    categories: [] as string[],
+    rentKinds: [] as string[],
     ward: '' as string,
     verdicts: [] as string[],
     // Crawled-time window. Empty means the latest snapshot of every property,
@@ -222,8 +232,15 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   applyFilterState(st: any, reload = true): void {
     if (!st) return;
-    if (st.shared) this.shared = { ...this.shared, ...st.shared,
-                                   verdicts: st.shared.verdicts ?? this.shared.verdicts };
+    if (st.shared) {
+      this.shared = { ...this.shared, ...st.shared,
+                      verdicts: st.shared.verdicts ?? this.shared.verdicts,
+                      categories: st.shared.categories
+                        // Presets written when type was a single select.
+                        ?? (st.shared.category ? [st.shared.category] : []),
+                      rentKinds: st.shared.rentKinds ?? [] };
+      delete (this.shared as any).category;
+    }
     // Presets written before the two tabs shared a date window.
     if (st.mapForm?.date && !st.shared?.dateTo) {
       this.shared.dateFrom = this.shared.dateTo = st.mapForm.date;
@@ -300,11 +317,31 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     };
   }
 
+  /** Non-rent categories, which are the ones shown as plain type chips. */
+  typeChips(): { key: string; label: string }[] {
+    return (this.config?.categories || []).filter((c: any) => c.key !== 'rent');
+  }
+
+  toggleCategory(key: string): void {
+    const c = this.shared.categories;
+    this.shared.categories = c.includes(key) ? c.filter(k => k !== key) : [...c, key];
+    this.refreshBoth();
+  }
+
+  toggleRentKind(key: string): void {
+    const k = this.shared.rentKinds;
+    this.shared.rentKinds = k.includes(key) ? k.filter(x => x !== key) : [...k, key];
+    this.refreshBoth();
+  }
+
   shownSummary(): string {
     const parts: string[] = [];
-    if (this.shared.category) {
-      const c = (this.config?.categories || []).find((x: any) => x.key === this.shared.category);
-      parts.push(c ? c.label : this.shared.category);
+    for (const key of this.shared.categories) {
+      const c = (this.config?.categories || []).find((x: any) => x.key === key);
+      parts.push(c ? c.label : key);
+    }
+    for (const key of this.shared.rentKinds) {
+      parts.push(this.RENT_KINDS.find(k => k.key === key)?.label || key);
     }
     if (this.shared.ward) parts.push(this.shared.ward);
     const lfit = this.ranges['lfit'];
@@ -430,6 +467,29 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       },
       error: () => { this.reviewPhotosLoading = false; },
     });
+  }
+
+  // --- swipe the gallery -----------------------------------------------------
+  // Touch expects a swipe, and on a phone the ‹ › buttons are small targets
+  // sitting over the photo you are trying to look at.
+  private swipeX = 0;
+  private swipeY = 0;
+  swiping = false;
+
+  swipeStart(e: PointerEvent): void {
+    this.swipeX = e.clientX;
+    this.swipeY = e.clientY;
+    this.swiping = true;
+  }
+
+  swipeEnd(e: PointerEvent): void {
+    if (!this.swiping) return;
+    this.swiping = false;
+    const dx = e.clientX - this.swipeX;
+    const dy = e.clientY - this.swipeY;
+    // Ignore a mostly-vertical drag: that is the sheet being scrolled.
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
+    this.photoStep(dx < 0 ? 1 : -1);
   }
 
   photoStep(step: number): void {
@@ -1490,7 +1550,10 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * removed, and the two disagreed about how many listings even existed. */
   private buildFilters(): Filters {
     const f: Filters = {
-      categories: this.shared.category ? [this.shared.category] : [],
+      // A rent kind implies the rent category; picking none of either means all.
+      categories: this.shared.rentKinds.length && !this.shared.categories.includes('rent')
+        ? [...this.shared.categories, 'rent'] : [...this.shared.categories],
+      rent_kinds: [...this.shared.rentKinds],
       wards: this.shared.ward ? [this.shared.ward] : [],
       eras: [...this.eras],
       verdicts: [...this.shared.verdicts],
@@ -1548,7 +1611,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   /** Filename stem describing the current search filters (kanji wards kept). */
   private exportStem(): string {
-    return ['listings', this.shared.category, this.shared.ward,
+    return ['listings', this.shared.categories.join('-'),
+            this.shared.rentKinds.join('-'), this.shared.ward,
             this.shared.dateTo || 'latest']
       .filter(Boolean).join('-').replace(/[\\/:*?"<>|\s]+/g, '_');
   }

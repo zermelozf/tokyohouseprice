@@ -32,12 +32,17 @@
      narrows the other and a preset restores the whole view. -->
 <ng-template #filterBarTpl>
   <div class="filterbar">
-    <label class="fld"><span>type</span>
-      <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
-        <option value="">all</option>
-        <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
-      </select>
-    </label>
+    <span class="vchips typechips">
+      <span class="vlabel">type</span>
+      <button type="button" class="chip" *ngFor="let c of typeChips()"
+              [class.sel]="shared.categories.includes(c.key)" (click)="toggleCategory(c.key)"
+              [title]="c.label">{{ c.label }}</button>
+      <span class="chipsep"></span>
+      <button type="button" class="chip" *ngFor="let k of RENT_KINDS"
+              [class.sel]="shared.rentKinds.includes(k.key)" (click)="toggleRentKind(k.key)"
+              [title]="k.label">{{ k.label }}</button>
+      <span class="note" *ngIf="!shared.categories.length && !shared.rentKinds.length">all</span>
+    </span>
     <label class="fld"><span>ward</span>
       <select [(ngModel)]="shared.ward" (ngModelChange)="refreshBoth()">
         <option value="">all</option>
@@ -830,7 +835,8 @@
         </div>
 
         <div class="sheet-body">
-          <div class="revgallery sheet-gallery">
+          <div class="revgallery sheet-gallery" (pointerdown)="swipeStart($event)"
+               (pointerup)="swipeEnd($event)" (pointercancel)="swiping = false">
             <img *ngIf="reviewPhotos.length" [src]="reviewPhotos[reviewPhotoIndex]" alt="" loading="lazy">
             <div class="revphoto-none" *ngIf="!reviewPhotos.length">
               {{ reviewPhotosLoading ? 'loading photos…' : 'no photos on this listing' }}
@@ -1322,7 +1328,8 @@
     </div>
 
     <div class="revbody" *ngIf="reviewCard as c">
-      <div class="revgallery">
+      <div class="revgallery" (pointerdown)="swipeStart($event)"
+           (pointerup)="swipeEnd($event)" (pointercancel)="swiping = false">
         <img *ngIf="reviewPhotos.length" [src]="reviewPhotos[reviewPhotoIndex]" alt="" loading="lazy">
         <div class="revphoto-none" *ngIf="!reviewPhotos.length">
           {{ reviewPhotosLoading ? 'loading photos…' : 'no photos on this listing' }}

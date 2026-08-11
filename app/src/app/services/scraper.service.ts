@@ -468,6 +468,9 @@ export interface Filters {
   walk_max?: number | null;
   age_max?: number | null;
   eras?: string[];             // 耐震基準 tiers; empty = no era filter
+  // Which kinds of 賃貸 to keep: mansion / apart / house — 賃貸 is one SUUMO
+  // category but three products. See query.RENT_KINDS.
+  rent_kinds?: string[];
   commute_max?: number | null; // door-to-school minutes
   // Total budget, applied here because SUUMO's own ceiling stops at 1億2千万.
   // Land is judged on the budget less the cost of the house you must build.

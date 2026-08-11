@@ -78,6 +78,36 @@ def budget_ceiling(row: dict, f: dict) -> float | None:
     return total
 
 
+# 賃貸 is one SUUMO category but three different products, and the choice
+# between them is the choice people actually make. The listing states which in
+# its own label, so the split needs no new data.
+RENT_KINDS = {
+    "mansion": "マンション",
+    "apart":   "アパート",
+    "house":   "一戸建",
+}
+
+
+def apply_rent_kinds(rows: list[dict], f: dict) -> list[dict]:
+    """Narrow 賃貸 to particular kinds. Only rent rows are judged — asking for
+    a rental house says nothing about which plots you want to see."""
+    want = f.get("rent_kinds")
+    if not want:
+        return rows
+    keys = [RENT_KINDS[k] for k in want if k in RENT_KINDS]
+    if not keys:
+        return rows
+    out = []
+    for r in rows:
+        if r.get("market") != "rent":
+            out.append(r)
+            continue
+        label = r.get("property_label") or ""
+        if any(k in label for k in keys):
+            out.append(r)
+    return out
+
+
 def apply_verdicts(rows: list[dict], f: dict) -> list[dict]:
     """`verdicts` may include the sentinel 'none' for not-yet-reviewed, which is
     what the review queue asks for."""
@@ -326,7 +356,7 @@ def search_db(f: dict) -> list[dict]:
         annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows)))))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
-    rows = apply_verdicts(rows, f)
+    rows = apply_rent_kinds(apply_verdicts(rows, f), f)
     rows = sort_rows(rows, f.get("sort"))
     limit = f.get("limit")
     return rows[:limit] if limit else rows

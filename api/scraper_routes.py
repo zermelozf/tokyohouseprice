@@ -52,6 +52,8 @@ class Filters(BaseModel):
     walk_max: Optional[int] = None
     age_max: Optional[int] = None
     eras: list[str] = []              # 耐震基準 tiers; see query.ERAS
+    # Which kinds of 賃貸 to keep: mansion / apart / house. See query.RENT_KINDS.
+    rent_kinds: list[str] = []
     # Manual verdicts to keep. 'none' selects the not-yet-reviewed, which is
     # what the review queue asks for.
     verdicts: list[str] = []

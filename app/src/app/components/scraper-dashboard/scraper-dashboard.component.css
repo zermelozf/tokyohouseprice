@@ -1160,3 +1160,8 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
   .cattag { font-size: 0.65rem; }
   .vbtn { padding: 0.1rem 0.3rem; font-size: 0.72rem; margin-right: 1px; }
 }
+.typechips { row-gap: 0.3rem; }
+.typechips .chipsep { width: 1px; align-self: stretch; background: #e2e6ec; margin: 0 0.2rem; }
+/* Horizontal swipe belongs to the gallery; vertical still scrolls the sheet. */
+.revgallery { touch-action: pan-y; user-select: none; }
+.revgallery img { -webkit-user-drag: none; user-drag: none; }
