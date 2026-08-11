@@ -103,6 +103,17 @@ CREATE TABLE IF NOT EXISTS hazard_cache (
 -- Named filter presets. The map carries a lot of state (eight ranges plus a
 -- dozen scalars), so retyping it is the main friction in coming back to a
 -- search you had already tuned.
+-- Coordinates for listings whose detail page publishes no pin. Keyed by the
+-- address string because listings in the same 丁目 share a point, so this is a
+-- cache key rather than an approximation of the join.
+CREATE TABLE IF NOT EXISTS geocode_cache (
+    address    TEXT PRIMARY KEY,
+    lat        REAL,
+    lng        REAL,
+    title      TEXT,      -- what GSI matched, for checking a suspicious hit
+    fetched_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS saved_filter (
     name        TEXT PRIMARY KEY,
     filters     TEXT,          -- JSON blob, opaque to the server

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from . import commute, hazard, zoning
+from . import commute, geocode, hazard, zoning
 from .db import connect, init_db as init_db_conn
 
 # Filters is a plain dict with any of these optional keys:
@@ -334,7 +334,8 @@ def search_db(f: dict) -> list[dict]:
     # Era is filtered in Python, not SQL: the rule needs a build year that may
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
-    rows = hazard.annotate(annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows)))))
+    rows = hazard.annotate(geocode.annotate(
+        annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     if f.get("commute_max") is not None:
@@ -387,14 +388,19 @@ def map_points(f: dict) -> list[dict]:
            s.property_label, s.image_url, s.build_year, s.age_years, s.scrape_date
     FROM listings_snapshot s
     JOIN latest l ON l.property_id = s.property_id AND l.d = s.scrape_date
-    JOIN det ON det.property_id = s.property_id
-    JOIN property_detail pd ON pd.property_id = det.property_id AND pd.scrape_date = det.d
+    -- LEFT, like search_db: a listing SUUMO publishes no pin for still has an
+    -- address, and geocode.annotate places it. Dropping it here instead would
+    -- make the map hold fewer listings than the table for no stated reason.
+    LEFT JOIN det ON det.property_id = s.property_id
+    LEFT JOIN property_detail pd
+           ON pd.property_id = det.property_id AND pd.scrape_date = det.d
     {clause}
     """
     conn = connect()
     try:
-        rows = hazard.annotate(annotate_reviews(annotate_capacity(commute.annotate(annotate_era(
-            [dict(r) for r in conn.execute(sql, date_params + params).fetchall()])))))
+        rows = hazard.annotate(geocode.annotate(annotate_reviews(annotate_capacity(
+            commute.annotate(annotate_era(
+                [dict(r) for r in conn.execute(sql, date_params + params).fetchall()]))))))
     finally:
         conn.close()
     if f.get("eras"):
@@ -402,7 +408,11 @@ def map_points(f: dict) -> list[dict]:
     if f.get("commute_max") is not None:
         rows = [r for r in rows if r["commute_min"] is not None
                 and r["commute_min"] <= f["commute_max"]]
-    return apply_verdicts(apply_floors(apply_budget(rows, f), f), f)
+    rows = apply_verdicts(apply_floors(apply_budget(rows, f), f), f)
+    # Whatever is left without a position cannot be drawn at all — not filtered
+    # out, simply unplaceable. The caller reports the count so the difference
+    # from the table is visible rather than silent.
+    return [r for r in rows if r.get("lat") is not None and r.get("lng") is not None]
 
 
 # --- on-demand detail enrichment (exact location) --------------------------

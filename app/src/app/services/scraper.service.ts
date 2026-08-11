@@ -52,6 +52,9 @@ export interface Listing {
   // Present only for detail-enriched properties (null otherwise).
   lat?: number | null;
   lng?: number | null;
+  // 'exact' = SUUMO's own pin; 'geocoded' = placed from the address, so
+  // accurate to the 丁目 rather than the building; null = unplaceable.
+  location_source?: 'exact' | 'geocoded' | null;
   [key: string]: any;
 }
 

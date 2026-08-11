@@ -252,9 +252,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     // Ranges are applied after the reload, since their bounds depend on the
     // data that comes back.
     this.pendingRanges = st.ranges || null;
-    // Both tabs move together, so a restored preset is not half-applied.
-    this.runSearch();
-    if (reload && this.map) this.loadMap(); else this.applyPendingRanges();
+    // Both tabs read one response, so a restored preset cannot half-apply.
+    if (reload) this.load(); else this.applyPendingRanges();
   }
 
   private pendingRanges: any = null;
@@ -266,10 +265,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       this.ranges[k] = { lo: Math.max(b.min, Math.min(v.lo, b.max)),
                             hi: Math.min(b.max, Math.max(v.hi, b.min)) };
     }
-    // Hold the preset until both tabs have reported: clamping against only
-    // one tab's bounds would permanently narrow a window the other tab's data
-    // would have supported.
-    if (this.mapLoaded && this.searched) this.pendingRanges = null;
+    this.pendingRanges = null;
     this.applyRanges();
   }
 
@@ -487,8 +483,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   /** Apply the shared criteria wherever they are showing. */
   refreshBoth(): void {
-    this.runSearch();
-    if (this.map) this.loadMap();
+    this.load();
   }
 
   /** Grade straight from the results table, without opening the card. */
@@ -584,11 +579,10 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  /** Bounds span both tabs' data, so a saved window means the same thing on
-   * each. The map only ever holds geocoded rows, so on its own it would give
-   * the search sliders a narrower span than the table actually contains. */
+  /** One dataset, so one set of bounds — the sliders mean the same thing on
+   * both tabs by construction. */
   private rebuildBounds(): void {
-    this.computeBounds([...this.mapAll, ...(this.searchAll as Filterable[])]);
+    this.computeBounds(this.searchAll as Filterable[]);
   }
 
   /** Re-filter both tabs, without touching the server. */
@@ -1410,18 +1404,33 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     return f;
   }
 
-  loadMap(): void {
-    this.api.mapData(this.buildFilters()).subscribe({
+  /** One fetch, two renderings.
+   *
+   * The tabs are the same listings drawn differently — a table and a set of
+   * dots — so they read one response rather than querying separately. Two
+   * requests could only ever agree by coincidence, and they did not: the map
+   * used to hold listings the table had already cut. */
+  load(): void {
+    this.api.search(this.buildFilters()).subscribe({
       next: res => {
-        this.mapAll = res.points;
-        this.rebuildBounds();
+        this.searched = true;
+        this.searchMeta = 'crawled data';
+        this.searchStats = res.stats;
+        this.searchAll = res.rows;
+        // Same objects, not a copy: a verdict saved from the table is the same
+        // row the map redraws.
+        this.mapAll = res.rows as unknown as MapPoint[];
         this.mapLoaded = true;
-        if (this.pendingRanges) this.applyPendingRanges();
-        else this.applyRanges();     // draws through the sliders
+        this.rebuildBounds();
+        if (this.pendingRanges) this.applyPendingRanges(); else this.applyRanges();
       },
       error: () => {},
     });
   }
+
+  // Both tabs' refresh buttons, and every filter change, land in the same place.
+  loadMap(): void { this.load(); }
+  runSearch(): void { this.load(); }
 
   // --- export search results for Google My Maps -----------------------------
   // Google Maps proper can't bulk-import points; My Maps (mymaps.google.com)
@@ -2294,6 +2303,15 @@ ${folders}
    * The year itself comes from the server (build_year_est), so the map and the
    * era filter can never disagree about which side of a revision a listing is.
    */
+  /** SUUMO publishes no pin for some listings, so their position is geocoded
+   * from the address — which resolves to the 丁目, not the building. Say so,
+   * rather than letting a block centre pass for a surveyed location. */
+  approxNote(p: any): string {
+    return p?.location_source === 'geocoded'
+      ? ` <span title="No pin published for this listing — placed from its address, so it is accurate to the 丁目 (block), not the building." style="color:#b07d00">≈ approx</span>`
+      : '';
+  }
+
   private builtLabel(p: MapPoint): string | null {
     if (p.build_year_est == null) return null;
     const tilde = p.build_year == null ? '~' : '';
@@ -2406,7 +2424,7 @@ ${folders}
           + (p.hazard_map_url ? ` <a href="${esc(p.hazard_map_url)}" target="_blank"
                rel="noopener" title="浸水 and 土砂災害 are not computed — check them here"
                >hazard map ↗</a>` : '') + '<br>' : ''}
-      <span style="color:#666">${esc(p.address || '')}</span><br>
+      <span style="color:#666">${esc(p.address || '')}</span>${this.approxNote(p)}<br>
       ${actions}
     </div>`;
   }
@@ -2541,22 +2559,6 @@ ${folders}
         },
         error: err => { this.urlPreviewing = false; this.urlPending = 'request failed — is the local API running? ' + (err?.message || ''); },
       });
-  }
-
-  // Search already-crawled listings in the local DB (the Search tab).
-  runSearch(): void {
-    const f = this.buildFilters();
-    this.api.search(f).subscribe({
-      next: res => {
-        this.searched = true; this.searchMeta = 'crawled data';
-        this.searchStats = res.stats;
-        this.searchAll = res.rows;
-        this.rebuildBounds();
-        // The table shows what survives the sliders, same as the map does.
-        if (this.pendingRanges) this.applyPendingRanges(); else this.applyRanges();
-      },
-      error: () => {},
-    });
   }
 
   // --- on-demand property detail (exact location + full specs) ---
