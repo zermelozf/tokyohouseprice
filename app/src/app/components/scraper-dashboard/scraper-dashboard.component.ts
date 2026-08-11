@@ -115,7 +115,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   // On-demand detail enrichment per listing, keyed by property_id (a key that
   // hasn't been fetched yet is genuinely undefined).
-  detailState: Record<string, DetailState | undefined> = {};
 
   // --- config + scheduled jobs ---
   config: ScraperConfig | null = null;
@@ -989,7 +988,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   constructor(private api: ScraperService, private http: HttpClient, private zone: NgZone) {}
 
   // Full-detail modal opened from a map popup's "See all details" button.
-  detailModal: { loading?: boolean; point?: MapPoint; data?: PropertyDetail; error?: string } | null = null;
+  detailModal: { loading?: boolean; point?: any; data?: PropertyDetail; error?: string } | null = null;
 
   ngOnInit(): void {
     this.api.summary().subscribe({
@@ -2479,7 +2478,9 @@ ${folders}
   }
 
   // Open the full detail sheet for a listing (cached today's snapshot, else fetch).
-  openDetails(p: MapPoint): void {
+  /** The one detail view, opened from a map dot or a table row — the table
+   * used to expand a second, thinner version of the same thing inline. */
+  openDetails(p: MapPoint | Listing): void {
     this.detailModal = { loading: true, point: p };
     this.api.detail(p.url).subscribe({
       next: d => this.detailModal = { point: p, data: d, error: d.error },
@@ -2610,19 +2611,6 @@ ${folders}
       });
   }
 
-  // --- on-demand property detail (exact location + full specs) ---
-  getDetail(r: Listing): void {
-    const key = r.property_id;
-    const st = this.detailState[key];
-    if (st?.data) { st.open = !st.open; return; }   // already fetched → just toggle
-    this.detailState[key] = { loading: true, open: true };
-    this.api.detail(r.url).subscribe({
-      next: d => this.detailState[key] = { loading: false, open: true, data: d, error: d.error },
-      error: () => this.detailState[key] = {
-        loading: false, open: true, error: 'request failed — is the local API running?' },
-    });
-  }
-
   // Takes anything carrying coordinates (PropertyDetail, MapPoint, a POI) so
   // every "open in Google Maps" link on the page is built the same way.
   mapsUrl(d: { lat?: number | null; lng?: number | null }): string {
@@ -2733,9 +2721,22 @@ ${folders}
       case 'land_m2': return r.land_m2;
       case 'age_years': return r.age_years;
       case 'walk': return r.nearest_walk_min;
+      case 'commute_min': return (r as any).commute_min ?? null;
       default: return null;
     }
   }
+
+  /** Columns that sort as text. Type groups by what the row *is*, then by the
+   * finer label, so 賃貸マンション and 賃貸アパート stay apart inside 賃貸. */
+  private sortText(r: Listing, key: string): string | null {
+    switch (key) {
+      case 'type': return `${this.catLabel(r.category)}\u0000${r['property_label'] || ''}`;
+      case 'ward': return r.ward || null;
+      case 'layout': return r.layout || null;
+      default: return null;
+    }
+  }
+  private readonly TEXT_SORT = new Set(['type', 'ward', 'layout']);
 
   /** Click cycle on a header: ascending → descending → back to unsorted. */
   toggleSort(key: string): void {
@@ -2753,11 +2754,16 @@ ${folders}
     if (!key || !rows || rows.length < 2) return rows;
     const c = this.sortCache;
     if (c && c.src === rows && c.key === key && c.dir === this.sortDir) return c.out;
+    const text = this.TEXT_SORT.has(key);
     const out = [...rows].sort((a, b) => {
-      const x = this.sortVal(a, key), y = this.sortVal(b, key);
+      const x = text ? this.sortText(a, key) : this.sortVal(a, key);
+      const y = text ? this.sortText(b, key) : this.sortVal(b, key);
       if (x == null) return y == null ? 0 : 1;   // blanks last, both directions
       if (y == null) return -1;
-      return (x - y) * this.sortDir;
+      // Japanese labels need a collator; a plain < compares code points and
+      // orders 賃貸/土地/中古 arbitrarily.
+      return (text ? (x as string).localeCompare(y as string, 'ja')
+                   : (x as number) - (y as number)) * this.sortDir;
     });
     this.sortCache = { src: rows, key, dir: this.sortDir, out };
     return out;

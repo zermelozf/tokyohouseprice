@@ -740,7 +740,8 @@
     <div class="tablewrap" *ngIf="rows.length">
       <table>
         <thead><tr>
-          <th>type</th>
+          <th class="sortable" [class.sorted]="sortKey === 'type'" (click)="toggleSort('type')"
+              title="sort by property type">type <span class="arrow">{{ sortArrow('type') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'price'" (click)="toggleSort('price')"
               title="sort by price">price <span class="arrow">{{ sortArrow('price') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'ppm2'" (click)="toggleSort('ppm2')"
@@ -757,11 +758,13 @@
           <th class="sortable" [class.sorted]="sortKey === 'commute_min'" (click)="toggleSort('commute_min')"
               title="door-to-school: walk to your station + train + walk to the Lycée Français">
             🎓 LFIT <span class="arrow">{{ sortArrow('commute_min') }}</span></th>
-          <th>ward</th><th>address</th><th>link</th><th>details</th><th>compare</th><th>verdict</th>
+          <th class="sortable" [class.sorted]="sortKey === 'ward'" (click)="toggleSort('ward')"
+              title="sort by ward">ward <span class="arrow">{{ sortArrow('ward') }}</span></th><th>address</th><th>link</th><th>compare</th><th>verdict</th>
         </tr></thead>
         <tbody>
           <ng-container *ngFor="let r of sortRows(rows)">
-            <tr>
+            <tr class="rowlink" (click)="openDetails(r)"
+                title="click the row for the full spec sheet">
               <td class="thumbcell">
                 <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
                      class="rowthumb" [title]="r.title || ''">
@@ -780,50 +783,21 @@
               </td>
               <td>{{ r.ward }}</td>
               <td class="addr">{{ r.address }}</td>
-              <td><a [href]="r.url" target="_blank" rel="noopener">open ↗</a></td>
-              <td>
-                <button class="ghost xtiny" (click)="getDetail(r)"
-                        [disabled]="detailState[r.property_id]?.loading"
-                        title="fetch exact location + full specs from the detail page">
-                  <ng-container *ngIf="detailState[r.property_id]?.loading">⏳</ng-container>
-                  <ng-container *ngIf="!detailState[r.property_id]?.loading">📍 {{ detailState[r.property_id]?.open ? 'hide' : 'details' }}</ng-container>
-                </button>
-              </td>
-              <td>
+              <td (click)="$event.stopPropagation()"><a [href]="r.url" target="_blank" rel="noopener">open ↗</a></td>
+              <td (click)="$event.stopPropagation()">
                 <button class="ghost xtiny" [class.sel]="isCompared(r.property_id)"
                         (click)="toggleCompare(r)"
                         title="pick two listings, then run the rent-vs-buy model on them">
                   {{ isCompared(r.property_id) ? '✓ picked' : '⚖️ compare' }}
                 </button>
               </td>
-              <td class="verdictcell">
+              <td class="verdictcell" (click)="$event.stopPropagation()">
                 <button type="button" class="vbtn bad" [class.on]="r['verdict'] === 'bad'"
                         (click)="quickGrade(r, 'bad')" title="bad (click again to clear)">✕</button>
                 <button type="button" class="vbtn maybe" [class.on]="r['verdict'] === 'maybe'"
                         (click)="quickGrade(r, 'maybe')" title="maybe">?</button>
                 <button type="button" class="vbtn good" [class.on]="r['verdict'] === 'good'"
                         (click)="quickGrade(r, 'good')" title="good">♥</button>
-              </td>
-            </tr>
-            <tr class="detailrow" *ngIf="detailState[r.property_id]?.open">
-              <td [attr.colspan]="15">
-                <ng-container *ngIf="detailState[r.property_id] as st">
-                  <div class="err" *ngIf="st.error">⚠ {{ st.error }}</div>
-                  <ng-container *ngIf="st.data as d">
-                    <div class="locline">
-                      <a *ngIf="d.lat != null" [href]="mapsUrl(d)" target="_blank" rel="noopener" class="mapslink">
-                        📍 {{ d.lat }}, {{ d.lng }} — open in Google Maps ↗
-                      </a>
-                      <span class="muted" *ngIf="d.address">· {{ d.address }}</span>
-                      <span class="muted">· {{ specList(d).length }} fields<span *ngIf="d.cached"> · cached</span></span>
-                    </div>
-                    <div class="specs">
-                      <div class="spec" *ngFor="let e of specList(d)">
-                        <span class="k">{{ e.k }}</span><span class="v">{{ e.v }}</span>
-                      </div>
-                    </div>
-                  </ng-container>
-                </ng-container>
               </td>
             </tr>
           </ng-container>
@@ -833,8 +807,8 @@
   </ng-template>
 
   <!-- ============ full detail modal (opened from a map popup) ============ -->
-  <div class="modal-backdrop" *ngIf="detailModal" (click)="closeDetails()">
-    <div class="modal" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop full" *ngIf="detailModal" (click)="closeDetails()">
+    <div class="modal fullscreen" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeDetails()" title="close">✕</button>
       <ng-container *ngIf="detailModal.point as p">
         <h3>{{ p.price_raw || fmtYen(p.price_yen) }} <span class="muted normal">· {{ p.category }}</span></h3>

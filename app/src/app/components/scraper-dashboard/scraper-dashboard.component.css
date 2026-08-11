@@ -1073,3 +1073,19 @@ td.verdictcell { white-space: nowrap; }
 .filterbar .vchips .vlabel { font-size: 0.63rem; color: #8a919b;
                              text-transform: uppercase; letter-spacing: 0.03em; }
 .dispnote { flex-basis: 100%; font-size: 0.8rem; line-height: 1.5; }
+
+/* A table row is the details button, so it reads as clickable. */
+.rowlink { cursor: pointer; }
+.rowlink:hover > td { background: #fdf2f8; }
+
+/* The detail sheet is the full spec table plus photos — it earns the screen. */
+.modal-backdrop.full { padding: 0; }
+.modal.fullscreen {
+  max-width: none; width: 100vw; height: 100dvh; max-height: none;
+  border-radius: 0; padding: 1.4rem clamp(1rem, 4vw, 3rem) 2rem;
+}
+.modal.fullscreen .modal-close { top: 0.9rem; right: 1rem; font-size: 1.4rem; }
+@media (min-width: 1100px) {
+  /* Specs read badly as one long column on a wide screen. */
+  .modal.fullscreen .specs { columns: 2; column-gap: 2.5rem; }
+}
