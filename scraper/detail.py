@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from html import unescape
 from datetime import datetime
 
 from bs4 import BeautifulSoup
@@ -92,25 +93,41 @@ def kankyo_url(url: str) -> str | None:
 
 # Listing photos are lazy-loaded: `src` carries a base64 placeholder and the
 # real URL sits in `rel` or `data-src`. Reading `src` gets a 1x1 transparent gif.
-_IMG = re.compile(r'(?:rel|data-src)="(https?://[^"]+?\.(?:jpg|jpeg|png))"', re.I)
+#
+# The extension is not always at the end. Many pages serve photos through a
+# resizing endpoint, with the real file named in a query parameter:
+#
+#   rel="…/jj/resizeImage?src=gazo%2Fbukken%2F…%2F21343036_0006.jpg&w=452&h=339"
+#
+# Anchoring the match to a URL *ending* in .jpg missed every one of those, so a
+# listing with 23 photos extracted none and showed only its search-card image.
+_IMG = re.compile(
+    r'(?:rel|data-src|src)="(https?://[^"]*?\.(?:jpg|jpeg|png)[^"]*)"', re.I)
 # Agency logos and UI chrome live under /jj/ and gazo/kaisha; the property's own
 # photos are under front/gazo/bukken or gazo%2Fbukken.
 _IMG_KEEP = ("front/gazo/bukken", "gazo%2Fbukken", "front/gazo/fr/bukken")
+# The same photo is served at several sizes — a 96px thumbnail beside the 452px
+# view. Group by the file itself and keep the widest.
+_IMG_FILE = re.compile(r"([^/%]+\.(?:jpg|jpeg|png))", re.I)
+_IMG_WIDTH = re.compile(r"[?&]w=(\d+)", re.I)
 
 
 def extract_images(html: str, limit: int = 30) -> list[str]:
-    """Every photo of the property itself, in page order, deduped."""
-    out, seen = [], set()
-    for url in _IMG.findall(html):
+    """Every photo of the property itself, in page order, largest size each."""
+    best: dict[str, tuple[int, str]] = {}
+    order: list[str] = []
+    for raw in _IMG.findall(html):
+        url = unescape(raw)          # rel="…&amp;w=452" is not a working URL
         if not any(k in url for k in _IMG_KEEP):
             continue
-        if url in seen:
-            continue
-        seen.add(url)
-        out.append(url)
-        if len(out) >= limit:
-            break
-    return out
+        name = _IMG_FILE.search(url)
+        key = name.group(1).lower() if name else url
+        w = int(m.group(1)) if (m := _IMG_WIDTH.search(url)) else 10_000
+        if key not in best:
+            order.append(key)
+        if key not in best or w > best[key][0]:
+            best[key] = (w, url)
+    return [best[k][1] for k in order[:limit]]
 
 
 def scrape_detail(url: str, fetcher: Fetcher | None = None) -> dict:
