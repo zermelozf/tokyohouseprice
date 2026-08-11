@@ -8,9 +8,9 @@ ratio is additionally capped at
     road width (m) × 0.6   elsewhere
 
 and the binding limit is the lower of the two. That is not a corner case here:
-the median frontage in this data is 4.0 m, and the road limit binds on 247 of
-252 plots — so quoting the designated ratio would overstate what fits on almost
-every one of them.
+the median frontage in this data is 4.0 m, and across 301 plots with a stated
+width the road limit binds on 111 — so quoting the designated ratio would
+overstate what fits on roughly a third of them.
 
     max floor area = land × min(designated 容積率, road limit)
     max footprint  = land × 建ぺい率

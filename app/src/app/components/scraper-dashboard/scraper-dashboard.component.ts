@@ -100,9 +100,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   // Search over already-crawled data (the Search tab). Crawled-time window
   // defaults to yesterday→today (set in ngOnInit).
-  searchForm = { category: '', ward: '', price_min: null as number | null,
-                 price_max: null as number | null, limit: 300,
-                 date_from: '', date_to: '' };
+  // The Search tab's own controls. Everything that also applies to the map
+  // lives in `shared`; price bounds are the sliders' job.
+  searchForm = { limit: 300 };
   // Total budget, shared by Search and Map. SUUMO's own price ceiling stops at
   // 1億2千万, so this cannot live in the crawl URL — without it the dashboard
   // shows listings the crawler already refuses to fetch details for.
@@ -161,11 +161,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     ward: '' as string,
     commuteMax: 40 as number | null,
     verdicts: [] as string[],
+    // Crawled-time window. Empty means the latest snapshot of every property,
+    // which is what the map always showed; the Search tab used to default to
+    // yesterday→today, so the two tabs answered different questions.
+    dateFrom: '' as string,
+    dateTo: '' as string,
   };
-  // Map-only: which crawl date to draw.
-  mapForm: { date: string } = { date: '' };
   // 耐震基準 tiers to show; empty = all (including listings with no known year).
-  mapEras: SeismicEra[] = [];
+  // Shared: the table used to ignore this, so filtering to 旧耐震 on the map
+  // left the search results silently unfiltered.
+  eras: SeismicEra[] = [];
   // What the dots encode. Era colouring answers "how much of this street is
   // 旧耐震" at a glance, which category colouring cannot.
   colorBy: 'category' | 'era' = 'category';
@@ -217,10 +222,10 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   filterState(): any {
     return {
       shared: { ...this.shared, verdicts: [...this.shared.verdicts] },
-      mapForm: { ...this.mapForm },
+
       searchForm: { ...this.searchForm },
       ranges: JSON.parse(JSON.stringify(this.ranges)),
-      mapEras: [...this.mapEras],
+      eras: [...this.eras],
       budgetYen: this.budgetYen, budgetBuildM2: this.budgetBuildM2,
       bldMinBuy: this.bldMinBuy, bldMinRent: this.bldMinRent,
       bldMinRentHouse: this.bldMinRentHouse,
@@ -233,9 +238,13 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     if (!st) return;
     if (st.shared) this.shared = { ...this.shared, ...st.shared,
                                    verdicts: st.shared.verdicts ?? this.shared.verdicts };
-    if (st.mapForm) this.mapForm = { ...this.mapForm, ...st.mapForm };
+    // Presets written before the two tabs shared a date window.
+    if (st.mapForm?.date && !st.shared?.dateTo) {
+      this.shared.dateFrom = this.shared.dateTo = st.mapForm.date;
+    }
     if (st.searchForm) this.searchForm = { ...this.searchForm, ...st.searchForm };
-    this.mapEras = st.mapEras ?? this.mapEras;
+    // `mapEras` is what presets saved before the filter became shared.
+    this.eras = st.eras ?? st.mapEras ?? this.eras;
     for (const k of ['budgetYen','budgetBuildM2','bldMinBuy','bldMinRent',
                      'bldMinRentHouse','rentMaxYen','ageMaxKnown','colorBy'] as const) {
       if (st[k] !== undefined) (this as any)[k] = st[k];
@@ -740,6 +749,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       link: 'https://www.gsi.go.jp/bousaichiri/slopemap.html' },
   ];
   hazardOpacity = 0.6;
+  /** Both tabs pull the same slice of the DB; the sliders cut it in the
+   * browser. Sized to cover everything crawled so far. */
+  readonly FETCH_LIMIT = 5000;
   mapZoom = 14;   // kept in sync with the map so we can flag zoom-limited layers
   // key → the Leaflet tile layers currently on the map for that hazard entry
   private hazardTiles: Record<string, any[]> = {};
@@ -950,12 +962,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     // looks as though nothing was ever saved.
     this.loadReviewCounts();
     this.loadSavedFilters();
-    // Default the crawled-time window to yesterday → today.
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-    this.searchForm.date_from = this.localDate(yesterday);
-    this.searchForm.date_to = this.localDate(today);
     this.runSearch();  // preload crawled data for the Search tab
   }
 
@@ -1375,25 +1381,37 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadMap(): void {
+  /** The single place the server-side cuts are assembled.
+   *
+   * Both tabs call it, so they cannot drift into answering different
+   * questions — which they did: the map sent neither the budget, the floor
+   * areas nor the rent ceiling, so it showed listings the table had already
+   * removed, and the two disagreed about how many listings even existed. */
+  private buildFilters(): Filters {
     const f: Filters = {
       categories: this.shared.category ? [this.shared.category] : [],
       wards: this.shared.ward ? [this.shared.ward] : [],
-      eras: [...this.mapEras],
-      // Numeric cuts are the sliders' job — the server sends everything in
-      // scope so the ranges can span the real data.
+      eras: [...this.eras],
+      budget_yen: this.budgetYen,
+      budget_build_m2: this.budgetBuildM2,
+      bld_min_buy: this.bldMinBuy,
+      bld_min_rent: this.bldMinRent,
+      bld_min_rent_house: this.bldMinRentHouse,
+      rent_max_yen: this.rentMaxYen,
       age_max_known: this.ageMaxKnown,
       commute_max: this.shared.commuteMax,
       verdicts: [...this.shared.verdicts],
-      limit: 5000,
+      // Both tabs pull the same set; the sliders then cut it in the browser,
+      // so a table row and a map dot always mean the same thing.
+      limit: this.FETCH_LIMIT,
     };
-    // Pinning both bounds to one day narrows "latest snapshot per property" to
-    // that single crawl, so the map shows what was on the market that morning.
-    if (this.mapForm.date) {
-      f.date_from = this.mapForm.date;
-      f.date_to = this.mapForm.date;
-    }
-    this.api.mapData(f).subscribe({
+    if (this.shared.dateFrom) f.date_from = this.shared.dateFrom;
+    if (this.shared.dateTo) f.date_to = this.shared.dateTo;
+    return f;
+  }
+
+  loadMap(): void {
+    this.api.mapData(this.buildFilters()).subscribe({
       next: res => {
         this.mapAll = res.points;
         this.rebuildBounds();
@@ -1423,8 +1441,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   /** Filename stem describing the current search filters (kanji wards kept). */
   private exportStem(): string {
-    const f = this.searchForm;
-    return ['listings', f.category, f.ward, f.date_to || 'latest']
+    return ['listings', this.shared.category, this.shared.ward,
+            this.shared.dateTo || 'latest']
       .filter(Boolean).join('-').replace(/[\\/:*?"<>|\s]+/g, '_');
   }
 
@@ -1852,7 +1870,7 @@ ${folders}
     this.compareLoading = true;
     this.compareError = '';
     this.api.compare(this.compareSel.map(s => s.property_id), this.compareAssumptions,
-                     this.mapForm.date || null, this.compareAnchor).subscribe({
+                     this.shared.dateTo || null, this.compareAnchor).subscribe({
       next: res => {
         this.compareLoading = false;
         if (res.error) { this.compareError = res.error; this.compareResult = null; }
@@ -2124,10 +2142,10 @@ ${folders}
   }
 
   toggleEra(key: SeismicEra): void {
-    this.mapEras = this.mapEras.includes(key)
-      ? this.mapEras.filter(e => e !== key)
-      : [...this.mapEras, key];
-    this.loadMap();
+    this.eras = this.eras.includes(key)
+      ? this.eras.filter(e => e !== key)
+      : [...this.eras, key];
+    this.refreshBoth();
   }
 
   // --- live OSM POIs (supermarkets, clinics) via Overpass, for current view ---
@@ -2527,25 +2545,7 @@ ${folders}
 
   // Search already-crawled listings in the local DB (the Search tab).
   runSearch(): void {
-    const s = this.searchForm;
-    const f: Filters = {
-      categories: this.shared.category ? [this.shared.category] : [],
-      wards: this.shared.ward ? [this.shared.ward] : [],
-      price_min: s.price_min ?? null,
-      price_max: s.price_max ?? null,
-      budget_yen: this.budgetYen,
-      budget_build_m2: this.budgetBuildM2,
-      bld_min_buy: this.bldMinBuy,
-      bld_min_rent: this.bldMinRent,
-      bld_min_rent_house: this.bldMinRentHouse,
-      rent_max_yen: this.rentMaxYen,
-      age_max_known: this.ageMaxKnown,
-      commute_max: this.shared.commuteMax,
-      verdicts: [...this.shared.verdicts],
-      date_from: s.date_from || null,
-      date_to: s.date_to || null,
-      limit: s.limit || 300,
-    };
+    const f = this.buildFilters();
     this.api.search(f).subscribe({
       next: res => {
         this.searched = true; this.searchMeta = 'crawled data';

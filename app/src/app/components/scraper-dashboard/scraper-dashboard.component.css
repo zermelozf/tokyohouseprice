@@ -1024,3 +1024,11 @@ td.verdictcell { white-space: nowrap; }
 .presetbar .psep { flex: 0 0 1px; align-self: stretch; background: #eef0f3; margin: 0 0.3rem; }
 .presetbar .primary { background: #FF69B4; border-color: #FF69B4; color: #fff; }
 .presetbar .danger { color: #b4232a; border-color: #f0d6d8; }
+
+/* Labelled control inside the shared filter bar. */
+.filterbar .fld { display: inline-flex; flex-direction: column; gap: 0.1rem; }
+.filterbar .fld > span:first-child { font-size: 0.63rem; color: #8a919b;
+                                     text-transform: uppercase; letter-spacing: 0.03em; }
+.filterbar .fld input[type="number"] { width: 4.6rem; }
+.filterbar .fld input[type="date"] { width: 8.2rem; }
+.filterbar .fsep { flex: 0 0 1px; align-self: stretch; background: #e6e9ee; margin: 0 0.15rem; }

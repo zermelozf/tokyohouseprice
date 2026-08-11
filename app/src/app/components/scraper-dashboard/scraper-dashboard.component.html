@@ -26,8 +26,10 @@
         </div>
 </ng-template>
 
-<!-- The criteria both tabs obey. Shared state, so narrowing one narrows the
-     other, and a saved preset restores the whole view rather than half of it. -->
+<!-- Every criterion both tabs obey, in one place. These are the hard cuts: the
+     server applies them, so they decide what either tab holds at all. The
+     sliders below then explore inside that. Shared state, so narrowing one tab
+     narrows the other and a preset restores the whole view. -->
 <ng-template #filterBarTpl>
   <div class="filterbar">
     <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
@@ -52,6 +54,53 @@
             (click)="toggleVerdict('none')" title="not yet reviewed">
       <i style="background:#9ca3af"></i>unseen
     </button>
+
+    <span class="fsep"></span>
+
+    <label class="fld"
+           [title]="'Total budget — applied here, not in the crawl, because SUUMO\'s own price ceiling stops at 1億2千万. A plot is judged on this less a ' + budgetBuildM2 + 'm² build (' + fmtYen(landCeiling()) + ').'">
+      <span>budget</span>
+      <select [(ngModel)]="budgetYen" (ngModelChange)="refreshBoth()">
+        <option [ngValue]="null">no limit</option>
+        <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
+      </select>
+    </label>
+    <label class="fld"
+           title="Building floor: buy / rental flat / rental house. Land is exempt — a plot has no building. No rental flat in this catchment exceeds ~108m², so flats and houses need different floors.">
+      <span>min m² buy/flat/house</span>
+      <span class="dualnum">
+        <input type="number" step="10" [(ngModel)]="bldMinBuy" (ngModelChange)="refreshBoth()">
+        <input type="number" step="10" [(ngModel)]="bldMinRent" (ngModelChange)="refreshBoth()">
+        <input type="number" step="10" [(ngModel)]="bldMinRentHouse" (ngModelChange)="refreshBoth()">
+      </span>
+    </label>
+    <label class="fld"
+           title="Monthly rent ceiling. Enforced here as well as in the crawl, because tightening a crawl filter never removes rows earlier crawls already stored.">
+      <span>max rent</span>
+      <input type="number" step="10000" [(ngModel)]="rentMaxYen" (ngModelChange)="refreshBoth()">
+    </label>
+    <label class="fld" title="Max age in years. Listings with no stated age (新築, land) are kept.">
+      <span>max age</span>
+      <input type="number" step="5" [(ngModel)]="ageMaxKnown" (ngModelChange)="refreshBoth()">
+    </label>
+
+    <label class="fld" title="Crawled-time window. Empty shows the latest snapshot of every property; pinning both to one day shows what that morning's crawl saw.">
+      <span>crawled</span>
+      <span class="dualnum">
+        <input type="date" [(ngModel)]="shared.dateFrom" (ngModelChange)="refreshBoth()">
+        <input type="date" [(ngModel)]="shared.dateTo" (ngModelChange)="refreshBoth()">
+      </span>
+    </label>
+
+    <span class="fsep"></span>
+
+    <span class="era-filter">
+      <span class="era-label" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06. No selection shows everything.">耐震基準</span>
+      <button type="button" class="chip" *ngFor="let e of eraList"
+              [class.sel]="eras.includes(e.key)" (click)="toggleEra(e.key)"
+              [title]="e.label"><i [style.background]="e.color"></i>{{ e.short }}</button>
+      <span class="note" *ngIf="!eras.length">all</span>
+    </span>
   </div>
 </ng-template>
 
@@ -228,40 +277,6 @@
     <p class="muted top0">Query the listings already saved in the local DB (latest snapshot per property). Click <strong>📍 details</strong> on a row for its exact location and full spec sheet.</p>
 
     <div class="actions searchbar">
-      <div class="small">
-        <label>crawled from</label>
-        <input type="date" [(ngModel)]="searchForm.date_from">
-      </div>
-      <div class="small">
-        <label>crawled to</label>
-        <input type="date" [(ngModel)]="searchForm.date_to">
-      </div>
-      <div class="small"><label>price min (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_min"></div>
-      <div class="small"><label>price max (¥)</label><input type="number" min="0" [(ngModel)]="searchForm.price_max"></div>
-      <div class="small">
-        <label [title]="'Total budget — applied here, not in the crawl, because SUUMO\'s own price ceiling stops at 1億2千万. A plot is judged on this less a ' + budgetBuildM2 + 'm² build (' + fmtYen(landCeiling()) + ').'">budget</label>
-        <select [(ngModel)]="budgetYen">
-          <option [ngValue]="null">no limit</option>
-          <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
-        </select>
-      </div>
-        <div class="small">
-        <label title="Building floor: buy / rental flat / rental house. Land is exempt — a plot has no building. No rental flat in this catchment exceeds ~108m², so flats and houses need different floors.">min m² buy/flat/house</label>
-        <span class="dualnum">
-          <input type="number" step="10" [(ngModel)]="bldMinBuy">
-          <input type="number" step="10" [(ngModel)]="bldMinRent">
-          <input type="number" step="10" [(ngModel)]="bldMinRentHouse">
-        </span>
-        </div>
-        <div class="small">
-        <label title="Monthly rent ceiling. Enforced here as well as in the crawl, because tightening a crawl filter never removes rows earlier crawls already stored.">max rent</label>
-        <input type="number" step="10000" [(ngModel)]="rentMaxYen" (ngModelChange)="loadMap()">
-        </div>
-        <div class="small">
-        <label title="Max age in years. Listings with no stated age (新築, land) are kept.">max age</label>
-        <input type="number" step="5" [(ngModel)]="ageMaxKnown">
-        </div>
-      <div class="small"><label>limit</label><input type="number" min="1" [(ngModel)]="searchForm.limit"></div>
       <button (click)="runSearch()">🔍 Search</button>
       <span class="exportlinks" *ngIf="searchRows.length">
         <span class="muted" title="download these results for Google My Maps (mymaps.google.com)">export</span>
@@ -513,8 +528,9 @@
     </h2>
     <p class="muted top0">
       Crawled listings with an exact location from their detail page. Enrichment runs after each crawl — properties not yet enriched won't appear.
-      <span *ngIf="mapForm.date">Showing what the <b>{{ mapForm.date }}</b> crawl saw.</span>
-      <span *ngIf="!mapForm.date">Showing the most recent snapshot of every property.</span>
+      <span *ngIf="shared.dateFrom || shared.dateTo">Showing what the
+        <b>{{ shared.dateFrom || '…' }} → {{ shared.dateTo || '…' }}</b> crawls saw.</span>
+      <span *ngIf="!shared.dateFrom && !shared.dateTo">Showing the most recent snapshot of every property.</span>
   <!-- Map controls.
        One model for both modes: pick a section, see its options. Windowed, the
        sections are a chip row with the open one below; fullscreen, the same
@@ -547,13 +563,6 @@
         <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: mapPoints.length, total: mapAll.length }"></ng-container>
         <ng-container *ngTemplateOutlet="presetBarTpl"></ng-container>
         <button (click)="loadMap()">🔄 Refresh</button>
-        <div class="era-filter">
-        <span class="era-label" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06. No selection shows everything.">耐震基準</span>
-        <button type="button" class="chip" *ngFor="let e of eraList"
-        [class.sel]="mapEras.includes(e.key)" (click)="toggleEra(e.key)"
-        [title]="e.label"><i [style.background]="e.color"></i>{{ e.short }}</button>
-        <span class="note" *ngIf="!mapEras.length">all (incl. unknown year)</span>
-        </div>
         <div class="legend" *ngIf="colorBy === 'category'">
         <span class="lg" *ngFor="let c of catColors"><i [style.background]="c.color"></i>{{ c.label }}</span>
         </div>
