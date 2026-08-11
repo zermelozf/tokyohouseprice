@@ -1877,8 +1877,18 @@ ${folders}
   }
 
   /** A comparison is being assembled — the map turns into a picker. */
+  /** Explicit pick mode: the table shows checkboxes and rows stop opening the
+   * sheet, so choosing four listings is four clicks rather than four round
+   * trips through a per-row button. Having picks also counts, so the map popup
+   * keeps behaving as a picker while a comparison is being assembled. */
+  comparePick = false;
   compareMode(): boolean {
-    return this.compareSel.length > 0;
+    return this.comparePick || this.compareSel.length > 0;
+  }
+
+  toggleComparePick(): void {
+    this.comparePick = !this.comparePick;
+    if (!this.comparePick && !this.compareSel.length) this.clearCompare();
   }
 
   /** Add/remove a listing from the tray. Picking a third replaces the oldest,
@@ -2560,6 +2570,45 @@ ${folders}
   }
 
   closeDetails(): void { this.detailModal = null; }
+
+  // --- sheet grip: drag to resize, drag down to dismiss, click to close -----
+  // A bar that only responded to clicks reads as broken, because a grip is the
+  // one control everyone tries to drag.
+  sheetHeight = 82;                      // dvh
+  private gripStartY = 0;
+  private gripStartH = 82;
+  private gripMoved = false;
+
+  gripDown(e: PointerEvent): void {
+    e.preventDefault();
+    this.gripStartY = e.clientY;
+    this.gripStartH = this.sheetHeight;
+    this.gripMoved = false;
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const dy = ev.clientY - this.gripStartY;
+      if (Math.abs(dy) > 3) this.gripMoved = true;
+      // Dragging up grows the sheet; down shrinks it, and past the floor it
+      // is a dismiss gesture rather than a resize.
+      const vh = window.innerHeight / 100;
+      this.zone.run(() => {
+        this.sheetHeight = Math.min(94, Math.max(18, this.gripStartH - dy / vh));
+      });
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      this.zone.run(() => {
+        // A click, or dragged down small enough to mean "put it away".
+        if (!this.gripMoved || this.sheetHeight <= 26) {
+          this.sheetHeight = 82;         // reset for the next listing
+          this.closeDetails();
+        }
+      });
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  }
 
   // Poll jobs + live crawl status every 5s while the dashboard is open, so a
   // running scheduled crawl and its result show up without a manual refresh.

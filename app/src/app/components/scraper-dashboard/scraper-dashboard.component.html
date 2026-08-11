@@ -261,6 +261,9 @@
         · {{ reviewedTotal() }} reviewed, <b>{{ reviewedShown('search') }}</b> shown
       </span>
       <span class="spacer"></span>
+      <button class="ghost tiny" [class.sel]="comparePick" (click)="toggleComparePick()"
+              title="tick several rows, then run the rent-vs-buy model on them">
+        ⚖️ {{ comparePick ? 'picking…' : 'compare' }}</button>
       <button class="ghost tiny" (click)="load()" title="re-query the local DB">🔄 refresh</button>
       <span class="exportlinks" *ngIf="searchRows.length">
         <span class="muted" title="download these results for Google My Maps (mymaps.google.com)">export</span>
@@ -356,10 +359,10 @@
       <p class="muted top0" *ngIf="!diff['new'].length">Nothing appeared that wasn't already there on {{ diff.date_from }}.</p>
       <div class="tablewrap" *ngIf="diff['new'].length">
         <table class="difftable">
-          <thead><tr><th>ward</th><th>type</th><th class="num">price</th><th class="num">land m²</th><th class="num">bldg m²</th><th>layout</th><th class="num">walk</th><th>listing</th></tr></thead>
+          <thead><tr><th>ward</th><th>type</th><th class="num">price</th><th class="num">land m²</th><th class="num">bldg m²</th><th class="c-layout">layout</th><th class="num">walk</th><th>listing</th></tr></thead>
           <tbody>
             <tr *ngFor="let r of diff['new']">
-                <td>{{ r.ward }}</td>
+                <td class="c-ward">{{ r.ward }}</td>
                 <td class="cattag">{{ catLabel(r.category) }}</td>
                 <td class="num">{{ r.price_raw || '—' }}</td>
                 <td class="num">{{ r.land_m2 || '—' }}</td>
@@ -740,56 +743,37 @@
     <div class="tablewrap" *ngIf="rows.length">
       <table>
         <thead><tr>
+          <th class="pickcol" *ngIf="comparePick" title="tick the listings to compare">⚖️</th>
+          <th class="verdictcol">verdict</th>
           <th class="sortable" [class.sorted]="sortKey === 'type'" (click)="toggleSort('type')"
               title="sort by property type">type <span class="arrow">{{ sortArrow('type') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'price'" (click)="toggleSort('price')"
               title="sort by price">price <span class="arrow">{{ sortArrow('price') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'ppm2'" (click)="toggleSort('ppm2')"
-              title="sort by price per m²">¥/m² <span class="arrow">{{ sortArrow('ppm2') }}</span></th>
+              title="sort by price per m²" class="c-ppm2">¥/m² <span class="arrow">{{ sortArrow('ppm2') }}</span></th>
           <th>layout</th>
           <th class="sortable" [class.sorted]="sortKey === 'building_m2'" (click)="toggleSort('building_m2')"
               title="sort by building area">bldg m² <span class="arrow">{{ sortArrow('building_m2') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'land_m2'" (click)="toggleSort('land_m2')"
-              title="sort by land area">land m² <span class="arrow">{{ sortArrow('land_m2') }}</span></th>
+              title="sort by land area" class="c-land">land m² <span class="arrow">{{ sortArrow('land_m2') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'age_years'" (click)="toggleSort('age_years')"
               title="sort by age">age <span class="arrow">{{ sortArrow('age_years') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'walk'" (click)="toggleSort('walk')"
-              title="sort by walking minutes to the nearest station">walk <span class="arrow">{{ sortArrow('walk') }}</span></th>
+              title="sort by walking minutes to the nearest station" class="c-walk">walk <span class="arrow">{{ sortArrow('walk') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'commute_min'" (click)="toggleSort('commute_min')"
               title="door-to-school: walk to your station + train + walk to the Lycée Français">
             🎓 LFIT <span class="arrow">{{ sortArrow('commute_min') }}</span></th>
           <th class="sortable" [class.sorted]="sortKey === 'ward'" (click)="toggleSort('ward')"
-              title="sort by ward">ward <span class="arrow">{{ sortArrow('ward') }}</span></th><th>address</th><th>link</th><th>compare</th><th>verdict</th>
+              title="sort by ward" class="c-ward">ward <span class="arrow">{{ sortArrow('ward') }}</span></th><th class="c-addr">address</th><th class="c-link">link</th>
         </tr></thead>
         <tbody>
           <ng-container *ngFor="let r of sortRows(rows)">
-            <tr class="rowlink" (click)="openDetails(r)"
-                title="click the row for the full spec sheet">
-              <td class="thumbcell">
-                <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
-                     class="rowthumb" [title]="r.title || ''">
-                <span class="cattag">{{ catLabel(r.category) }}</span>
-              </td>
-              <td>{{ fmtYen(r.price_yen) }}</td>
-              <td>{{ ppm2(r) }}</td>
-              <td class="layout"><span [title]="r.layout || ''">{{ r.layout || '—' }}</span></td>
-              <td>{{ r.building_m2 ?? '—' }}</td>
-              <td>{{ r.land_m2 ?? '—' }}</td>
-              <td>{{ r.age_years ?? '—' }}</td>
-              <td>{{ r.nearest_walk_min ?? '—' }}</td>
-              <td class="commutecell" [title]="commuteTip(r)">
-                <b *ngIf="r['commute_min'] != null">{{ r['commute_min'] }}′</b>
-                <span *ngIf="r['commute_min'] == null" class="muted">—</span>
-              </td>
-              <td>{{ r.ward }}</td>
-              <td class="addr">{{ r.address }}</td>
-              <td (click)="$event.stopPropagation()"><a [href]="r.url" target="_blank" rel="noopener">open ↗</a></td>
-              <td (click)="$event.stopPropagation()">
-                <button class="ghost xtiny" [class.sel]="isCompared(r.property_id)"
-                        (click)="toggleCompare(r)"
-                        title="pick two listings, then run the rent-vs-buy model on them">
-                  {{ isCompared(r.property_id) ? '✓ picked' : '⚖️ compare' }}
-                </button>
+            <tr class="rowlink" [class.picked]="isCompared(r.property_id)"
+                (click)="comparePick ? toggleCompare(r) : openDetails(r)"
+                [title]="comparePick ? 'tick to compare' : 'click the row for the full spec sheet'">
+              <td class="pickcol" *ngIf="comparePick">
+                <input type="checkbox" [checked]="isCompared(r.property_id)"
+                       (click)="$event.stopPropagation(); toggleCompare(r)">
               </td>
               <td class="verdictcell" (click)="$event.stopPropagation()">
                 <button type="button" class="vbtn bad" [class.on]="r['verdict'] === 'bad'"
@@ -799,6 +783,25 @@
                 <button type="button" class="vbtn good" [class.on]="r['verdict'] === 'good'"
                         (click)="quickGrade(r, 'good')" title="good">♥</button>
               </td>
+              <td class="thumbcell">
+                <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
+                     class="rowthumb" [title]="r.title || ''">
+                <span class="cattag">{{ catLabel(r.category) }}</span>
+              </td>
+              <td>{{ fmtYen(r.price_yen) }}</td>
+              <td class="c-ppm2">{{ ppm2(r) }}</td>
+              <td class="layout c-layout"><span [title]="r.layout || ''">{{ r.layout || '—' }}</span></td>
+              <td>{{ r.building_m2 ?? '—' }}</td>
+              <td class="c-land">{{ r.land_m2 ?? '—' }}</td>
+              <td>{{ r.age_years ?? '—' }}</td>
+              <td class="c-walk">{{ r.nearest_walk_min ?? '—' }}</td>
+              <td class="commutecell" [title]="commuteTip(r)">
+                <b *ngIf="r['commute_min'] != null">{{ r['commute_min'] }}′</b>
+                <span *ngIf="r['commute_min'] == null" class="muted">—</span>
+              </td>
+              <td>{{ r.ward }}</td>
+              <td class="addr c-addr">{{ r.address }}</td>
+              <td class="c-link" (click)="$event.stopPropagation()"><a [href]="r.url" target="_blank" rel="noopener">open ↗</a></td>
             </tr>
           </ng-container>
         </tbody>
@@ -811,8 +814,10 @@
        buttons to act on it, in one place. Same gallery, keys and grade path as
        the review queue — it is the same act, so it is not a second version. -->
   <div class="modal-backdrop sheet-backdrop" *ngIf="detailModal" (click)="closeDetails()">
-    <div class="modal sheet" (click)="$event.stopPropagation()">
-      <div class="sheet-grip" (click)="closeDetails()" title="close"></div>
+    <div class="modal sheet" (click)="$event.stopPropagation()"
+         [style.height.dvh]="sheetHeight">
+      <div class="sheet-grip" (pointerdown)="gripDown($event)"
+           title="drag to resize · drag down or click to close"></div>
       <button class="modal-close" (click)="closeDetails()" title="close (Esc)">✕</button>
 
       <ng-container *ngIf="detailModal.point as p">
