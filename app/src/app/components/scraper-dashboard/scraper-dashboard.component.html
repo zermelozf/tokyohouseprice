@@ -790,7 +790,7 @@
                 <button type="button" class="vbtn maybe" [class.on]="r['verdict'] === 'maybe'"
                         (click)="quickGrade(r, 'maybe')" title="maybe">?</button>
                 <button type="button" class="vbtn good" [class.on]="r['verdict'] === 'good'"
-                        (click)="quickGrade(r, 'good')" title="good">♥</button>
+                        (click)="quickGrade(r, 'good')" title="good">♥︎</button>
               </td>
               <td class="thumbcell">
                 <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
@@ -837,7 +837,7 @@
         <span class="erapill" *ngIf="p.era" [style.background]="eraColor(p.era)">{{ eraShort(p.era) }}</span>
         <span class="revprog" *ngIf="queue">{{ reviewIndex + 1 }} / {{ reviewQueue.length }}</span>
         <span class="muted" *ngIf="queue">
-          {{ reviewCounts['good'] || 0 }} ♥ · {{ reviewCounts['maybe'] || 0 }} ? ·
+          {{ reviewCounts['good'] || 0 }} ♥︎ · {{ reviewCounts['maybe'] || 0 }} ? ·
           {{ reviewCounts['bad'] || 0 }} ✕
         </span>
       </div>
@@ -948,7 +948,7 @@
                 title="maybe — key 2">? maybe</button>
         <button type="button" class="vbig good" [class.on]="p.verdict === 'good'"
                 (click)="grade(p.verdict === 'good' && !queue ? null : 'good')"
-                title="good — key 3">♥ yes</button>
+                title="good — key 3">♥︎ yes</button>
         <button class="ghost tiny" *ngIf="queue" (click)="nextCard(-1)"
                 [disabled]="reviewIndex === 0" title="previous listing">← back</button>
         <button class="nextbtn" *ngIf="queue" (click)="nextCard()"

@@ -216,7 +216,11 @@ export type Verdict = 'good' | 'maybe' | 'bad';
 
 /** Colours double as the map legend and the card border. */
 export const VERDICT_META: Record<Verdict, { label: string; color: string; icon: string }> = {
-  good:  { label: 'good',  color: '#15803d', icon: '♥' },
+  // U+FE0E after the heart: Android renders a bare U+2665 with emoji
+  // presentation — always red, whatever the CSS says — so an unselected
+  // "good" button looked already chosen. The variation selector asks for the
+  // text glyph, which takes its colour from the button.
+  good:  { label: 'good',  color: '#15803d', icon: '♥︎' },
   maybe: { label: 'maybe', color: '#ca8a04', icon: '?' },
   bad:   { label: 'bad',   color: '#c2410c', icon: '✕' },
 };
