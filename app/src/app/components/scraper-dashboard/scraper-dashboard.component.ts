@@ -406,9 +406,19 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return this.reviewQueue[this.reviewIndex] ?? null;
   }
 
+  /** The listing currently being judged, wherever it is on screen.
+   *
+   * The review queue and the detail sheet are the same act — look at a
+   * listing, decide — so they share one photo gallery, one grade path and one
+   * set of keys, rather than each growing its own. The queue wins when both
+   * are open, because it sits on top. */
+  focusCard(): any | null {
+    return this.reviewOpen ? this.reviewCard : (this.detailModal?.point ?? null);
+  }
+
   /** Load the full gallery for the card on screen. */
   private loadPhotos(): void {
-    const c = this.reviewCard;
+    const c = this.focusCard();
     this.reviewPhotoIndex = 0;
     this.reviewPhotos = c?.image_url ? [c.image_url] : [];
     if (!c) return;
@@ -416,12 +426,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.api.detail(c.url).subscribe({
       next: d => {
         this.reviewPhotosLoading = false;
-        const imgs = (d as any).images as string[] | undefined;
-        if (imgs && imgs.length) {
-          // Card image first if it is not already in the set, then the rest.
-          const rest = imgs.filter(u => u !== c.image_url);
-          this.reviewPhotos = c.image_url ? [c.image_url, ...rest] : rest;
-        }
+        this.setPhotos(c, (d as any).images);
       },
       error: () => { this.reviewPhotosLoading = false; },
     });
@@ -436,7 +441,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   /** Grade the card and advance. Verdicts are saved immediately — a review
    * session should never lose work if the tab is closed halfway. */
   grade(v: Verdict | null): void {
-    const card = this.reviewCard;
+    const card = this.focusCard();
     if (!card) return;
     const tags = this.reviewTagInput.split(',').map(t => t.trim()).filter(Boolean);
     const note = this.reviewNote.trim();
@@ -456,7 +461,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       },
       error: () => {},
     });
-    this.nextCard();
+    // In the queue, grading moves on. In the sheet you are looking at one
+    // listing on purpose, so it stays put and just shows the new verdict.
+    if (this.reviewOpen) this.nextCard();
   }
 
   nextCard(step = 1): void {
@@ -1030,7 +1037,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   @HostListener('document:keydown', ['$event'])
   onReviewKey(e: KeyboardEvent): void {
-    if (!this.reviewOpen) return;
+    if (!this.reviewOpen && !this.detailModal) return;
     const el = e.target as HTMLElement;
     if (el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) return;   // typing a note
     const map: Record<string, () => void> = {
@@ -1039,9 +1046,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       '3': () => this.grade('good'),
       'ArrowRight': () => this.photoStep(1),
       'ArrowLeft': () => this.photoStep(-1),
-      ' ': () => this.nextCard(),
-      'Backspace': () => this.nextCard(-1),
-      'Escape': () => { this.reviewOpen = false; },
+      ' ': () => { if (this.reviewOpen) this.nextCard(); },
+      'Backspace': () => { if (this.reviewOpen) this.nextCard(-1); },
+      'Escape': () => { if (this.reviewOpen) this.reviewOpen = false; else this.closeDetails(); },
     };
     const fn = map[e.key];
     if (fn) { e.preventDefault(); fn(); }
@@ -2526,10 +2533,30 @@ ${folders}
    * used to expand a second, thinner version of the same thing inline. */
   openDetails(p: MapPoint | Listing): void {
     this.detailModal = { loading: true, point: p };
+    // The card photo is up immediately; the rest arrive with the spec sheet.
+    this.reviewPhotos = p.image_url ? [p.image_url] : [];
+    this.reviewPhotoIndex = 0;
+    this.reviewPhotosLoading = true;
     this.api.detail(p.url).subscribe({
-      next: d => this.detailModal = { point: p, data: d, error: d.error },
-      error: () => this.detailModal = { point: p, error: 'request failed — is the local API running?' },
+      next: d => {
+        this.detailModal = { point: p, data: d, error: d.error };
+        this.reviewPhotosLoading = false;
+        // Same response as the specs — the gallery does not fetch again.
+        this.setPhotos(p, (d as any).images);
+      },
+      error: () => {
+        this.detailModal = { point: p, error: 'request failed — is the local API running?' };
+        this.reviewPhotosLoading = false;
+      },
     });
+  }
+
+  /** Card photo first (it is the one you already recognise), then the rest. */
+  private setPhotos(card: any, images?: string[]): void {
+    if (!images?.length) return;
+    const rest = images.filter(u => u !== card.image_url);
+    this.reviewPhotos = card.image_url ? [card.image_url, ...rest] : rest;
+    this.reviewPhotoIndex = 0;
   }
 
   closeDetails(): void { this.detailModal = null; }
