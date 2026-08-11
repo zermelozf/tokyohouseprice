@@ -1021,6 +1021,13 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     return `${d.getFullYear()}-${m}-${day}`;
   }
 
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    // The review overlay sits above the sheet, so it closes first.
+    if (this.reviewOpen) return;
+    if (this.detailModal) this.closeDetails();
+  }
+
   @HostListener('document:keydown', ['$event'])
   onReviewKey(e: KeyboardEvent): void {
     if (!this.reviewOpen) return;

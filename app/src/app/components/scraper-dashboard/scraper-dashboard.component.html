@@ -807,9 +807,11 @@
   </ng-template>
 
   <!-- ============ full detail modal (opened from a map popup) ============ -->
-  <div class="modal-backdrop full" *ngIf="detailModal" (click)="closeDetails()">
-    <div class="modal fullscreen" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeDetails()" title="close">✕</button>
+  <div class="modal-backdrop sheet-backdrop" *ngIf="detailModal" (click)="closeDetails()">
+    <div class="modal sheet" (click)="$event.stopPropagation()">
+      <!-- Grab bar: the affordance that says this panel pulls down to dismiss. -->
+      <div class="sheet-grip" (click)="closeDetails()" title="close"></div>
+      <button class="modal-close" (click)="closeDetails()" title="close (Esc)">✕</button>
       <ng-container *ngIf="detailModal.point as p">
         <h3>{{ p.price_raw || fmtYen(p.price_yen) }} <span class="muted normal">· {{ p.category }}</span></h3>
         <div class="muted mb">{{ detailModal.data?.address || p.address }}</div>

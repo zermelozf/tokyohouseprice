@@ -1078,14 +1078,28 @@ td.verdictcell { white-space: nowrap; }
 .rowlink { cursor: pointer; }
 .rowlink:hover > td { background: #fdf2f8; }
 
-/* The detail sheet is the full spec table plus photos — it earns the screen. */
-.modal-backdrop.full { padding: 0; }
-.modal.fullscreen {
-  max-width: none; width: 100vw; height: 100dvh; max-height: none;
-  border-radius: 0; padding: 1.4rem clamp(1rem, 4vw, 3rem) 2rem;
+/* --- detail sheet ----------------------------------------------------------
+   Full screen made the page feel replaced rather than inspected. A sheet from
+   the bottom keeps the results visible behind it, so it reads as a temporary
+   look at one row, and it is dismissed the three ways people try: the grip,
+   the backdrop, Escape. */
+.sheet-backdrop { align-items: flex-end; justify-content: center; padding: 0; }
+.modal.sheet {
+  width: min(100%, 1100px); max-width: none;
+  max-height: 82dvh; height: auto;
+  border-radius: 14px 14px 0 0; padding: 0.6rem clamp(1rem, 3vw, 2rem) 1.75rem;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.28);
+  animation: sheet-up 0.22s cubic-bezier(0.22, 0.8, 0.3, 1);
 }
-.modal.fullscreen .modal-close { top: 0.9rem; right: 1rem; font-size: 1.4rem; }
+@keyframes sheet-up { from { transform: translateY(14px); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .modal.sheet { animation: none; } }
+.sheet-grip {
+  width: 42px; height: 4px; border-radius: 2px; background: #d7dbe0;
+  margin: 0.15rem auto 0.7rem; cursor: pointer; flex: none;
+}
+.sheet-grip:hover { background: #b9bfc7; }
+.modal.sheet .modal-close { top: 0.5rem; right: 0.7rem; font-size: 1.2rem; }
 @media (min-width: 1100px) {
-  /* Specs read badly as one long column on a wide screen. */
-  .modal.fullscreen .specs { columns: 2; column-gap: 2.5rem; }
+  /* Specs read badly as one long column on a wide sheet. */
+  .modal.sheet .specs { columns: 2; column-gap: 2.5rem; }
 }
