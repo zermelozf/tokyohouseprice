@@ -1,10 +1,19 @@
 """Coordinates for listings SUUMO gives no pin for.
 
-Most detail pages embed an exact position, but a substantial minority do not:
-chintai pages carry theirs on the /kankyo/ tab, and some listings publish none
-at all — neither tab holds a latitude in any form. Those rows could not be
-drawn, so the map showed fewer listings than the table, which makes the two
-views disagree about what exists.
+This is a fallback, not the main route to a position. Of 1,544 listings, 755
+carry SUUMO's own pin, 12 (all chintai) publish none on either the detail page
+or the /kankyo/ tab, and the remaining 777 have simply never been detail-
+scraped — they sit outside the enrichment gate (ENRICH_COMMUTE_MAX_MIN,
+ENRICH_BUDGET_YEN in pipeline.py), so nothing has fetched their page.
+
+Scraping those 777 would give exact pins, plus the specs, zoning and hazard
+that geocoding cannot supply. But until that is worth ~30 minutes of crawling,
+they could be listed and not drawn, and the map silently held fewer listings
+than the table. Geocoding closes that gap immediately and costs one lookup per
+distinct 丁目 rather than one page fetch per listing.
+
+An exact pin always wins: annotate() only fills rows that have none, so
+enriching a listing later replaces its approximate position automatically.
 
 The address is always present, so it is geocoded instead, via the GSI address
 service (国土地理院) — the same source already used for elevation, free and
