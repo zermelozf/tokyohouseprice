@@ -110,7 +110,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // when reporting what a plot can carry. The price slider is the filter.
   budgetBuildM2 = 130;
   searchRows: Listing[] = [];
-  searchStats: Stats | null = null;
   searchMeta = '';
   searched = false;
 
@@ -273,6 +272,34 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     if (!this.crawlDates.length) return;
     this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
     this.load();
+  }
+
+  /** Stats for the rows actually on screen.
+   *
+   * The server computes these over everything it returns, which is the set
+   * *before* the sliders — so the header claimed 535 listings while the table
+   * showed 74, and the median price described listings you had just excluded.
+   * Same formulas as api._stats, applied to what is displayed. */
+  shownStats(rows: Listing[]): Stats {
+    const prices = rows.map(r => r.price_yen).filter((v): v is number => !!v);
+    const ppm2: number[] = [];
+    for (const r of rows) {
+      const area = (r.building_m2 || 0) || r.land_m2;
+      if (r.price_yen && area) ppm2.push(r.price_yen / area);
+    }
+    const median = (xs: number[]): number | null => {
+      if (!xs.length) return null;
+      const a = [...xs].sort((x, y) => x - y), m = a.length >> 1;
+      return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+    };
+    const mp = median(prices), mppm2 = median(ppm2);
+    return {
+      count: rows.length,
+      median_price_yen: mp === null ? null : Math.round(mp),
+      min_price_yen: prices.length ? Math.min(...prices) : null,
+      max_price_yen: prices.length ? Math.max(...prices) : null,
+      median_price_per_m2: mppm2 === null ? null : Math.round(mppm2),
+    };
   }
 
   shownSummary(): string {
@@ -1437,7 +1464,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       next: res => {
         this.searched = true;
         this.searchMeta = 'crawled data';
-        this.searchStats = res.stats;
         this.searchAll = res.rows;
         // Same objects, not a copy: a verdict saved from the table is the same
         // row the map redraws.
@@ -2433,7 +2459,6 @@ ${folders}
          · <a href="${esc(this.routeUrl(p))}" target="_blank" rel="noopener"
               title="Google Maps route from this listing to ${esc(ref.name)} (${esc(this.travelMode)})"
            >🗺️ route to ${esc(ref.name.split(' ')[0])} ↗</a>
-         <button class="allbtn" type="button">📋 See all details</button>
          <button class="cmpbtn" type="button">⚖️ Compare</button>
          <button class="revbtn" type="button">🔍 Review</button>`;
 

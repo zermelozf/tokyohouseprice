@@ -129,6 +129,38 @@ def annotate_reviews(rows: list[dict]) -> list[dict]:
     return rows
 
 
+def annotate_images(rows: list[dict]) -> list[dict]:
+    """Fall back to the detail page's photos when the search card had none.
+
+    SUUMO's rent cards frequently ship without a usable image URL — the card
+    carries a placeholder and the real photos only exist on the detail page —
+    so a third of the rent listings showed as blank thumbnails while their
+    photos sat in the DB already fetched.
+    """
+    import json as _json
+    need = [r["property_id"] for r in rows if not r.get("image_url")]
+    if not need:
+        return rows
+    conn = connect()
+    try:
+        first = {}
+        for i in range(0, len(need), 500):
+            chunk = need[i:i + 500]
+            for row in conn.execute(
+                    "SELECT property_id, images_json FROM property_detail "
+                    f"WHERE property_id IN ({','.join('?' * len(chunk))}) "
+                    "GROUP BY property_id", chunk):
+                imgs = _json.loads(row["images_json"] or "[]")
+                if imgs:
+                    first[row["property_id"]] = imgs[0]
+    finally:
+        conn.close()
+    for r in rows:
+        if not r.get("image_url"):
+            r["image_url"] = first.get(r["property_id"])
+    return rows
+
+
 def annotate_capacity(rows: list[dict]) -> list[dict]:
     """Attach how big a house each plot can carry. Only land needs it — for a
     house you are buying the building that is already there."""
@@ -286,8 +318,8 @@ def search_db(f: dict) -> list[dict]:
     # Era is filtered in Python, not SQL: the rule needs a build year that may
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
-    rows = hazard.annotate(geocode.annotate(
-        annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))))))
+    rows = hazard.annotate(geocode.annotate(annotate_images(
+        annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows)))))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     rows = apply_verdicts(rows, f)

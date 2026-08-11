@@ -123,7 +123,7 @@
       Crawlers
       <span class="tabdot" *ngIf="liveStatus && liveStatus.state === 'running'" title="a crawl is running"></span>
     </button>
-    <button [class.sel]="activeTab === 'search'" (click)="activeTab = 'search'">Search crawled data</button>
+    <button [class.sel]="activeTab === 'search'" (click)="activeTab = 'search'">Search</button>
     <button [class.sel]="activeTab === 'report'" (click)="openDiffReport()">Report</button>
     <button [class.sel]="activeTab === 'map'" (click)="openMap()">Map</button>
   </nav>
@@ -244,7 +244,7 @@
 
   <!-- ============ SEARCH TAB (already-crawled data) ============ -->
   <section class="card" *ngIf="activeTab === 'search'">
-    <h2>Search crawled data <span class="muted normal">{{ searchMeta }}</span></h2>
+    <h2>Search <span class="muted normal">{{ searchMeta }}</span></h2>
     <p class="muted top0">Query the listings already saved in the local DB (latest snapshot per property). Click <strong>📍 details</strong> on a row for its exact location and full spec sheet.</p>
 
     <!-- criteria, then sliders, then presets, then what you do with the result -->
@@ -274,7 +274,7 @@
       <span class="exportnote" *ngIf="exportMsg">{{ exportMsg }}</span>
     </div>
 
-    <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: searchStats }"></ng-container>
+    <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: shownStats(searchRows) }"></ng-container>
     <p class="muted" *ngIf="searched && !searchRows.length">No listings match — crawl some data first (Crawlers tab) or widen the filters.</p>
   </section>
 
@@ -532,7 +532,7 @@
                     (click)="useLatestCrawl()">jump to latest ({{ latestCrawl() }})</button>
             <br>
             <span class="muted">Filters, sliders and saved views are on the
-              <button class="linkbtn" (click)="activeTab = 'search'">Search tab</button> —
+              <button class="linkbtn" (click)="activeTab = 'search'">Search</button> —
               they apply here too.</span>
           </div>
           <div class="reviewbar">
