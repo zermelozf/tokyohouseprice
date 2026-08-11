@@ -125,6 +125,77 @@ def _norm_key(k: str) -> str:
     return k.replace("･", "・")
 
 
+# --- land you cannot build on ------------------------------------------------
+# 土地面積 is the plot you buy, not the plot you may build on. Two things come
+# off it, and both are stated in the listing:
+#
+#   セットバック  建築基準法42条2項: a plot fronting a road under 4 m must cede
+#                 land until the road measures 4 m. The ceded strip stops being
+#                 敷地面積, so it reduces the footprint and the floor area
+#                 alike. Written '済' when it has already happened — in which
+#                 case the stated area is already net and nothing comes off —
+#                 or '要', sometimes with the square metres.
+#   私道負担      a share of a private road inside the boundary. Same effect:
+#                 it is not building land.
+#
+# Ignoring these overstates what fits, and the median frontage in this data is
+# 4.0 m, so it is not a corner case.
+_SETBACK_DONE = re.compile(r"セットバック[^。、]{0,6}(?:済|完了)")
+_SETBACK_AREA = re.compile(r"セットバック[^。、]{0,12}?([\d.]+)\s*(?:~|～|-)?\s*([\d.]+)?\s*(?:m2|m 2|㎡)")
+_SETBACK_NEED = re.compile(r"セットバック[^。、]{0,6}(?:要|有|必要)")
+# The 私道負担 field leads with its area, or with 無 when there is none.
+_ROAD_BURDEN = re.compile(r"^\s*(?:共有持分)?\s*([\d.]+)\s*(?:m2|m 2|㎡)")
+
+
+def parse_setback(raw: str | None) -> tuple[float | None, str]:
+    """(square metres to cede, status). Status is 'done' when it has already
+    happened, 'required' when it has not, 'none' when the listing says so, and
+    'unknown' when it is silent."""
+    if not raw:
+        return None, "unknown"
+    text = _zen2han(raw)
+    if _SETBACK_DONE.search(text):
+        return None, "done"          # the stated area is already net
+    m = _SETBACK_AREA.search(text)
+    if m:
+        # A range ('0.86～0.98m2') is per-区画; take the larger, which is the
+        # one that binds the plot it applies to.
+        vals = [float(v) for v in m.groups() if v]
+        return (max(vals) if vals else None), "required"
+    if _SETBACK_NEED.search(text):
+        return None, "required"      # stated but not quantified
+    return None, "none" if "セットバック" in text else "unknown"
+
+
+def parse_road_burden(raw: str | None) -> float | None:
+    """私道負担 in square metres, when the listing leads with it."""
+    if not raw:
+        return None
+    m = _ROAD_BURDEN.search(_zen2han(raw))
+    return float(m.group(1)) if m else None
+
+
+def buildable_land(land_m2: float, s: dict) -> tuple[float, dict]:
+    """(land you may build on, what came off it)."""
+    blob = " ".join(v for k, v in s.items()
+                    if k in ("私道負担・道路", "その他制限事項", "備考") and v)
+    setback, status = parse_setback(blob)
+    burden = parse_road_burden(s.get("私道負担・道路"))
+    off = (setback or 0) + (burden or 0)
+    # A deduction bigger than half the plot means the fields have been read
+    # wrongly — report it rather than publishing an implausible capacity.
+    if off >= land_m2 * 0.5:
+        off = 0.0
+        status = status if status == "done" else "unclear"
+        setback = burden = None
+    return land_m2 - off, {
+        "setback_m2": setback,
+        "setback_status": status,
+        "road_burden_m2": burden,
+        "deducted_m2": round(off, 2) if off else None,
+    }
+
+
 def capacity(land_m2: float | None, specs: dict | None) -> dict | None:
     """What can be built on this plot. None when the zoning is unknown."""
     if not land_m2 or not specs:
@@ -148,12 +219,17 @@ def capacity(land_m2: float | None, specs: dict | None) -> dict | None:
     # subdivision is not judged on its narrowest lot.
     land_max = hi if (hi and hi > land_m2 * 1.01) else None
 
-    max_floor = land_m2 * far_eff / 100
-    max_footprint = land_m2 * coverage / 100
+    # Ratios apply to the land you may build on, not the land you buy.
+    net_land, deductions = buildable_land(land_m2, s)
+    max_floor = net_land * far_eff / 100
+    max_footprint = net_land * coverage / 100
     return {
         "land_m2": land_m2,
+        "buildable_land_m2": round(net_land, 2) if net_land != land_m2 else None,
+        **deductions,
         "land_m2_max": land_max,
-        "max_floor_m2_largest": round(land_max * far_eff / 100, 1) if land_max else None,
+        "max_floor_m2_largest": (round((land_max - (land_m2 - net_land)) * far_eff / 100, 1)
+                                 if land_max else None),
         "restrictions": parse_restrictions(s.get("その他制限事項")),
         "coverage_pct": coverage,
         "far_pct": far,

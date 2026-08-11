@@ -742,6 +742,19 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   /** The house a plot obliges you to build, at the standard ¥250k/m². */
   buildCost(): number { return this.budgetBuildM2 * 250_000; }
 
+  /** What a plot gives up before anything can be built: the 42条2項 setback
+   * and any private-road share. Empty when nothing comes off. */
+  setbackNote(cap: any): string {
+    if (!cap) return '';
+    if (cap.deducted_m2) {
+      const what = cap.setback_m2 ? 'セットバック' : '私道負担';
+      return `− ${cap.deducted_m2} m² ${what} (builds on ${cap.buildable_land_m2} m²)`;
+    }
+    if (cap.setback_status === 'required') return 'セットバック required, area not stated';
+    if (cap.setback_status === 'done') return 'セットバック 済 — area is already net';
+    return '';
+  }
+
   /** '109.1 – 120.3' for a listing selling several units, else the one area.
    * Showing only the floor understated these by up to 20%. */
   areaSpan(lo: number | null | undefined, hi: number | null | undefined): string {
@@ -2651,7 +2664,18 @@ ${folders}
         + (cap.limited_by === 'road width'
             ? ` <b>capped by the ${esc(cap.road_width_m)} m road</b> from ${esc(cap.far_pct)}%`
             : ` as designated`)
-        + (cap.zone ? ` · ${esc(cap.zone)}` : '') + `</span>`
+        + (cap.zone ? ` · ${esc(cap.zone)}` : '')
+        + (cap.deducted_m2
+            ? ` · on ${esc(cap.buildable_land_m2)} m² of the ${esc(cap.land_m2)} m² plot,`
+              + ` after ${esc(cap.deducted_m2)} m² of `
+              + (cap.setback_m2 ? 'セットバック' : '私道負担')
+            : '')
+        + `</span>`
+        + (cap.setback_status === 'required' && !cap.setback_m2
+            ? `<br><span style="color:#b45309">⚠ セットバック required but not`
+              + ` quantified — the plot loses land to widen the road, so this`
+              + ` is an upper bound</span>`
+            : '')
         + (cap.restrictions && cap.restrictions.length
             ? `<br><span style="color:#b45309">⚠ not included: `
               + cap.restrictions.map((r: string) => esc(r)).join('; ')

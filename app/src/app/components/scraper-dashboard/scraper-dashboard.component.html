@@ -893,6 +893,9 @@
             🏗️ fits <b>{{ cap.max_floor_m2 }} m²</b> on a {{ cap.max_footprint_m2 }} m² footprint
             <span class="muted">· {{ cap.coverage_pct }}% / {{ cap.far_effective_pct }}%<span
                   *ngIf="cap.limited_by === 'road width'"> (road-limited)</span></span>
+            <span class="setbacknote" *ngIf="setbackNote(cap)"
+                  title="建築基準法42条2項: a plot on a road under 4 m cedes land until the road measures 4 m. The ceded strip is not 敷地面積, so it reduces both the footprint and the floor area.">
+              · {{ setbackNote(cap) }}</span>
           </div>
 
           <div class="hazbox" *ngIf="p.hazard as h">

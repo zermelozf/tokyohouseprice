@@ -210,6 +210,13 @@ export interface PlotCapacity {
   land_m2_max: number | null;          // 分譲地: the largest 区画 on the listing
   max_floor_m2_largest: number | null;
   restrictions: string[];              // named by SUUMO, not quantified anywhere
+  // 建築基準法42条2項 setback and any 私道負担: land inside the boundary that is
+  // not 敷地面積, so the ratios above apply to buildable_land_m2, not land_m2.
+  buildable_land_m2: number | null;    // null when nothing comes off
+  setback_m2: number | null;
+  setback_status: 'done' | 'required' | 'none' | 'unclear' | 'unknown';
+  road_burden_m2: number | null;
+  deducted_m2: number | null;
 }
 
 export type Verdict = 'good' | 'maybe' | 'bad';
