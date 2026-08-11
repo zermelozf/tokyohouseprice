@@ -30,6 +30,87 @@ ENRICH_BUDGET_YEN = 200_000_000
 DETAIL_MAX_AGE_DAYS = 7
 
 
+def in_scope(row: dict, commute_max: int | None, budget_yen: int | None,
+             cache: dict | None = None) -> bool:
+    """Whether a listing is a candidate at all.
+
+    SUUMO cannot express either limit in a search URL — its price ceiling stops
+    at 1億2千万, and a station-based search knows nothing about the walk from
+    the listing to that station — so a crawl returns listings that are out of
+    scope on arrival. Storing them means every later step (enrichment,
+    geocoding, the map) has to keep re-deciding to ignore them.
+
+    Anything that cannot be judged — no cached commute, no price — is kept, so
+    a missing lookup never silently drops a listing.
+    """
+    if commute_max is not None:
+        got = commute.listing_commute(row.get("station_raw"), cache
+                                      if cache is not None else commute.table())
+        if got and got["commute_min"] > commute_max:
+            return False
+    if budget_yen is not None and row.get("price_yen") is not None:
+        cap = query.budget_ceiling(row, {"budget_yen": budget_yen})
+        if cap is not None and row["price_yen"] > cap:
+            return False
+    return True
+
+
+def keep_in_scope(snapshots: list[dict],
+                  commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
+                  budget_yen: int | None = ENRICH_BUDGET_YEN) -> tuple[list[dict], int]:
+    """(kept, dropped) — applied before the rows are written, not after."""
+    if commute_max is None and budget_yen is None:
+        return snapshots, 0
+    cache = commute.table()
+    kept = [r for r in snapshots if in_scope(r, commute_max, budget_yen, cache)]
+    return kept, len(snapshots) - len(kept)
+
+
+def prune(commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
+          budget_yen: int | None = ENRICH_BUDGET_YEN,
+          dry_run: bool = True) -> dict:
+    """Delete stored listings that were never candidates.
+
+    Crawls returned them because SUUMO cannot express either limit in a search
+    URL; keeping them means the map, the enrichment pass and the geocoder each
+    spend effort on listings that are then filtered out anyway.
+
+    Two things are never deleted:
+      * a listing you have reviewed — grading it by hand is exactly the kind of
+        work that must not be thrown away by a bulk rule;
+      * the bronze HTML, which is the source of truth. Silver can be rebuilt
+        from it, so this is reversible in the way that matters.
+    """
+    from . import query as _q
+    rows = _q.search_db({"limit": 1_000_000})
+    cache = commute.table()
+    reviewed = set(_q.reviews())
+    doomed = [r["property_id"] for r in rows
+              if not in_scope(r, commute_max, budget_yen, cache)
+              and r["property_id"] not in reviewed]
+    kept_reviewed = [r["property_id"] for r in rows
+                     if not in_scope(r, commute_max, budget_yen, cache)
+                     and r["property_id"] in reviewed]
+    out = {"scanned": len(rows), "out_of_scope": len(doomed) + len(kept_reviewed),
+           "deleting": len(doomed), "kept_because_reviewed": len(kept_reviewed),
+           "remaining": len(rows) - len(doomed), "dry_run": dry_run,
+           "commute_max": commute_max, "budget_yen": budget_yen}
+    if dry_run or not doomed:
+        return out
+    conn = init_db()
+    try:
+        for i in range(0, len(doomed), 500):
+            chunk = doomed[i:i + 500]
+            marks = ",".join("?" * len(chunk))
+            conn.execute(f"DELETE FROM listings_snapshot WHERE property_id IN ({marks})", chunk)
+            conn.execute(f"DELETE FROM property_detail WHERE property_id IN ({marks})", chunk)
+        conn.commit()
+        conn.execute("VACUUM")
+    finally:
+        conn.close()
+    return out
+
+
 def _worth_enriching(pids: list[str], commute_max: int | None,
                      budget_yen: int | None) -> set[str]:
     """Which of `pids` deserve a detail fetch.
@@ -145,11 +226,13 @@ def crawl_category_ward(conn, fetcher: Fetcher, category: str, ward: str,
             for r in records:
                 if r.get("property_id") and r.get("url"):
                     scraped[r["property_id"]] = r["url"]
-        snaps = [silver.to_snapshot(r, scraped_at=now) for r in records]
+        snaps, dropped = keep_in_scope(
+            [silver.to_snapshot(r, scraped_at=now) for r in records])
         n = silver.upsert(conn, snaps)
         total_records += n
         pages_done = page
-        log.info("%s/%s page %d: %d listings", category, ward, page, n)
+        log.info("%s/%s page %d: %d listings%s", category, ward, page, n,
+                 f" ({dropped} out of scope, not stored)" if dropped else "")
 
     return {"category": category, "ward": ward,
             "pages": pages_done, "listings": total_records}
@@ -182,11 +265,14 @@ def crawl_url(url: str, max_pages: int = 5,
                              page=page, url=purl, html=html, n_cards=len(records))
             if not records:
                 break
-            n = silver.upsert(conn, [silver.to_snapshot(r, scraped_at=now) for r in records])
+            snaps, dropped = keep_in_scope(
+                [silver.to_snapshot(r, scraped_at=now) for r in records])
+            n = silver.upsert(conn, snaps)
             total += n
             pages_done = page
-            log.info("url-crawl %s/%s page %d: %d listings",
-                     meta["category"], meta["ward_label"], page, n)
+            log.info("url-crawl %s/%s page %d: %d listings%s",
+                     meta["category"], meta["ward_label"], page, n,
+                     f" ({dropped} out of scope, not stored)" if dropped else "")
         if enrich and scraped:
             day = now.strftime("%Y-%m-%d")
             enriched = enrich_details(fetcher, scraped, day)

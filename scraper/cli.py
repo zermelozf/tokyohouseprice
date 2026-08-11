@@ -23,6 +23,7 @@ import logging
 from . import gold
 from .config import ALL_CATEGORIES, SALE_CATEGORIES, WARDS
 from .detail import scrape_property
+from .pipeline import (ENRICH_BUDGET_YEN, ENRICH_COMMUTE_MAX_MIN, prune)
 from .pipeline import crawl, crawl_url
 
 
@@ -54,6 +55,14 @@ def main(argv: list[str] | None = None) -> None:
     cu.add_argument("--max-pages", type=int, default=5)
     cu.add_argument("--min-delay", type=float, default=2.0)
     cu.add_argument("--max-delay", type=float, default=4.0)
+
+    pr = sub.add_parser("prune", help="delete stored listings that are out of scope")
+    pr.add_argument("--commute-max", type=int, default=None,
+                    help=f"door-to-school minutes (default {ENRICH_COMMUTE_MAX_MIN})")
+    pr.add_argument("--budget", type=int, default=None,
+                    help=f"total budget in yen (default {ENRICH_BUDGET_YEN})")
+    pr.add_argument("--apply", action="store_true",
+                    help="actually delete; without it, only report what would go")
 
     d = sub.add_parser("property", help="scrape one property detail page")
     d.add_argument("url")
@@ -91,6 +100,14 @@ def main(argv: list[str] | None = None) -> None:
         summary = crawl_url(args.url, max_pages=args.max_pages,
                             min_delay=args.min_delay, max_delay=args.max_delay)
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.cmd == "prune":
+        res = prune(commute_max=args.commute_max if args.commute_max is not None
+                    else ENRICH_COMMUTE_MAX_MIN,
+                    budget_yen=args.budget if args.budget is not None
+                    else ENRICH_BUDGET_YEN,
+                    dry_run=not args.apply)
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+
     elif args.cmd == "property":
         print(json.dumps(scrape_property(args.url), ensure_ascii=False, indent=2))
     elif args.cmd == "trends":
