@@ -26,49 +26,56 @@
         </div>
 </ng-template>
 
-<!-- One filter bar, rendered on both the Map and the Search tab. The criteria it
-     holds are shared state, so narrowing one tab narrows the other and a saved
-     preset restores the whole view rather than half of it. -->
+<!-- The criteria both tabs obey. Shared state, so narrowing one narrows the
+     other, and a saved preset restores the whole view rather than half of it. -->
 <ng-template #filterBarTpl>
   <div class="filterbar">
+    <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
+      <option value="">all types</option>
+      <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
+    </select>
+    <select [(ngModel)]="shared.ward" (ngModelChange)="refreshBoth()">
+      <option value="">all wards</option>
+      <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
+    </select>
+    <select [(ngModel)]="shared.commuteMax" (ngModelChange)="refreshBoth()"
+            title="door-to-school minutes: walk + train + walk to the Lycée">
+      <option [ngValue]="null">🎓 any</option>
+      <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">🎓 ≤{{ m }} min</option>
+    </select>
+    <button type="button" class="chip" *ngFor="let v of VERDICTS"
+            [class.sel]="shared.verdicts.includes(v.key)" (click)="toggleVerdict(v.key)"
+            [title]="'show only ' + v.label">
+      <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
+    </button>
+    <button type="button" class="chip" [class.sel]="shared.verdicts.includes('none')"
+            (click)="toggleVerdict('none')" title="not yet reviewed">
+      <i style="background:#9ca3af"></i>unseen
+    </button>
+  </div>
+</ng-template>
+
+<!-- Presets come last, after every filter above them: you set the view, then
+     save it. Loading one restores both tabs, sliders included. -->
+<ng-template #presetBarTpl>
+  <div class="presetbar">
+    <span class="plabel">saved views</span>
     <select class="fload" [(ngModel)]="activeFilter" (ngModelChange)="loadFilter($event)">
-      <option value="">— saved filters —</option>
+      <option value="">— load a saved view —</option>
       <option *ngFor="let f of savedFilters" [value]="f.name">{{ f.name }}</option>
     </select>
-    <input class="fname" [(ngModel)]="filterName" placeholder="name this view"
+    <button class="ghost tiny danger" *ngIf="activeFilter"
+            (click)="removeFilter(activeFilter)"
+            [title]="'delete the saved view &quot;' + activeFilter + '&quot;'">🗑 delete “{{ activeFilter }}”</button>
+    <span class="psep"></span>
+    <input class="fname" [(ngModel)]="filterName"
+           [placeholder]="'name this view — ' + shownSummary()"
            (keyup.enter)="saveCurrentFilter()">
-    <button class="ghost tiny" (click)="saveCurrentFilter()"
-            [disabled]="!filterName.trim()" title="save every filter on both tabs">save</button>
+    <button class="primary tiny" (click)="saveCurrentFilter()" [disabled]="!filterName.trim()"
+            title="saves every filter on both tabs, sliders included">💾 save view</button>
     <button class="ghost tiny" (click)="copyShareLink()"
-            title="a link that restores this exact view">🔗</button>
-    <button class="ghost tiny" *ngIf="activeFilter" (click)="removeFilter(activeFilter)"
-            [title]="'delete ' + activeFilter">🗑</button>
+            title="a link that restores this exact view">🔗 copy link</button>
     <span class="note" *ngIf="shareMsg">{{ shareMsg }}</span>
-
-    <span class="sharedbits">
-      <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
-        <option value="">all types</option>
-        <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
-      </select>
-      <select [(ngModel)]="shared.ward" (ngModelChange)="refreshBoth()">
-        <option value="">all wards</option>
-        <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
-      </select>
-      <select [(ngModel)]="shared.commuteMax" (ngModelChange)="refreshBoth()"
-              title="door-to-school minutes: walk + train + walk to the Lycée">
-        <option [ngValue]="null">🎓 any</option>
-        <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">🎓 ≤{{ m }} min</option>
-      </select>
-      <button type="button" class="chip" *ngFor="let v of VERDICTS"
-              [class.sel]="shared.verdicts.includes(v.key)" (click)="toggleVerdict(v.key)"
-              [title]="'show only ' + v.label">
-        <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
-      </button>
-      <button type="button" class="chip" [class.sel]="shared.verdicts.includes('none')"
-              (click)="toggleVerdict('none')" title="not yet reviewed">
-        <i style="background:#9ca3af"></i>unseen
-      </button>
-    </span>
   </div>
 </ng-template>
 
@@ -270,6 +277,7 @@
 
     <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
     <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: searchRows.length, total: searchAll.length }"></ng-container>
+    <ng-container *ngTemplateOutlet="presetBarTpl"></ng-container>
     <div class="reviewbar" *ngIf="searchRows.length">
       <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
       <span class="muted">unreviewed first · keys 1/2/3</span>
@@ -537,6 +545,7 @@
           </span>
         </div>
         <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: mapPoints.length, total: mapAll.length }"></ng-container>
+        <ng-container *ngTemplateOutlet="presetBarTpl"></ng-container>
         <button (click)="loadMap()">🔄 Refresh</button>
         <div class="era-filter">
         <span class="era-label" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06. No selection shows everything.">耐震基準</span>

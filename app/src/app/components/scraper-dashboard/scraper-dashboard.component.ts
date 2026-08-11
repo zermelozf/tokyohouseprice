@@ -270,11 +270,27 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** What the current filters leave showing, offered as the preset's name so
+   * a saved view is recognisable in the list later. */
+  shownSummary(): string {
+    const parts: string[] = [];
+    if (this.shared.category) {
+      const c = (this.config?.categories || []).find((x: any) => x.key === this.shared.category);
+      parts.push(c ? c.label : this.shared.category);
+    }
+    if (this.shared.ward) parts.push(this.shared.ward);
+    if (this.shared.commuteMax) parts.push(`≤${this.shared.commuteMax}min`);
+    const n = this.searchRows.length || this.mapPoints.length;
+    return parts.length ? `${parts.join(' ')} (${n})` : `${n} listings`;
+  }
+
   saveCurrentFilter(): void {
     const name = (this.filterName || '').trim();
     if (!name) return;
+    const existing = this.savedFilters.some(f => f.name === name);
+    if (existing && !confirm(`"${name}" already exists — overwrite it?`)) return;
     this.api.saveFilter(name, this.filterState()).subscribe({
-      next: () => { this.filterName = ''; this.loadSavedFilters();
+      next: () => { this.filterName = ''; this.activeFilter = name; this.loadSavedFilters();
                     this.shareMsg = `saved "${name}"`; },
       error: () => { this.shareMsg = 'save failed'; },
     });
@@ -287,7 +303,14 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   }
 
   removeFilter(name: string): void {
-    this.api.deleteFilter(name).subscribe({ next: () => this.loadSavedFilters(), error: () => {} });
+    if (!name || !confirm(`Delete the saved view "${name}"? The listings are untouched.`)) return;
+    this.api.deleteFilter(name).subscribe({
+      // Clear the selection too, or the dropdown keeps showing a view that no
+      // longer exists and its delete button offers to remove it again.
+      next: () => { if (this.activeFilter === name) this.activeFilter = '';
+                    this.shareMsg = `deleted "${name}"`; this.loadSavedFilters(); },
+      error: () => { this.shareMsg = 'delete failed'; },
+    });
   }
 
   /** A link that restores this exact view. */

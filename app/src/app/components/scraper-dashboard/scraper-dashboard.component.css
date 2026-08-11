@@ -1011,3 +1011,16 @@ td.verdictcell { white-space: nowrap; }
 .sharedbits .chip { display: inline-flex; align-items: center; gap: 0.25rem;
                     padding: 0.24rem 0.5rem; }
 .sharedbits .chip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+/* Presets sit below every filter: set the view, then save it. */
+.presetbar { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+             flex-basis: 100%; margin: 0.15rem 0 0.4rem;
+             padding: 0.45rem 0.6rem; background: #fff;
+             border: 1px solid #eef0f3; border-radius: 5px; }
+.presetbar .plabel { font-size: 0.7rem; color: #8a919b; text-transform: uppercase;
+                     letter-spacing: 0.03em; }
+.presetbar .fload { max-width: 13rem; }
+.presetbar .fname { flex: 1 1 12rem; min-width: 10rem; }
+.presetbar .psep { flex: 0 0 1px; align-self: stretch; background: #eef0f3; margin: 0 0.3rem; }
+.presetbar .primary { background: #FF69B4; border-color: #FF69B4; color: #fff; }
+.presetbar .danger { color: #b4232a; border-color: #f0d6d8; }
