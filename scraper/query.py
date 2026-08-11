@@ -146,10 +146,14 @@ def annotate_images(rows: list[dict]) -> list[dict]:
         first = {}
         for i in range(0, len(need), 500):
             chunk = need[i:i + 500]
+            # A property has one detail row per scrape date, and the early
+            # ones predate image extraction — so take the newest row that
+            # actually has photos, not whichever row a GROUP BY happens to
+            # pick, which was silently the empty one.
             for row in conn.execute(
                     "SELECT property_id, images_json FROM property_detail "
                     f"WHERE property_id IN ({','.join('?' * len(chunk))}) "
-                    "GROUP BY property_id", chunk):
+                    "ORDER BY scrape_date ASC", chunk):
                 imgs = _json.loads(row["images_json"] or "[]")
                 if imgs:
                     first[row["property_id"]] = imgs[0]
