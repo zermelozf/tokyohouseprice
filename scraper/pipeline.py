@@ -75,24 +75,21 @@ def prune(commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
     URL; keeping them means the map, the enrichment pass and the geocoder each
     spend effort on listings that are then filtered out anyway.
 
-    Two things are never deleted:
-      * a listing you have reviewed — grading it by hand is exactly the kind of
-        work that must not be thrown away by a bulk rule;
-      * the bronze HTML, which is the source of truth. Silver can be rebuilt
-        from it, so this is reversible in the way that matters.
+    Out of scope means deleted, with no exception for having been reviewed: a
+    listing an hour from the school is not a candidate whatever you thought of
+    it. The verdict itself survives in listing_review, which records decisions
+    rather than listings.
+
+    Bronze HTML is untouched — it is the source of truth, and silver can be
+    rebuilt from it, so this is reversible in the way that matters.
     """
     from . import query as _q
     rows = _q.search_db({"limit": 1_000_000})
     cache = commute.table()
-    reviewed = set(_q.reviews())
     doomed = [r["property_id"] for r in rows
-              if not in_scope(r, commute_max, budget_yen, cache)
-              and r["property_id"] not in reviewed]
-    kept_reviewed = [r["property_id"] for r in rows
-                     if not in_scope(r, commute_max, budget_yen, cache)
-                     and r["property_id"] in reviewed]
-    out = {"scanned": len(rows), "out_of_scope": len(doomed) + len(kept_reviewed),
-           "deleting": len(doomed), "kept_because_reviewed": len(kept_reviewed),
+              if not in_scope(r, commute_max, budget_yen, cache)]
+    out = {"scanned": len(rows), "out_of_scope": len(doomed),
+           "deleting": len(doomed),
            "remaining": len(rows) - len(doomed), "dry_run": dry_run,
            "commute_max": commute_max, "budget_yen": budget_yen}
     if dry_run or not doomed:
