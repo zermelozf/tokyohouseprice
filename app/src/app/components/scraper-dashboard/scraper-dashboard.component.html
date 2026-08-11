@@ -35,12 +35,16 @@
     <span class="vchips typechips">
       <span class="vlabel">type</span>
       <button type="button" class="chip" *ngFor="let c of typeChips()"
-              [class.sel]="shared.categories.includes(c.key)" (click)="toggleCategory(c.key)"
-              [title]="c.label">{{ c.label }}</button>
+              [class.sel]="shared.categories.includes(c.key)"
+              [class.empty]="!typeCount(c.key)" (click)="toggleCategory(c.key)"
+              [title]="c.label + ' — ' + typeCount(c.key) + ' listing(s) under the other filters'">
+        {{ c.label }} <span class="cnt">{{ typeCount(c.key) }}</span></button>
       <span class="chipsep"></span>
       <button type="button" class="chip" *ngFor="let k of RENT_KINDS"
-              [class.sel]="shared.rentKinds.includes(k.key)" (click)="toggleRentKind(k.key)"
-              [title]="k.label">{{ k.label }}</button>
+              [class.sel]="shared.rentKinds.includes(k.key)"
+              [class.empty]="!typeCount(k.key, true)" (click)="toggleRentKind(k.key)"
+              [title]="k.label + ' — ' + typeCount(k.key, true) + ' listing(s) under the other filters'">
+        {{ k.label }} <span class="cnt">{{ typeCount(k.key, true) }}</span></button>
       <span class="note" *ngIf="!shared.categories.length && !shared.rentKinds.length">all</span>
     </span>
     <label class="fld"><span>ward</span>

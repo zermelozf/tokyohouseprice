@@ -325,13 +325,40 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   toggleCategory(key: string): void {
     const c = this.shared.categories;
     this.shared.categories = c.includes(key) ? c.filter(k => k !== key) : [...c, key];
-    this.refreshBoth();
+    this.applyRanges();          // no refetch: the rows are already here
   }
 
   toggleRentKind(key: string): void {
     const k = this.shared.rentKinds;
     this.shared.rentKinds = k.includes(key) ? k.filter(x => x !== key) : [...k, key];
-    this.refreshBoth();
+    this.applyRanges();
+  }
+
+  /** Which 賃貸 product a listing is, from the label it states itself. */
+  private rentKindOf(p: any): string | null {
+    const l = p.property_label || '';
+    if (l.includes('一戸建')) return 'house';
+    if (l.includes('アパート')) return 'apart';
+    if (l.includes('マンション')) return 'mansion';
+    return null;
+  }
+
+  /** Nothing selected means everything; a rent kind implies rent. */
+  private passesType(p: any): boolean {
+    const cats = this.shared.categories, kinds = this.shared.rentKinds;
+    if (!cats.length && !kinds.length) return true;
+    if (p.market === 'rent') {
+      if (kinds.length) return kinds.includes(this.rentKindOf(p) as string);
+      return cats.includes('rent');
+    }
+    return cats.includes(p.category);
+  }
+
+  /** How many listings a chip holds, under every *other* filter in force. */
+  typeCount(key: string, isRentKind = false): number {
+    return this.searchAll.filter((r: any) =>
+      isRentKind ? (r.market === 'rent' && this.rentKindOf(r) === key)
+                 : r.category === key).length;
   }
 
   shownSummary(): string {
@@ -716,8 +743,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   /** Re-filter both tabs, without touching the server. */
   applyRanges(): void {
-    this.mapPoints = this.mapAll.filter(p => this.inRanges(p));
-    this.searchRows = this.searchAll.filter(r => this.inRanges(r as Filterable));
+    const keep = (r: any) => this.passesType(r) && this.inRanges(r as Filterable);
+    this.mapPoints = this.mapAll.filter(keep);
+    this.searchRows = this.searchAll.filter(keep);
     this.renderMarkers();
   }
 
@@ -1565,10 +1593,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * removed, and the two disagreed about how many listings even existed. */
   private buildFilters(): Filters {
     const f: Filters = {
-      // A rent kind implies the rent category; picking none of either means all.
-      categories: this.shared.rentKinds.length && !this.shared.categories.includes('rent')
-        ? [...this.shared.categories, 'rent'] : [...this.shared.categories],
-      rent_kinds: [...this.shared.rentKinds],
+      // Type is cut in the browser, not here: a chip can only show how many
+      // listings it holds if the response still contains the other types.
+      categories: [],
       wards: this.shared.ward ? [this.shared.ward] : [],
       eras: [...this.eras],
       verdicts: [...this.shared.verdicts],

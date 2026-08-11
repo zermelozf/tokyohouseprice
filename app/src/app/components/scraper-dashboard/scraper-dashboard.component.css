@@ -1165,3 +1165,7 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 /* Horizontal swipe belongs to the gallery; vertical still scrolls the sheet. */
 .revgallery { touch-action: pan-y; user-select: none; }
 .revgallery img { -webkit-user-drag: none; user-drag: none; }
+/* A facet that shows nothing under the current filters says so, rather than
+   looking identical to one that would. */
+.typechips .cnt { opacity: 0.55; font-variant-numeric: tabular-nums; }
+.typechips .chip.empty { opacity: 0.42; }
