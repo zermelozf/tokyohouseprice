@@ -11,7 +11,6 @@ import {
   CompareAssumptions, CompareResult, CompareOption, Verdict, VERDICT_META,
 } from '../../services/scraper.service';
 
-interface DetailState { loading?: boolean; open?: boolean; data?: PropertyDetail; error?: string; }
 
 /**
  * 2020 census counts for one 町丁. `null` means e-Stat withheld the figure for
