@@ -2,7 +2,7 @@
   <div class="rangebank">
           <div class="rangerow" *ngFor="let spec of RANGE_SPECS">
             <ng-container *ngIf="rangeBounds[spec.key] as b">
-              <label [title]="spec.label + ' — bounds come from the data currently loaded'">
+              <label [title]="spec.hint || (spec.label + ' — bounds come from the data currently loaded')">
                 {{ spec.label }}<span class="rangeval">{{ rangeLabel(spec.key) }}</span>
               </label>
               <div class="dualrange">
@@ -44,13 +44,14 @@
         <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
       </select>
     </label>
-    <label class="fld" title="door-to-school minutes: walk + train + walk to the Lycée">
-      <span>🎓 to LFIT</span>
-      <select [(ngModel)]="shared.commuteMax" (ngModelChange)="refreshBoth()">
-        <option [ngValue]="null">any</option>
-        <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">≤{{ m }} min</option>
-      </select>
+    <label class="fld" title="Crawled-time window. Both bounds on one day shows what that morning's crawl saw.">
+      <span>crawled from</span>
+      <input type="date" [(ngModel)]="shared.dateFrom" (ngModelChange)="refreshBoth()">
     </label>
+    <label class="fld"><span>crawled to</span>
+      <input type="date" [(ngModel)]="shared.dateTo" (ngModelChange)="refreshBoth()">
+    </label>
+
     <span class="vchips">
       <span class="vlabel">reviewed</span>
       <button type="button" class="chip" *ngFor="let v of VERDICTS"
@@ -64,47 +65,8 @@
       </button>
     </span>
 
-    <span class="fsep"></span>
-
-    <label class="fld"
-           [title]="'Total budget — applied here, not in the crawl, because SUUMO\'s own price ceiling stops at 1億2千万. A plot is judged on this less a ' + budgetBuildM2 + 'm² build (' + fmtYen(landCeiling()) + ').'">
-      <span>budget</span>
-      <select [(ngModel)]="budgetYen" (ngModelChange)="refreshBoth()">
-        <option [ngValue]="null">no limit</option>
-        <option *ngFor="let b of budgetOptions" [ngValue]="b">{{ fmtYen(b) }}</option>
-      </select>
-    </label>
-    <label class="fld"
-           title="Building floor: buy / rental flat / rental house. Land is exempt — a plot has no building. No rental flat in this catchment exceeds ~108m², so flats and houses need different floors.">
-      <span>min m² buy/flat/house</span>
-      <span class="dualnum">
-        <input type="number" step="10" [(ngModel)]="bldMinBuy" (ngModelChange)="refreshBoth()">
-        <input type="number" step="10" [(ngModel)]="bldMinRent" (ngModelChange)="refreshBoth()">
-        <input type="number" step="10" [(ngModel)]="bldMinRentHouse" (ngModelChange)="refreshBoth()">
-      </span>
-    </label>
-    <label class="fld"
-           title="Monthly rent ceiling. Enforced here as well as in the crawl, because tightening a crawl filter never removes rows earlier crawls already stored.">
-      <span>max rent</span>
-      <input type="number" step="10000" [(ngModel)]="rentMaxYen" (ngModelChange)="refreshBoth()">
-    </label>
-    <label class="fld" title="Max age in years. Listings with no stated age (新築, land) are kept.">
-      <span>max age</span>
-      <input type="number" step="5" [(ngModel)]="ageMaxKnown" (ngModelChange)="refreshBoth()">
-    </label>
-
-    <label class="fld" title="Crawled-time window. Empty shows the latest snapshot of every property; pinning both to one day shows what that morning's crawl saw.">
-      <span>crawled</span>
-      <span class="dualnum">
-        <input type="date" [(ngModel)]="shared.dateFrom" (ngModelChange)="refreshBoth()">
-        <input type="date" [(ngModel)]="shared.dateTo" (ngModelChange)="refreshBoth()">
-      </span>
-    </label>
-
-    <span class="fsep"></span>
-
     <span class="era-filter">
-      <span class="era-label" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06. No selection shows everything.">耐震基準</span>
+      <span class="vlabel" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06.">耐震基準</span>
       <button type="button" class="chip" *ngFor="let e of eraList"
               [class.sel]="eras.includes(e.key)" (click)="toggleEra(e.key)"
               [title]="e.label"><i [style.background]="e.color"></i>{{ e.short }}</button>

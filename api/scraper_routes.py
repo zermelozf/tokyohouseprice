@@ -52,22 +52,16 @@ class Filters(BaseModel):
     walk_max: Optional[int] = None
     age_max: Optional[int] = None
     eras: list[str] = []              # 耐震基準 tiers; see query.ERAS
-    commute_max: Optional[int] = None # door-to-school minutes; see scraper.commute
-    # Total budget. Applied here because SUUMO's own ceiling stops at 1億2千万.
-    # For land it is reduced by the cost of the house you would have to build.
-    budget_yen: Optional[int] = None
-    budget_build_m2: int = 130
-    budget_build_cost_m2: int = 250_000
-    # Market-specific floors. chintai's own area filter stops at 100m², and a
-    # global bld_min would drop every land listing, so these are applied here.
-    bld_min_buy: Optional[float] = None
-    bld_min_rent: Optional[float] = None        # rental flats
-    bld_min_rent_house: Optional[float] = None  # rental houses
-    rent_max_yen: Optional[int] = None          # monthly rent ceiling
     # Manual verdicts to keep. 'none' selects the not-yet-reviewed, which is
     # what the review queue asks for.
     verdicts: list[str] = []
-    age_max_known: Optional[int] = None   # rows with no stated age are kept
+    # Removed, deliberately: budget_yen, bld_min_buy/rent/rent_house,
+    # rent_max_yen, age_max_known, commute_max. Each restated a cut this model
+    # already had (price_min/max, bld_min/max, age_max) or one that belongs
+    # earlier: what is worth storing at all is decided once, at ingest, by
+    # pipeline.in_scope. A filter that exists in two places can disagree with
+    # itself, and this one did — the map and the table showed different
+    # listings for months.
     date_from: Optional[str] = None   # crawled-time window, 'YYYY-MM-DD' inclusive
     date_to: Optional[str] = None
     sort: Optional[str] = None

@@ -78,42 +78,6 @@ def budget_ceiling(row: dict, f: dict) -> float | None:
     return total
 
 
-# Floors that differ by market, and that SUUMO cannot always express: chintai's
-# area filter stops at 100m², and a single global bld_min/age_max would delete
-# every land listing, since a plot has neither a building nor an age. So each
-# test only applies to rows it can actually judge.
-def apply_floors(rows: list[dict], f: dict) -> list[dict]:
-    buy_min = f.get("bld_min_buy")
-    rent_min = f.get("bld_min_rent")          # flats
-    rent_house_min = f.get("bld_min_rent_house")
-    age_max = f.get("age_max_known")
-    # Rent ceilings live in the crawl URL, but a filter tightened later never
-    # removes what earlier crawls already stored — the row simply stops being
-    # refreshed. So the ceiling has to be enforced here too, or yesterday's
-    # over-budget listings linger for ever.
-    rent_max = f.get("rent_max_yen")
-    out = []
-    for r in rows:
-        bld = r.get("building_m2")
-        if r.get("market") == "rent":
-            # A rental house and a rental flat are both category='rent' but are
-            # not the same product — and no flat in this catchment exceeds
-            # ~108m², so one shared floor deletes the whole category.
-            is_house = "一戸建" in (r.get("property_label") or "")
-            floor = rent_house_min if is_house else rent_min
-            if floor is not None and (bld is None or bld < floor):
-                continue
-            if rent_max is not None and (r.get("price_yen") or 0) > rent_max:
-                continue
-        elif buy_min is not None and bld is not None and bld < buy_min:
-            continue          # a plot has no building; it is judged on land
-        age = r.get("age_years")
-        if age_max is not None and age is not None and age > age_max:
-            continue          # unknown age (新築, land) is kept, not guessed
-        out.append(r)
-    return out
-
-
 def apply_verdicts(rows: list[dict], f: dict) -> list[dict]:
     """`verdicts` may include the sentinel 'none' for not-yet-reviewed, which is
     what the review queue asks for."""
@@ -121,18 +85,6 @@ def apply_verdicts(rows: list[dict], f: dict) -> list[dict]:
     if not want:
         return rows
     return [r for r in rows if (r.get("verdict") or "none") in want]
-
-
-def apply_budget(rows: list[dict], f: dict) -> list[dict]:
-    if f.get("budget_yen") is None:
-        return rows
-    out = []
-    for r in rows:
-        cap = budget_ceiling(r, f)
-        price = r.get("price_yen")
-        if price is not None and cap is not None and price <= cap:
-            out.append(r)
-    return out
 
 
 def reviews() -> dict[str, dict]:
@@ -338,10 +290,6 @@ def search_db(f: dict) -> list[dict]:
         annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
-    if f.get("commute_max") is not None:
-        rows = [r for r in rows if r["commute_min"] is not None
-                and r["commute_min"] <= f["commute_max"]]
-    rows = apply_floors(apply_budget(rows, f), f)
     rows = apply_verdicts(rows, f)
     rows = sort_rows(rows, f.get("sort"))
     limit = f.get("limit")
@@ -349,70 +297,15 @@ def search_db(f: dict) -> list[dict]:
 
 
 def map_points(f: dict) -> list[dict]:
-    """Latest listing snapshot for each property that has an enriched location,
-    joined to its most recent detail coordinates. Powers the Report map.
-    Honours the same category/ward/price/date filters as search_db."""
-    where, params = [], []
-    for key, col in (("markets", "market"), ("categories", "category"), ("wards", "ward")):
-        vals = f.get(key)
-        if vals:
-            where.append(f"s.{col} IN ({','.join('?' * len(vals))})")
-            params += list(vals)
-    for key, expr in (("price_min", "s.price_yen >= ?"), ("price_max", "s.price_yen <= ?")):
-        if f.get(key) is not None:
-            where.append(expr)
-            params.append(f[key])
-    clause = ("WHERE " + " AND ".join(where)) if where else ""
+    """The same listings search_db returns, minus any that cannot be drawn.
 
-    date_where, date_params = [], []
-    if f.get("date_from"):
-        date_where.append("scrape_date >= ?")
-        date_params.append(f["date_from"])
-    if f.get("date_to"):
-        date_where.append("scrape_date <= ?")
-        date_params.append(f["date_to"])
-    cte_clause = ("WHERE " + " AND ".join(date_where)) if date_where else ""
-
-    sql = f"""
-    WITH latest AS (
-        SELECT property_id, MAX(scrape_date) AS d
-        FROM listings_snapshot {cte_clause} GROUP BY property_id
-    ),
-    det AS (
-        SELECT property_id, MAX(scrape_date) AS d
-        FROM property_detail WHERE lat IS NOT NULL GROUP BY property_id
-    )
-    SELECT s.property_id, pd.lat, pd.lng, s.market, s.category, s.ward,
-           s.price_yen, s.price_raw, s.url, s.title, s.address, s.layout,
-           s.building_m2, s.land_m2, s.nearest_walk_min, s.station_raw,
-           s.property_label, s.image_url, s.build_year, s.age_years, s.scrape_date
-    FROM listings_snapshot s
-    JOIN latest l ON l.property_id = s.property_id AND l.d = s.scrape_date
-    -- LEFT, like search_db: a listing SUUMO publishes no pin for still has an
-    -- address, and geocode.annotate places it. Dropping it here instead would
-    -- make the map hold fewer listings than the table for no stated reason.
-    LEFT JOIN det ON det.property_id = s.property_id
-    LEFT JOIN property_detail pd
-           ON pd.property_id = det.property_id AND pd.scrape_date = det.d
-    {clause}
+    It used to be a second implementation — its own SQL, its own annotate
+    chain, its own copy of the era and commute tests — which is how the map
+    came to disagree with the table about what existed. There is one query now;
+    a map point is a search row that has a position.
     """
-    conn = connect()
-    try:
-        rows = hazard.annotate(geocode.annotate(annotate_reviews(annotate_capacity(
-            commute.annotate(annotate_era(
-                [dict(r) for r in conn.execute(sql, date_params + params).fetchall()]))))))
-    finally:
-        conn.close()
-    if f.get("eras"):
-        rows = [r for r in rows if r["era"] in f["eras"]]
-    if f.get("commute_max") is not None:
-        rows = [r for r in rows if r["commute_min"] is not None
-                and r["commute_min"] <= f["commute_max"]]
-    rows = apply_verdicts(apply_floors(apply_budget(rows, f), f), f)
-    # Whatever is left without a position cannot be drawn at all — not filtered
-    # out, simply unplaceable. The caller reports the count so the difference
-    # from the table is visible rather than silent.
-    return [r for r in rows if r.get("lat") is not None and r.get("lng") is not None]
+    return [r for r in search_db(f)
+            if r.get("lat") is not None and r.get("lng") is not None]
 
 
 # --- on-demand detail enrichment (exact location) --------------------------

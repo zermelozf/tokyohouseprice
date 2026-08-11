@@ -106,16 +106,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   // Total budget, shared by Search and Map. SUUMO's own price ceiling stops at
   // 1億2千万, so this cannot live in the crawl URL — without it the dashboard
   // shows listings the crawler already refuses to fetch details for.
-  budgetYen: number | null = 200_000_000;
+  // Not a filter: the size of house assumed when pricing a plot all-in, and
+  // when reporting what a plot can carry. The price slider is the filter.
   budgetBuildM2 = 130;
-  // Floors SUUMO cannot express: chintai's area filter stops at 100m², and a
-  // single global floor would delete land, which has no building or age.
-  bldMinBuy: number | null = 120;
-  bldMinRent: number | null = 80;        // flats: none in range exceed ~108m²
-  bldMinRentHouse: number | null = 110;  // houses
-  rentMaxYen: number | null = 400_000;
-  ageMaxKnown: number | null = 25;
-  readonly budgetOptions = [100_000_000, 150_000_000, 200_000_000, 250_000_000, 300_000_000];
   searchRows: Listing[] = [];
   searchStats: Stats | null = null;
   searchMeta = '';
@@ -159,7 +152,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   shared = {
     category: '' as string,
     ward: '' as string,
-    commuteMax: 40 as number | null,
     verdicts: [] as string[],
     // Crawled-time window. Empty means the latest snapshot of every property,
     // which is what the map always showed; the Search tab used to default to
@@ -226,10 +218,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       searchForm: { ...this.searchForm },
       ranges: JSON.parse(JSON.stringify(this.ranges)),
       eras: [...this.eras],
-      budgetYen: this.budgetYen, budgetBuildM2: this.budgetBuildM2,
-      bldMinBuy: this.bldMinBuy, bldMinRent: this.bldMinRent,
-      bldMinRentHouse: this.bldMinRentHouse,
-      rentMaxYen: this.rentMaxYen, ageMaxKnown: this.ageMaxKnown,
+      budgetBuildM2: this.budgetBuildM2,
       colorBy: this.colorBy,
     };
   }
@@ -245,8 +234,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     if (st.searchForm) this.searchForm = { ...this.searchForm, ...st.searchForm };
     // `mapEras` is what presets saved before the filter became shared.
     this.eras = st.eras ?? st.mapEras ?? this.eras;
-    for (const k of ['budgetYen','budgetBuildM2','bldMinBuy','bldMinRent',
-                     'bldMinRentHouse','rentMaxYen','ageMaxKnown','colorBy'] as const) {
+    for (const k of ['budgetBuildM2', 'colorBy'] as const) {
       if (st[k] !== undefined) (this as any)[k] = st[k];
     }
     // Ranges are applied after the reload, since their bounds depend on the
@@ -294,7 +282,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       parts.push(c ? c.label : this.shared.category);
     }
     if (this.shared.ward) parts.push(this.shared.ward);
-    if (this.shared.commuteMax) parts.push(`≤${this.shared.commuteMax}min`);
+    const lfit = this.ranges['lfit'];
+    if (lfit && this.rangeBounds['lfit'] && lfit.hi < this.rangeBounds['lfit'].max)
+      parts.push(`≤${lfit.hi}min`);
     const n = this.searchRows.length || this.mapPoints.length;
     return parts.length ? `${parts.join(' ')} (${n})` : `${n} listings`;
   }
@@ -524,31 +514,53 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   searchAll: Listing[] = [];
   ranges: Record<string, { lo: number; hi: number }> = {};
   rangeBounds: Record<string, { min: number; max: number; step: number }> = {};
+  /** Every numeric criterion, exactly once each.
+   *
+   * There is no separate "budget", "max rent", "min m²" or "max commute" box:
+   * a one-sided cut is just a range with one end open, so a second control for
+   * the same dimension is the same field twice. */
   readonly RANGE_SPECS: { key: string; label: string; unit: string; step: number;
-                          pick: (p: Filterable) => number | null }[] = [
-    { key: 'price',  label: 'price (buy)',    unit: '¥',   step: 1_000_000,
-      pick: p => p.market === 'rent' ? null : p.price_yen },
+                          hint?: string; pick: (p: Filterable) => number | null }[] = [
+    // All-in cost, which is the only way one control can price a plot and a
+    // house on the same axis: buying land commits you to building on it, so a
+    // ¥90M plot is not a ¥90M purchase.
+    { key: 'price',  label: 'price, all-in',  unit: '¥',   step: 1_000_000,
+      hint: 'Purchase price. For a plot this includes the house you would have '
+          + 'to build on it, so plots and houses compare on the same axis.',
+      pick: p => p.market === 'rent' ? null
+                 : (p.price_yen == null ? null
+                    : p.price_yen + (p.category === 'land' ? this.buildCost() : 0)) },
     { key: 'rent',   label: 'rent / month',   unit: '¥',   step: 10_000,
       pick: p => p.market === 'rent' ? p.price_yen : null },
+    // Three size axes, because they are three different products — not one
+    // field repeated. A rental flat tops out around 108m² in this catchment,
+    // so a shared floor would delete the whole category.
+    { key: 'buym2',  label: 'buy · building', unit: 'm²',  step: 5,
+      pick: p => p.market !== 'rent' && p.category !== 'land' ? p.building_m2 : null },
+    { key: 'rentflat', label: 'rent · flat',  unit: 'm²',  step: 5,
+      pick: p => p.market === 'rent' && this.isFlat(p) ? p.building_m2 : null },
+    { key: 'renthouse', label: 'rent · house', unit: 'm²', step: 5,
+      pick: p => p.market === 'rent' && this.isHouse(p) ? p.building_m2 : null },
     // Bare plots only. A house has a plot too, but when you are buying the
-    // house its land size is not what you are choosing on — filtering by it
-    // would quietly drop houses for a reason nobody asked about.
+    // house its land size is not what you are choosing on.
     { key: 'land',   label: 'land (plots)',   unit: 'm²',  step: 5,
       pick: p => p.category === 'land' ? p.land_m2 : null },
-    { key: 'house',  label: 'house',          unit: 'm²',  step: 5,
-      pick: p => this.isHouse(p) ? p.building_m2 : null },
-    { key: 'flat',   label: 'mansion / apt',  unit: 'm²',  step: 5,
-      pick: p => this.isFlat(p) ? p.building_m2 : null },
-    // What a plot can carry, rather than how big the plot is — the land area
-    // alone does not tell you whether a house fits, because 建ぺい率 and the
-    // frontage-road cap decide that.
+    // What a plot can carry, rather than how big it is — 建ぺい率 and the
+    // frontage-road cap decide whether a house actually fits.
     { key: 'buildable', label: 'buildable floor', unit: 'm²', step: 5,
       pick: p => p.capacity ? p.capacity.max_floor_m2 : null },
     { key: 'footprint', label: 'footprint',       unit: 'm²', step: 5,
       pick: p => p.capacity ? p.capacity.max_footprint_m2 : null },
     { key: 'lfit',   label: '🎓 to LFIT',      unit: 'min', step: 1,
       pick: p => p.commute_min ?? null },
+    { key: 'age',    label: 'age',             unit: 'yr',  step: 1,
+      hint: 'Listings with no stated age (新築, land) have no age to test, so '
+          + 'they are never cut by this.',
+      pick: p => (p as any).age_years ?? null },
   ];
+
+  /** The house a plot obliges you to build, at the standard ¥250k/m². */
+  buildCost(): number { return this.budgetBuildM2 * 250_000; }
 
   isHouse(p: Filterable): boolean {
     const l = p.property_label || '';
@@ -1404,14 +1416,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       categories: this.shared.category ? [this.shared.category] : [],
       wards: this.shared.ward ? [this.shared.ward] : [],
       eras: [...this.eras],
-      budget_yen: this.budgetYen,
-      budget_build_m2: this.budgetBuildM2,
-      bld_min_buy: this.bldMinBuy,
-      bld_min_rent: this.bldMinRent,
-      bld_min_rent_house: this.bldMinRentHouse,
-      rent_max_yen: this.rentMaxYen,
-      age_max_known: this.ageMaxKnown,
-      commute_max: this.shared.commuteMax,
       verdicts: [...this.shared.verdicts],
       // Both tabs pull the same set; the sliders then cut it in the browser,
       // so a table row and a map dot always mean the same thing.
@@ -2146,8 +2150,10 @@ ${folders}
   }
 
   /** What a land listing may cost, once the house you must build is paid for. */
+  /** What is left for the plot itself once the house is paid for, at the top
+   * of the current price window. Used in the popup, not as a filter. */
   landCeiling(): number {
-    return (this.budgetYen ?? 0) - this.budgetBuildM2 * 250_000;
+    return (this.ranges['price']?.hi ?? 0) - this.buildCost();
   }
 
   /** Break down the school commute for a tooltip. */
