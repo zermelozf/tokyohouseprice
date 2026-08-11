@@ -1156,3 +1156,15 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .triage-why { display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center; }
 .triage-why .chip { padding: 0.18rem 0.45rem; font-size: 0.72rem; }
 @media (max-width: 820px) { .triage-why { order: 10; flex-basis: 100%; } }
+/* Next is the deliberate step through the queue, so it looks like the action. */
+.nextbtn { background: #FF69B4; border: 1px solid #FF69B4; color: #fff;
+           padding: 0.42rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+.nextbtn:hover { transform: none; box-shadow: 0 1px 5px rgba(0,0,0,0.16); }
+
+/* Filmstrip: the neighbouring photos sit either side, so a drag reveals the
+   real next image rather than animating a blank. */
+.revgallery { position: relative; overflow: hidden; }
+.galtrack { display: flex; width: 300%; height: 100%; will-change: transform; }
+.galtrack.gliding { transition: transform 0.18s cubic-bezier(0.22, 0.7, 0.3, 1); }
+.galtrack img { width: 33.3333%; height: 100%; object-fit: contain;
+                background: #f4f6f8; flex: none; pointer-events: none; }

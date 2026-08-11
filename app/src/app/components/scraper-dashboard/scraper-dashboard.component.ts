@@ -510,26 +510,68 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   private loadPhotos(): void { this.loadCard(); }
 
   // --- swipe the gallery -----------------------------------------------------
-  // Touch expects a swipe, and on a phone the ‹ › buttons are small targets
-  // sitting over the photo you are trying to look at.
+  // The photo follows the finger and settles: a swipe that only jumps on
+  // release gives you nothing to aim with, so it reads as unresponsive.
+  // Three slots are rendered — previous, current, next — and the track is
+  // translated, so the neighbouring photo is already there as you pull it in.
+  swiping = false;
+  dragX = 0;                 // px, live during the drag
+  gliding = false;           // true while the track animates to its resting place
   private swipeX = 0;
   private swipeY = 0;
-  swiping = false;
+  private swipeW = 1;
+  private locked: 'x' | 'y' | null = null;
 
-  swipeStart(e: PointerEvent): void {
-    this.swipeX = e.clientX;
-    this.swipeY = e.clientY;
-    this.swiping = true;
+  photoAt(offset: number): string | null {
+    const n = this.reviewPhotos.length;
+    if (!n) return null;
+    return this.reviewPhotos[(this.reviewPhotoIndex + offset + n) % n];
   }
 
-  swipeEnd(e: PointerEvent): void {
+  swipeStart(e: PointerEvent): void {
+    if (this.reviewPhotos.length < 2) return;
+    this.swiping = true;
+    this.locked = null;
+    this.gliding = false;
+    this.dragX = 0;
+    this.swipeX = e.clientX;
+    this.swipeY = e.clientY;
+    this.swipeW = (e.currentTarget as HTMLElement).clientWidth || 1;
+  }
+
+  swipeMove(e: PointerEvent): void {
+    if (!this.swiping) return;
+    const dx = e.clientX - this.swipeX, dy = e.clientY - this.swipeY;
+    // Decide once whether this gesture is the gallery's or the sheet's, so a
+    // diagonal drag does not fight between scrolling and paging.
+    if (!this.locked && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      this.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (this.locked !== 'x') return;
+    e.preventDefault();
+    this.dragX = dx;
+  }
+
+  swipeEnd(): void {
     if (!this.swiping) return;
     this.swiping = false;
-    const dx = e.clientX - this.swipeX;
-    const dy = e.clientY - this.swipeY;
-    // Ignore a mostly-vertical drag: that is the sheet being scrolled.
-    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
-    this.photoStep(dx < 0 ? 1 : -1);
+    const dx = this.dragX;
+    // A tenth of the width, or a short decisive flick.
+    const far = Math.abs(dx) > Math.max(48, this.swipeW * 0.1);
+    this.gliding = true;
+    if (far) {
+      // Glide the rest of the way, then swap and drop back to centre with the
+      // animation off, so the new photo does not slide in a second time.
+      this.dragX = dx < 0 ? -this.swipeW : this.swipeW;
+      setTimeout(() => {
+        this.photoStep(dx < 0 ? 1 : -1);
+        this.gliding = false;
+        this.dragX = 0;
+      }, 180);
+    } else {
+      this.dragX = 0;                       // snap back
+      setTimeout(() => this.gliding = false, 180);
+    }
   }
 
   photoStep(step: number): void {
@@ -538,8 +580,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.reviewPhotoIndex = (this.reviewPhotoIndex + step + n) % n;
   }
 
-  /** Grade the card and advance. Verdicts are saved immediately — a review
-   * session should never lose work if the tab is closed halfway. */
+  /** Record a verdict. Saved immediately — a review session should never lose
+   * work if the tab is closed halfway. */
   grade(v: Verdict | null): void {
     const card = this.focusCard();
     if (!card) return;
@@ -561,19 +603,21 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       },
       error: () => {},
     });
-    // In the queue, grading moves on. In the sheet you are looking at one
-    // listing on purpose, so it stays put and just shows the new verdict.
-    if (this.reviewOpen) this.nextCard();
+    // Grading never moves you on. Auto-advance takes the listing away at the
+    // moment you decided about it — before you can add the reason, change your
+    // mind, or pick it for comparison. Next is a button.
   }
 
   nextCard(step = 1): void {
-    this.reviewNote = '';
-    this.reviewTagInput = '';
     const next = this.reviewIndex + step;
     if (next < 0) { this.reviewIndex = 0; return; }
     if (next >= this.reviewQueue.length) { this.reviewOpen = false; return; }
     this.reviewIndex = next;
-    this.loadPhotos();
+    // Show what was already said about this listing, rather than a blank slate.
+    const c = this.reviewQueue[next];
+    this.reviewNote = c?.review_note || '';
+    this.reviewTagInput = (c?.review_tags || []).join(', ');
+    this.loadCard();
   }
 
   toggleQuickTag(tag: string): void {

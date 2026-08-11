@@ -844,8 +844,14 @@
 
       <div class="sheet-body">
         <div class="revgallery sheet-gallery" (pointerdown)="swipeStart($event)"
-             (pointerup)="swipeEnd($event)" (pointercancel)="swiping = false">
-          <img *ngIf="reviewPhotos.length" [src]="reviewPhotos[reviewPhotoIndex]" alt="" loading="lazy">
+             (pointermove)="swipeMove($event)" (pointerup)="swipeEnd()"
+             (pointerleave)="swipeEnd()" (pointercancel)="swipeEnd()">
+          <div class="galtrack" *ngIf="reviewPhotos.length" [class.gliding]="gliding"
+               [style.transform]="'translate3d(calc(-100% + ' + dragX + 'px), 0, 0)'">
+            <img [src]="photoAt(-1)" alt="" loading="lazy">
+            <img [src]="photoAt(0)" alt="" loading="lazy">
+            <img [src]="photoAt(1)" alt="" loading="lazy">
+          </div>
           <div class="revphoto-none" *ngIf="!reviewPhotos.length">
             {{ reviewPhotosLoading ? 'loading photos…' : 'no photos on this listing' }}
           </div>
@@ -943,8 +949,10 @@
         <button type="button" class="vbig good" [class.on]="p.verdict === 'good'"
                 (click)="grade(p.verdict === 'good' && !queue ? null : 'good')"
                 title="good — key 3">♥ yes</button>
-        <button class="ghost tiny" *ngIf="queue" (click)="nextCard()" title="space">skip →</button>
-        <button class="ghost tiny" *ngIf="queue" (click)="nextCard(-1)">← back</button>
+        <button class="ghost tiny" *ngIf="queue" (click)="nextCard(-1)"
+                [disabled]="reviewIndex === 0" title="previous listing">← back</button>
+        <button class="nextbtn" *ngIf="queue" (click)="nextCard()"
+                title="next listing (space)">next →</button>
         <button class="ghost tiny" (click)="toggleCompare(p)" [class.sel]="isCompared(p.property_id)"
                 title="pick listings, then run the rent-vs-buy model">
           {{ isCompared(p.property_id) ? '✓ picked' : '⚖️ compare' }}</button>
@@ -955,7 +963,8 @@
         </span>
         <input class="sheet-note" [(ngModel)]="reviewNote"
                [placeholder]="p.review_note || 'note (saved with the verdict)'">
-        <span class="muted keyshint">1 / 2 / 3 · ← → photos · Esc close</span>
+        <span class="muted keyshint">1 / 2 / 3 verdict<span *ngIf="queue"> · space next</span>
+          · ← → photos · Esc close</span>
       </div>
     </div>
   </ng-template>
