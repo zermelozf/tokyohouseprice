@@ -1,4 +1,4 @@
-import { HostListener, Component, OnDestroy, OnInit, NgZone } from '@angular/core';
+import { DoCheck, HostListener, Component, OnDestroy, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -76,7 +76,7 @@ type Filterable = {
   templateUrl: './scraper-dashboard.component.html',
   styleUrls: ['./scraper-dashboard.component.css'],
 })
-export class ScraperDashboardComponent implements OnInit, OnDestroy {
+export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   // Tokyo-wide SUUMO result pages to start from when creating a crawler — open
   // one, refine filters on SUUMO, then paste the URL into the crawler form.
   suumoLinks: SuumoLink[] = [
@@ -1050,6 +1050,44 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.pollTimer) clearInterval(this.pollTimer);
     if (this.map) { this.map.remove(); this.map = null; }
+    this.lockPageScroll(false);
+  }
+
+  /** True while any overlay covers the page. */
+  private overlayOpen(): boolean {
+    return !!this.detailModal || this.compareOpen || this.reviewOpen;
+  }
+
+  private scrollLocked = false;
+  /** Freeze the page behind an overlay.
+   *
+   * Scrolling inside the sheet otherwise scrolls the results underneath it, and
+   * a wheel over the backdrop scrolls them too — so closing the sheet left you
+   * somewhere else in the table. The scroll position is restored, because
+   * `overflow: hidden` on the body otherwise jumps you back to the top. */
+  private lockPageScroll(on: boolean): void {
+    if (on === this.scrollLocked) return;
+    this.scrollLocked = on;
+    const b = document.body;
+    if (on) {
+      this.savedScrollY = window.scrollY;
+      b.style.position = 'fixed';
+      b.style.top = `-${this.savedScrollY}px`;
+      b.style.left = '0';
+      b.style.right = '0';
+      b.style.overflow = 'hidden';
+    } else {
+      b.style.position = b.style.top = b.style.left = b.style.right = b.style.overflow = '';
+      window.scrollTo(0, this.savedScrollY);
+    }
+  }
+  private savedScrollY = 0;
+
+  // Every overlay opens and closes from several places, some of them straight
+  // from the template, so this is synced on each change-detection pass rather
+  // than hooked onto each of them.
+  ngDoCheck(): void {
+    this.lockPageScroll(this.overlayOpen());
   }
 
   // --- Report tab (crawl-to-crawl diff) ---

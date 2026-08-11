@@ -1103,3 +1103,7 @@ td.verdictcell { white-space: nowrap; }
   /* Specs read badly as one long column on a wide sheet. */
   .modal.sheet .specs { columns: 2; column-gap: 2.5rem; }
 }
+
+/* Stop the scroll from chaining to the page when a panel reaches its end. */
+.modal-backdrop { overscroll-behavior: contain; }
+.modal { overscroll-behavior: contain; }
