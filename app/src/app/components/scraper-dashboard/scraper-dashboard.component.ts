@@ -480,9 +480,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return this.reviewOpen ? this.reviewCard : (this.detailModal?.point ?? null);
   }
 
-  /** Load the full gallery for the card on screen. */
-  private loadPhotos(): void {
+  /** Everything the sheet shows for one listing: photos and the spec sheet,
+   * from a single request. The review queue and the detail sheet both call it,
+   * so a card looks the same whichever way you arrived at it. */
+  sheetData: PropertyDetail | null = null;
+  sheetError = '';
+
+  private loadCard(): void {
     const c = this.focusCard();
+    this.sheetData = null;
+    this.sheetError = '';
     this.reviewPhotoIndex = 0;
     this.reviewPhotos = c?.image_url ? [c.image_url] : [];
     if (!c) return;
@@ -490,11 +497,17 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.api.detail(c.url).subscribe({
       next: d => {
         this.reviewPhotosLoading = false;
+        this.sheetData = d;
+        this.sheetError = d.error || '';
         this.setPhotos(c, (d as any).images);
       },
-      error: () => { this.reviewPhotosLoading = false; },
+      error: () => {
+        this.reviewPhotosLoading = false;
+        this.sheetError = 'request failed — is the local API running?';
+      },
     });
   }
+  private loadPhotos(): void { this.loadCard(); }
 
   // --- swipe the gallery -----------------------------------------------------
   // Touch expects a swipe, and on a phone the ‹ › buttons are small targets
@@ -1097,7 +1110,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   constructor(private api: ScraperService, private http: HttpClient, private zone: NgZone) {}
 
   // Full-detail modal opened from a map popup's "See all details" button.
-  detailModal: { loading?: boolean; point?: any; data?: PropertyDetail; error?: string } | null = null;
+  // Just "which listing is open"; its contents live in sheetData, shared with
+  // the review queue.
+  detailModal: { point?: any } | null = null;
 
   ngOnInit(): void {
     this.api.summary().subscribe({
@@ -2648,23 +2663,8 @@ ${folders}
   /** The one detail view, opened from a map dot or a table row — the table
    * used to expand a second, thinner version of the same thing inline. */
   openDetails(p: MapPoint | Listing): void {
-    this.detailModal = { loading: true, point: p };
-    // The card photo is up immediately; the rest arrive with the spec sheet.
-    this.reviewPhotos = p.image_url ? [p.image_url] : [];
-    this.reviewPhotoIndex = 0;
-    this.reviewPhotosLoading = true;
-    this.api.detail(p.url).subscribe({
-      next: d => {
-        this.detailModal = { point: p, data: d, error: d.error };
-        this.reviewPhotosLoading = false;
-        // Same response as the specs — the gallery does not fetch again.
-        this.setPhotos(p, (d as any).images);
-      },
-      error: () => {
-        this.detailModal = { point: p, error: 'request failed — is the local API running?' };
-        this.reviewPhotosLoading = false;
-      },
-    });
+    this.detailModal = { point: p };
+    this.loadCard();
   }
 
   /** Card photo first (it is the one you already recognise), then the rest. */
