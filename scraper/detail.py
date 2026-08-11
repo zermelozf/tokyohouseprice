@@ -130,18 +130,36 @@ def extract_images(html: str, limit: int = 30) -> list[str]:
     return [best[k][1] for k in order[:limit]]
 
 
-def scrape_detail(url: str, fetcher: Fetcher | None = None) -> dict:
+def scrape_detail(url: str, fetcher: Fetcher | None = None,
+                  archive: bool = True) -> dict:
     """Fetch one detail page and return the exact pin plus the full spec table.
 
-    Lightweight sibling of scrape_property (no bronze write). `specs` is every
-    label→value pair on the page — structure, land rights, zoning, building/
-    floor-area ratios, road access, transaction terms, etc. — kept verbatim so
-    takken-relevant fields and future model features are all preserved.
+    `specs` is every label→value pair on the page — structure, land rights,
+    zoning, building/floor-area ratios, road access, transaction terms — kept
+    verbatim so takken-relevant fields and future model features are preserved.
+
+    The page is also written to bronze. It used not to be, and that turned every
+    extractor fix into a re-crawl: when the photo pattern was found to miss
+    SUUMO's resizing URLs, the HTML proving it had not been kept, so 506
+    listings had to be fetched again to recover galleries that were in
+    responses we had already received. Search pages were archived from the
+    start; detail pages are where most of the data actually is.
     """
     own = fetcher is None
     fetcher = fetcher or Fetcher()
     try:
         html = fetcher.get(url)
+        if archive:
+            m = re.search(r"/((?:nc|jnc)_[0-9]+)/", url)
+            conn = init_db()
+            try:
+                bronze.save_page(conn, source="suumo", market="detail",
+                                 category="detail", ward=(m.group(1) if m else "detail"),
+                                 page=1, url=url, html=html, n_cards=1)
+            except Exception as exc:      # archiving must never lose the scrape
+                log.warning("bronze write failed for %s: %s", url, exc)
+            finally:
+                conn.close()
         loc = extract_location(html)
         # Chintai keeps its map on a separate tab, so the pin costs one more
         # fetch. Best-effort: a listing without coordinates is still worth

@@ -23,7 +23,8 @@ import logging
 from . import gold
 from .config import ALL_CATEGORIES, SALE_CATEGORIES, WARDS
 from .detail import scrape_property
-from .pipeline import (ENRICH_BUDGET_YEN, ENRICH_COMMUTE_MAX_MIN, prune)
+from .pipeline import (ENRICH_BUDGET_YEN, ENRICH_COMMUTE_MAX_MIN, prune,
+                       reparse_details)
 from .pipeline import crawl, crawl_url
 
 
@@ -55,6 +56,10 @@ def main(argv: list[str] | None = None) -> None:
     cu.add_argument("--max-pages", type=int, default=5)
     cu.add_argument("--min-delay", type=float, default=2.0)
     cu.add_argument("--max-delay", type=float, default=4.0)
+
+    rp = sub.add_parser("reparse",
+                        help="re-extract archived detail pages from bronze (no fetching)")
+    rp.add_argument("--limit", type=int, default=None)
 
     pr = sub.add_parser("prune", help="delete stored listings that are out of scope")
     pr.add_argument("--commute-max", type=int, default=None,
@@ -100,6 +105,9 @@ def main(argv: list[str] | None = None) -> None:
         summary = crawl_url(args.url, max_pages=args.max_pages,
                             min_delay=args.min_delay, max_delay=args.max_delay)
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.cmd == "reparse":
+        print(json.dumps(reparse_details(limit=args.limit), ensure_ascii=False, indent=2))
+
     elif args.cmd == "prune":
         res = prune(commute_max=args.commute_max if args.commute_max is not None
                     else ENRICH_COMMUTE_MAX_MIN,

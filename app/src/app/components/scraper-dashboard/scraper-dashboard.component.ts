@@ -445,6 +445,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   // Which verdicts the map shows. Default hides nothing; the point of the
   // status badge is to stop you reopening the same rejects, not to hide them.
 
+  /** Badges are off while working a queue: the verdict you gave last time (and
+   * the running tally) argue for repeating it, which is the one thing a fresh
+   * look should not do. The single detail sheet still shows them — there you
+   * opened that listing deliberately. */
+  showBadges = false;
+
   readonly QUICK_TAGS = ['bright', 'dark', 'noisy', 'main road', 'narrow street',
                          'good layout', 'odd layout', 'needs work', 'nice street',
                          'no parking', 'steep', 'overlooked'];
@@ -522,6 +528,36 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   private swipeW = 1;
   private locked: 'x' | 'y' | null = null;
 
+  /** The same photo at a chosen width.
+   *
+   * SUUMO serves sale and land photos through a resizing endpoint whose size
+   * is in the URL — the page asks for 452px, which is soft on a half-screen
+   * sheet and worse blown up. The endpoint honours far larger: 1440x1080 comes
+   * back at 240KB. Rent photos are static files at their native size (often
+   * 210x280) and cannot be enlarged, so they are left alone rather than
+   * stretched. */
+  photoUrl(url: string | null, width: number): string {
+    if (!url || !/[?&]w=\d+/.test(url)) return url || '';
+    return url.replace(/([?&])w=\d+/, `$1w=${width}`)
+              .replace(/([?&])h=\d+/, `$1h=${Math.round(width * 0.75)}`);
+  }
+
+  /** Ask for what the screen can actually show, capped so a phone on a slow
+   * connection does not pull a 4K photo. */
+  galleryWidth(): number {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Math.min(1440, Math.round(Math.min(window.innerWidth, 1100) * dpr));
+  }
+
+  // --- lightbox --------------------------------------------------------------
+  lightbox = false;
+
+  openLightbox(): void {
+    if (!this.reviewPhotos.length || this.swipedFar) return;   // a swipe is not a click
+    this.lightbox = true;
+  }
+  closeLightbox(): void { this.lightbox = false; }
+
   photoAt(offset: number): string | null {
     const n = this.reviewPhotos.length;
     if (!n) return null;
@@ -552,10 +588,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.dragX = dx;
   }
 
+  swipedFar = false;
+
   swipeEnd(): void {
     if (!this.swiping) return;
     this.swiping = false;
     const dx = this.dragX;
+    // Remember whether this gesture was a drag, so the click it also fires
+    // does not open the lightbox.
+    this.swipedFar = Math.abs(dx) > 6;
+    setTimeout(() => this.swipedFar = false, 60);
     // A tenth of the width, or a short decisive flick.
     const far = Math.abs(dx) > Math.max(48, this.swipeW * 0.1);
     this.gliding = true;
@@ -1205,6 +1247,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.lightbox) { this.closeLightbox(); return; }
     // The review overlay sits above the sheet, so it closes first.
     if (this.reviewOpen) return;
     if (this.detailModal) this.closeDetails();
@@ -1223,7 +1266,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       'ArrowLeft': () => this.photoStep(-1),
       ' ': () => { if (this.reviewOpen) this.nextCard(); },
       'Backspace': () => { if (this.reviewOpen) this.nextCard(-1); },
-      'Escape': () => { if (this.reviewOpen) this.reviewOpen = false; else this.closeDetails(); },
+      'Escape': () => {
+        if (this.lightbox) this.closeLightbox();
+        else if (this.reviewOpen) this.reviewOpen = false;
+        else this.closeDetails();
+      },
     };
     const fn = map[e.key];
     if (fn) { e.preventDefault(); fn(); }
@@ -1237,7 +1284,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   /** True while any overlay covers the page. */
   private overlayOpen(): boolean {
-    return !!this.detailModal || this.compareOpen || this.reviewOpen;
+    return !!this.detailModal || this.compareOpen || this.reviewOpen || this.lightbox;
   }
 
   private scrollLocked = false;

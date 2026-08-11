@@ -832,11 +832,17 @@
       <div class="sheet-head">
         <b class="sheet-price">{{ p.price_raw || fmtYen(p.price_yen) }}</b>
         <span class="muted">{{ p.property_label || catLabel(p.category) }}</span>
-        <span class="verdictpill" *ngIf="verdictMeta(p.verdict) as m"
-              [style.background]="m.color">{{ m.icon }} {{ m.label }}</span>
-        <span class="erapill" *ngIf="p.era" [style.background]="eraColor(p.era)">{{ eraShort(p.era) }}</span>
+        <ng-container *ngIf="!queue || showBadges">
+          <span class="verdictpill" *ngIf="verdictMeta(p.verdict) as m"
+                [style.background]="m.color">{{ m.icon }} {{ m.label }}</span>
+          <span class="erapill" *ngIf="p.era" [style.background]="eraColor(p.era)">{{ eraShort(p.era) }}</span>
+        </ng-container>
+        <button class="ghost xtiny badgetoggle" *ngIf="queue" (click)="showBadges = !showBadges"
+                [title]="showBadges ? 'hide the verdict and 耐震基準 badges'
+                                    : 'show the verdict and 耐震基準 badges — hidden so an earlier call does not colour this one'">
+          {{ showBadges ? '🏷️ hide' : '🏷️' }}</button>
         <span class="revprog" *ngIf="queue">{{ reviewIndex + 1 }} / {{ reviewQueue.length }}</span>
-        <span class="muted" *ngIf="queue">
+        <span class="muted" *ngIf="queue && showBadges">
           {{ reviewCounts['good'] || 0 }} ♥︎ · {{ reviewCounts['maybe'] || 0 }} ? ·
           {{ reviewCounts['bad'] || 0 }} ✕
         </span>
@@ -847,10 +853,11 @@
              (pointermove)="swipeMove($event)" (pointerup)="swipeEnd()"
              (pointerleave)="swipeEnd()" (pointercancel)="swipeEnd()">
           <div class="galtrack" *ngIf="reviewPhotos.length" [class.gliding]="gliding"
-               [style.transform]="'translate3d(calc(-100% + ' + dragX + 'px), 0, 0)'">
-            <img [src]="photoAt(-1)" alt="" loading="lazy">
-            <img [src]="photoAt(0)" alt="" loading="lazy">
-            <img [src]="photoAt(1)" alt="" loading="lazy">
+               [style.transform]="'translate3d(calc(-100% + ' + dragX + 'px), 0, 0)'"
+               (click)="openLightbox()" title="click to enlarge">
+            <img [src]="photoUrl(photoAt(-1), galleryWidth())" alt="" loading="lazy">
+            <img [src]="photoUrl(photoAt(0), galleryWidth())" alt="" loading="lazy">
+            <img [src]="photoUrl(photoAt(1), galleryWidth())" alt="" loading="lazy">
           </div>
           <div class="revphoto-none" *ngIf="!reviewPhotos.length">
             {{ reviewPhotosLoading ? 'loading photos…' : 'no photos on this listing' }}
@@ -978,6 +985,19 @@
                   [ngTemplateOutlet]="listingSheetTpl"
                   [ngTemplateOutletContext]="{ card: p, queue: false }"></ng-container>
   </div>
+</div>
+
+<!-- Full-screen photo. Above every other overlay, since it is opened from
+     inside one, and dismissed the same three ways. -->
+<div class="lightbox" *ngIf="lightbox" (click)="closeLightbox()">
+  <img [src]="photoUrl(reviewPhotos[reviewPhotoIndex], 1600)" alt=""
+       (click)="$event.stopPropagation()">
+  <button class="modal-close" (click)="closeLightbox()" title="close (Esc)">✕</button>
+  <button class="galnav prev" *ngIf="reviewPhotos.length > 1"
+          (click)="$event.stopPropagation(); photoStep(-1)" title="previous (←)">‹</button>
+  <button class="galnav next" *ngIf="reviewPhotos.length > 1"
+          (click)="$event.stopPropagation(); photoStep(1)" title="next (→)">›</button>
+  <span class="galcount">{{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}</span>
 </div>
 
 <!-- ============ compare tray: two picks, then run the model ============ -->

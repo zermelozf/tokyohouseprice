@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta
 
 from . import bronze, silver, parse_sale, parse_rent, suumo_url, normalize, detail, query
@@ -64,6 +65,56 @@ def keep_in_scope(snapshots: list[dict],
     cache = commute.table()
     kept = [r for r in snapshots if in_scope(r, commute_max, budget_yen, cache)]
     return kept, len(snapshots) - len(kept)
+
+
+def reparse_details(limit: int | None = None) -> dict:
+    """Re-extract every archived detail page, without fetching anything.
+
+    This is what bronze is for. An extractor fix — a photo pattern, a spec
+    label, a coordinate format — should cost a pass over stored HTML, not
+    another crawl of SUUMO. Pages archived from now on are re-readable this
+    way; the ones fetched before detail archiving existed are not, which is
+    what made the resizeImage fix expensive.
+    """
+    from . import bronze, detail
+    from .db import connect as _connect
+    conn = _connect()
+    try:
+        pages = list(conn.execute(
+            "SELECT path, url, MAX(fetched_at) FROM fetch_manifest "
+            "WHERE market = 'detail' GROUP BY url ORDER BY fetched_at DESC"))
+    finally:
+        conn.close()
+    if limit:
+        pages = pages[:limit]
+    day = datetime.now().strftime("%Y-%m-%d")
+    done = failed = 0
+    for row in pages:
+        try:
+            html = bronze.read_page(row["path"])
+        except Exception as exc:
+            log.warning("bronze read failed for %s: %s", row["path"], exc)
+            failed += 1
+            continue
+        try:
+            loc = detail.extract_location(html)
+            extracted = detail.extract_specs(html)
+            specs = extracted["specs"]
+            m = re.search(r"/((?:nc|jnc)_[0-9]+)/", row["url"] or "")
+            query.save_detail({
+                "property_id": m.group(1) if m else None,
+                "url": row["url"],
+                "lat": loc["lat"], "lng": loc["lng"],
+                "address": specs.get("所在地") or specs.get("住所"),
+                "title": extracted.get("title"),
+                "specs": specs,
+                "images": detail.extract_images(html),
+            }, scrape_date=day)
+            done += 1
+        except Exception as exc:
+            log.warning("reparse failed for %s: %s", row["url"], exc)
+            failed += 1
+    return {"pages": len(pages), "reparsed": done, "failed": failed}
 
 
 def prune(commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
