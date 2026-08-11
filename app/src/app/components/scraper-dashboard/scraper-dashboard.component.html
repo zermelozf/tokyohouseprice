@@ -1,3 +1,31 @@
+<ng-template #rangesTpl let-shown="shown" let-total="total">
+  <div class="rangebank">
+          <div class="rangerow" *ngFor="let spec of RANGE_SPECS">
+            <ng-container *ngIf="rangeBounds[spec.key] as b">
+              <label [title]="spec.label + ' — bounds come from the data currently loaded'">
+                {{ spec.label }}<span class="rangeval">{{ rangeLabel(spec.key) }}</span>
+              </label>
+              <div class="dualrange">
+                <div class="track"></div>
+                <div class="fill"
+                     [style.left.%]="100 * (ranges[spec.key].lo - b.min) / (b.max - b.min || 1)"
+                     [style.right.%]="100 * (b.max - ranges[spec.key].hi) / (b.max - b.min || 1)"></div>
+                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
+                       [(ngModel)]="ranges[spec.key].lo"
+                       (ngModelChange)="ranges[spec.key].lo = $event > ranges[spec.key].hi ? ranges[spec.key].hi : $event; applyRanges()">
+                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
+                       [(ngModel)]="ranges[spec.key].hi"
+                       (ngModelChange)="ranges[spec.key].hi = $event < ranges[spec.key].lo ? ranges[spec.key].lo : $event; applyRanges()">
+              </div>
+            </ng-container>
+          </div>
+          <div class="rangefoot">
+            <b>{{ shown }}</b> of {{ total }} shown
+            <button class="ghost tiny" (click)="resetRanges()">reset ranges</button>
+          </div>
+        </div>
+</ng-template>
+
 <!-- One filter bar, rendered on both the Map and the Search tab. The criteria it
      holds are shared state, so narrowing one tab narrows the other and a saved
      preset restores the whole view rather than half of it. -->
@@ -241,6 +269,7 @@
     </div>
 
     <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
+    <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: searchRows.length, total: searchAll.length }"></ng-container>
     <div class="reviewbar" *ngIf="searchRows.length">
       <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
       <span class="muted">unreviewed first · keys 1/2/3</span>
@@ -507,31 +536,7 @@
             <b>{{ reviewedShown('map') }}</b> of them match these filters
           </span>
         </div>
-        <div class="rangebank">
-          <div class="rangerow" *ngFor="let spec of RANGE_SPECS">
-            <ng-container *ngIf="mapBounds[spec.key] as b">
-              <label [title]="spec.label + ' — bounds come from the data currently loaded'">
-                {{ spec.label }}<span class="rangeval">{{ rangeLabel(spec.key) }}</span>
-              </label>
-              <div class="dualrange">
-                <div class="track"></div>
-                <div class="fill"
-                     [style.left.%]="100 * (mapRanges[spec.key].lo - b.min) / (b.max - b.min || 1)"
-                     [style.right.%]="100 * (b.max - mapRanges[spec.key].hi) / (b.max - b.min || 1)"></div>
-                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
-                       [(ngModel)]="mapRanges[spec.key].lo"
-                       (ngModelChange)="mapRanges[spec.key].lo = $event > mapRanges[spec.key].hi ? mapRanges[spec.key].hi : $event; applyRanges()">
-                <input type="range" [min]="b.min" [max]="b.max" [step]="b.step"
-                       [(ngModel)]="mapRanges[spec.key].hi"
-                       (ngModelChange)="mapRanges[spec.key].hi = $event < mapRanges[spec.key].lo ? mapRanges[spec.key].lo : $event; applyRanges()">
-              </div>
-            </ng-container>
-          </div>
-          <div class="rangefoot">
-            <b>{{ mapPoints.length }}</b> of {{ mapAll.length }} shown
-            <button class="ghost tiny" (click)="resetRanges()">reset ranges</button>
-          </div>
-        </div>
+        <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: mapPoints.length, total: mapAll.length }"></ng-container>
         <button (click)="loadMap()">🔄 Refresh</button>
         <div class="era-filter">
         <span class="era-label" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06. No selection shows everything.">耐震基準</span>

@@ -858,7 +858,12 @@ td.commutecell b { color: #1e5b96; }
 .dualnum input { flex: 1 1 0; min-width: 0; }
 
 /* --- dual-thumb range sliders on the map -------------------------------- */
-.rangebank { flex-basis: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.5rem 1.1rem; }
+/* Rendered on both tabs, so it carries its own frame rather than relying on
+   the map panel around it. */
+.rangebank { flex-basis: 100%; display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+             gap: 0.5rem 1.1rem; margin: 0.35rem 0; padding: 0.55rem 0.65rem;
+             background: #fafbfc; border: 1px solid #eef0f3; border-radius: 5px; }
 .rangerow label {
   display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem;
   margin: 0 0 0.1rem; font-size: 0.7rem; color: #8a919b;

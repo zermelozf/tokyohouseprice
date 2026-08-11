@@ -60,6 +60,16 @@ function blankJob(): JobInput {
   };
 }
 
+/** The fields the range sliders read. A map point and a search row are
+ * different types but both satisfy this, which is what lets one set of
+ * sliders filter both tabs. */
+type Filterable = {
+  market: string; category: string;
+  price_yen: number | null; land_m2: number | null; building_m2: number | null;
+  property_label?: string | null; commute_min?: number | null;
+  capacity?: { max_floor_m2: number | null; max_footprint_m2: number | null } | null;
+};
+
 @Component({
   selector: 'app-scraper-dashboard',
   standalone: true,
@@ -209,7 +219,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       shared: { ...this.shared, verdicts: [...this.shared.verdicts] },
       mapForm: { ...this.mapForm },
       searchForm: { ...this.searchForm },
-      ranges: JSON.parse(JSON.stringify(this.mapRanges)),
+      ranges: JSON.parse(JSON.stringify(this.ranges)),
       mapEras: [...this.mapEras],
       budgetYen: this.budgetYen, budgetBuildM2: this.budgetBuildM2,
       bldMinBuy: this.bldMinBuy, bldMinRent: this.bldMinRent,
@@ -242,12 +252,15 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   private applyPendingRanges(): void {
     if (!this.pendingRanges) return;
     for (const [k, v] of Object.entries(this.pendingRanges as Record<string, any>)) {
-      const b = this.mapBounds[k];
+      const b = this.rangeBounds[k];
       if (!b || !v) continue;
-      this.mapRanges[k] = { lo: Math.max(b.min, Math.min(v.lo, b.max)),
+      this.ranges[k] = { lo: Math.max(b.min, Math.min(v.lo, b.max)),
                             hi: Math.min(b.max, Math.max(v.hi, b.min)) };
     }
-    this.pendingRanges = null;
+    // Hold the preset until both tabs have reported: clamping against only
+    // one tab's bounds would permanently narrow a window the other tab's data
+    // would have supported.
+    if (this.mapLoaded && this.searched) this.pendingRanges = null;
     this.applyRanges();
   }
 
@@ -463,15 +476,19 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
 
 
-  // --- map range filters ---------------------------------------------------
-  // The map loads once and filters in the browser: a slider has to respond to
-  // the drag, and a round trip per frame would not. Bounds come from the data
-  // rather than being guessed, so the ends of every slider are reachable.
+  // --- range filters, shared by the Map and the Search tab -----------------
+  // Each tab loads once and filters in the browser: a slider has to respond to
+  // the drag, and a round trip per frame would not. Bounds come from the union
+  // of both tabs' data rather than being guessed, so the ends of every slider
+  // are reachable and one window means the same thing on both.
   mapAll: MapPoint[] = [];
-  mapRanges: Record<string, { lo: number; hi: number }> = {};
-  mapBounds: Record<string, { min: number; max: number; step: number }> = {};
+  /** Everything the last search returned; `searchRows` is what survives the
+   * sliders, and is what the table, the exports and the review queue use. */
+  searchAll: Listing[] = [];
+  ranges: Record<string, { lo: number; hi: number }> = {};
+  rangeBounds: Record<string, { min: number; max: number; step: number }> = {};
   readonly RANGE_SPECS: { key: string; label: string; unit: string; step: number;
-                          pick: (p: MapPoint) => number | null }[] = [
+                          pick: (p: Filterable) => number | null }[] = [
     { key: 'price',  label: 'price (buy)',    unit: '¥',   step: 1_000_000,
       pick: p => p.market === 'rent' ? null : p.price_yen },
     { key: 'rent',   label: 'rent / month',   unit: '¥',   step: 10_000,
@@ -493,29 +510,29 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     { key: 'footprint', label: 'footprint',       unit: 'm²', step: 5,
       pick: p => p.capacity ? p.capacity.max_footprint_m2 : null },
     { key: 'lfit',   label: '🎓 to LFIT',      unit: 'min', step: 1,
-      pick: p => p.commute_min },
+      pick: p => p.commute_min ?? null },
   ];
 
-  isHouse(p: MapPoint): boolean {
+  isHouse(p: Filterable): boolean {
     const l = p.property_label || '';
     return l.includes('一戸建') || (p.market !== 'rent' && p.category !== 'land' && !l.includes('マンション'));
   }
-  isFlat(p: MapPoint): boolean {
+  isFlat(p: Filterable): boolean {
     const l = p.property_label || '';
     return l.includes('マンション') || l.includes('アパート') || l.includes('テラス');
   }
 
   /** Slider bounds from the data itself, so both ends are always reachable. */
-  private computeBounds(points: MapPoint[]): void {
+  private computeBounds(points: Filterable[]): void {
     for (const spec of this.RANGE_SPECS) {
       const vals = points.map(spec.pick).filter((v): v is number => v != null);
-      if (!vals.length) { delete this.mapBounds[spec.key]; continue; }
+      if (!vals.length) { delete this.rangeBounds[spec.key]; continue; }
       const lo = Math.floor(Math.min(...vals) / spec.step) * spec.step;
       const hi = Math.ceil(Math.max(...vals) / spec.step) * spec.step;
-      this.mapBounds[spec.key] = { min: lo, max: hi, step: spec.step };
-      const cur = this.mapRanges[spec.key];
+      this.rangeBounds[spec.key] = { min: lo, max: hi, step: spec.step };
+      const cur = this.ranges[spec.key];
       // Keep the user's window when new data arrives, clamped to what exists.
-      this.mapRanges[spec.key] = cur
+      this.ranges[spec.key] = cur
         ? { lo: Math.max(lo, Math.min(cur.lo, hi)), hi: Math.min(hi, Math.max(cur.hi, lo)) }
         : { lo, hi };
     }
@@ -524,9 +541,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
   /** A listing passes if every dimension it *has* is inside its window.
    * A plot has no building, a flat is not a house — those tests simply do not
    * apply, rather than excluding the row. */
-  private inRanges(p: MapPoint): boolean {
+  private inRanges(p: Filterable): boolean {
     for (const spec of this.RANGE_SPECS) {
-      const b = this.mapBounds[spec.key], r = this.mapRanges[spec.key];
+      const b = this.rangeBounds[spec.key], r = this.ranges[spec.key];
       if (!b || !r) continue;
       const v = spec.pick(p);
       if (v == null) continue;
@@ -535,21 +552,29 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  /** Re-filter and redraw, without touching the server. */
+  /** Bounds span both tabs' data, so a saved window means the same thing on
+   * each. The map only ever holds geocoded rows, so on its own it would give
+   * the search sliders a narrower span than the table actually contains. */
+  private rebuildBounds(): void {
+    this.computeBounds([...this.mapAll, ...(this.searchAll as Filterable[])]);
+  }
+
+  /** Re-filter both tabs, without touching the server. */
   applyRanges(): void {
     this.mapPoints = this.mapAll.filter(p => this.inRanges(p));
+    this.searchRows = this.searchAll.filter(r => this.inRanges(r as Filterable));
     this.renderMarkers();
   }
 
   resetRanges(): void {
-    this.mapRanges = {};
-    this.computeBounds(this.mapAll);
+    this.ranges = {};
+    this.rebuildBounds();
     this.applyRanges();
   }
 
   rangeLabel(key: string): string {
     const spec = this.RANGE_SPECS.find(s => s.key === key)!;
-    const r = this.mapRanges[key], b = this.mapBounds[key];
+    const r = this.ranges[key], b = this.rangeBounds[key];
     if (!r || !b) return '—';
     const fmt = (v: number) => spec.unit === '¥' ? this.fmtYen(v) : `${v}${spec.unit === 'm²' ? '' : ''}`;
     const full = r.lo <= b.min && r.hi >= b.max;
@@ -1348,7 +1373,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     this.api.mapData(f).subscribe({
       next: res => {
         this.mapAll = res.points;
-        this.computeBounds(this.mapAll);
+        this.rebuildBounds();
         this.mapLoaded = true;
         if (this.pendingRanges) this.applyPendingRanges();
         else this.applyRanges();     // draws through the sliders
@@ -2499,8 +2524,14 @@ ${folders}
       limit: s.limit || 300,
     };
     this.api.search(f).subscribe({
-      next: res => { this.searched = true; this.searchMeta = 'crawled data';
-                     this.searchStats = res.stats; this.searchRows = res.rows; },
+      next: res => {
+        this.searched = true; this.searchMeta = 'crawled data';
+        this.searchStats = res.stats;
+        this.searchAll = res.rows;
+        this.rebuildBounds();
+        // The table shows what survives the sliders, same as the map does.
+        if (this.pendingRanges) this.applyPendingRanges(); else this.applyRanges();
+      },
       error: () => {},
     });
   }
