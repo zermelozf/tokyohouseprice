@@ -32,28 +32,37 @@
      narrows the other and a preset restores the whole view. -->
 <ng-template #filterBarTpl>
   <div class="filterbar">
-    <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
-      <option value="">all types</option>
-      <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
-    </select>
-    <select [(ngModel)]="shared.ward" (ngModelChange)="refreshBoth()">
-      <option value="">all wards</option>
-      <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
-    </select>
-    <select [(ngModel)]="shared.commuteMax" (ngModelChange)="refreshBoth()"
-            title="door-to-school minutes: walk + train + walk to the Lycée">
-      <option [ngValue]="null">🎓 any</option>
-      <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">🎓 ≤{{ m }} min</option>
-    </select>
-    <button type="button" class="chip" *ngFor="let v of VERDICTS"
-            [class.sel]="shared.verdicts.includes(v.key)" (click)="toggleVerdict(v.key)"
-            [title]="'show only ' + v.label">
-      <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
-    </button>
-    <button type="button" class="chip" [class.sel]="shared.verdicts.includes('none')"
-            (click)="toggleVerdict('none')" title="not yet reviewed">
-      <i style="background:#9ca3af"></i>unseen
-    </button>
+    <label class="fld"><span>type</span>
+      <select [(ngModel)]="shared.category" (ngModelChange)="refreshBoth()">
+        <option value="">all</option>
+        <option *ngFor="let c of (config?.categories || [])" [value]="c.key">{{ c.label }}</option>
+      </select>
+    </label>
+    <label class="fld"><span>ward</span>
+      <select [(ngModel)]="shared.ward" (ngModelChange)="refreshBoth()">
+        <option value="">all</option>
+        <option *ngFor="let w of (config?.wards || [])" [value]="w">{{ w }}</option>
+      </select>
+    </label>
+    <label class="fld" title="door-to-school minutes: walk + train + walk to the Lycée">
+      <span>🎓 to LFIT</span>
+      <select [(ngModel)]="shared.commuteMax" (ngModelChange)="refreshBoth()">
+        <option [ngValue]="null">any</option>
+        <option *ngFor="let m of [15,20,25,30,40,50]" [ngValue]="m">≤{{ m }} min</option>
+      </select>
+    </label>
+    <span class="vchips">
+      <span class="vlabel">reviewed</span>
+      <button type="button" class="chip" *ngFor="let v of VERDICTS"
+              [class.sel]="shared.verdicts.includes(v.key)" (click)="toggleVerdict(v.key)"
+              [title]="'show only ' + v.label">
+        <i [style.background]="v.color"></i>{{ v.icon }} {{ reviewCounts[v.key] || 0 }}
+      </button>
+      <button type="button" class="chip" [class.sel]="shared.verdicts.includes('none')"
+              (click)="toggleVerdict('none')" title="not yet reviewed">
+        <i style="background:#9ca3af"></i>unseen
+      </button>
+    </span>
 
     <span class="fsep"></span>
 
@@ -276,8 +285,21 @@
     <h2>Search crawled data <span class="muted normal">{{ searchMeta }}</span></h2>
     <p class="muted top0">Query the listings already saved in the local DB (latest snapshot per property). Click <strong>📍 details</strong> on a row for its exact location and full spec sheet.</p>
 
-    <div class="actions searchbar">
-      <button (click)="runSearch()">🔍 Search</button>
+    <!-- criteria, then sliders, then presets, then what you do with the result -->
+    <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
+    <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: searchRows.length, total: searchAll.length }"></ng-container>
+    <ng-container *ngTemplateOutlet="presetBarTpl"></ng-container>
+
+    <div class="actions searchbar resultbar">
+      <button (click)="startReview(true, 'search')" [disabled]="!searchRows.length">
+        🔍 Review {{ searchRows.length }}
+      </button>
+      <span class="muted">unreviewed first · keys 1/2/3</span>
+      <span class="muted" *ngIf="reviewedTotal()">
+        · {{ reviewedTotal() }} reviewed, <b>{{ reviewedShown('search') }}</b> shown
+      </span>
+      <span class="spacer"></span>
+      <button class="ghost tiny" (click)="load()" title="re-query the local DB">🔄 refresh</button>
       <span class="exportlinks" *ngIf="searchRows.length">
         <span class="muted" title="download these results for Google My Maps (mymaps.google.com)">export</span>
         <button class="linkbtn" (click)="exportCsv()"
@@ -290,17 +312,6 @@
       <span class="exportnote" *ngIf="exportMsg">{{ exportMsg }}</span>
     </div>
 
-    <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
-    <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: searchRows.length, total: searchAll.length }"></ng-container>
-    <ng-container *ngTemplateOutlet="presetBarTpl"></ng-container>
-    <div class="reviewbar" *ngIf="searchRows.length">
-      <button (click)="startReview(true, 'search')">🔍 Review {{ searchRows.length }} results</button>
-      <span class="muted">unreviewed first · keys 1/2/3</span>
-      <span class="muted" *ngIf="reviewedTotal()">
-        · {{ reviewedTotal() }} reviewed overall,
-        <b>{{ reviewedShown('search') }}</b> of them match these filters
-      </span>
-    </div>
     <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: searchStats }"></ng-container>
     <p class="muted" *ngIf="searched && !searchRows.length">No listings match — crawl some data first (Crawlers tab) or widen the filters.</p>
   </section>
@@ -547,29 +558,35 @@
   <ng-template #controlBodyTpl>
     <div class="ctl-body" [ngSwitch]="activeControl">
 
-      <ng-container *ngSwitchCase="'filters'">
+      <!-- Display only. Every filter lives on the Search tab, so the same
+           field is never on screen twice. -->
+      <ng-container *ngSwitchCase="'display'">
         <div class="actions searchbar">
-        <ng-container *ngTemplateOutlet="filterBarTpl"></ng-container>
-        <div class="reviewbar">
-          <button (click)="startReview(true)" [disabled]="!mapPoints.length">
-            🔍 Review {{ mapPoints.length }} shown
-          </button>
-          <span class="muted">unreviewed first · keys 1/2/3</span>
-          <span class="muted" *ngIf="reviewedTotal()">
-            · {{ reviewedTotal() }} reviewed overall,
-            <b>{{ reviewedShown('map') }}</b> of them match these filters
-          </span>
-        </div>
-        <ng-container *ngTemplateOutlet="rangesTpl; context: { shown: mapPoints.length, total: mapAll.length }"></ng-container>
-        <ng-container *ngTemplateOutlet="presetBarTpl"></ng-container>
-        <button (click)="loadMap()">🔄 Refresh</button>
-        <div class="legend" *ngIf="colorBy === 'category'">
-        <span class="lg" *ngFor="let c of catColors"><i [style.background]="c.color"></i>{{ c.label }}</span>
-        </div>
-        <div class="legend" *ngIf="colorBy === 'era'">
-        <span class="lg" *ngFor="let e of eraList"><i [style.background]="e.color"></i>{{ e.label }}</span>
-        <span class="lg"><i style="background:#9ca3af"></i>year unknown</span>
-        </div>
+          <div class="dispnote">
+            Showing <b>{{ mapPoints.length }}</b> listings ·
+            <span *ngIf="shared.dateTo && shared.dateFrom === shared.dateTo">crawl of <b>{{ shared.dateTo }}</b></span>
+            <span *ngIf="shared.dateFrom !== shared.dateTo">crawls {{ shared.dateFrom || '…' }} → {{ shared.dateTo || '…' }}</span>
+            <button class="linkbtn" *ngIf="latestCrawl() && shared.dateTo !== latestCrawl()"
+                    (click)="useLatestCrawl()">jump to latest ({{ latestCrawl() }})</button>
+            <br>
+            <span class="muted">Filters, sliders and saved views are on the
+              <button class="linkbtn" (click)="activeTab = 'search'">Search tab</button> —
+              they apply here too.</span>
+          </div>
+          <div class="reviewbar">
+            <button (click)="startReview(true)" [disabled]="!mapPoints.length">
+              🔍 Review {{ mapPoints.length }} shown
+            </button>
+            <span class="muted">unreviewed first · keys 1/2/3</span>
+          </div>
+          <button (click)="loadMap()">🔄 Refresh</button>
+          <div class="legend" *ngIf="colorBy === 'category'">
+            <span class="lg" *ngFor="let c of catColors"><i [style.background]="c.color"></i>{{ c.label }}</span>
+          </div>
+          <div class="legend" *ngIf="colorBy === 'era'">
+            <span class="lg" *ngFor="let e of eraList"><i [style.background]="e.color"></i>{{ e.label }}</span>
+            <span class="lg"><i style="background:#9ca3af"></i>year unknown</span>
+          </div>
         </div>
       </ng-container>
 

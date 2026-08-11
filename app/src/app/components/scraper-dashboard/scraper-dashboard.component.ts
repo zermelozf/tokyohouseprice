@@ -277,6 +277,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   /** What the current filters leave showing, offered as the preset's name so
    * a saved view is recognisable in the list later. */
+  /** The crawl the view is pinned to, for the map's status line. */
+  latestCrawl(): string { return this.crawlDates[0]?.date || ''; }
+
+  /** Back to the newest crawl, both bounds on it. */
+  useLatestCrawl(): void {
+    if (!this.crawlDates.length) return;
+    this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
+    this.load();
+  }
+
   shownSummary(): string {
     const parts: string[] = [];
     if (this.shared.category) {
@@ -888,8 +898,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
    * in both, so the mental model does not change with the window size.
    */
   readonly controlSections = [
-    { key: 'filters', icon: '🔍', label: 'Filters',
-      hint: 'category, ward and crawl date' },
+    { key: 'display', icon: '🎨', label: 'Display',
+      hint: 'how the dots are coloured — filters live on the Search tab' },
     { key: 'poi',     icon: '📍', label: 'Nearby',
       hint: 'landmarks, rail lines and OpenStreetMap points of interest' },
     { key: 'census',  icon: '👥', label: 'Census',
@@ -898,7 +908,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
       hint: 'flood, landslide and ground-condition overlays' },
   ];
   /** Which section is open, in both layouts. null = collapsed. */
-  activeControl: string | null = 'filters';
+  activeControl: string | null = 'display';
 
   activeSection() {
     return this.controlSections.find(s => s.key === this.activeControl) || null;
@@ -911,7 +921,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
 
   toggleFab(): void {
     this.mapFabOpen = !this.mapFabOpen;
-    if (this.mapFabOpen && !this.activeControl) this.activeControl = 'filters';
+    if (this.mapFabOpen && !this.activeControl) this.activeControl = 'display';
   }
 
   closeFab(): void {
@@ -956,7 +966,15 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy {
     // looks as though nothing was ever saved.
     this.loadReviewCounts();
     this.loadSavedFilters();
-    this.runSearch();  // preload crawled data for the Search tab
+    // Default to the most recent crawl, both bounds on the same day: a window
+    // spanning several crawls mixes listings that were on the market on
+    // different mornings, and the newest one is what you are looking at.
+    this.ensureCrawlDates(() => {
+      if (this.crawlDates.length) {
+        this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
+      }
+      this.load();
+    });
   }
 
   // Local 'YYYY-MM-DD' (not UTC) — scrape_date is stamped in the machine's local time.

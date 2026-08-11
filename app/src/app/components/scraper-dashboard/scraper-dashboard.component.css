@@ -970,14 +970,52 @@ td.commutecell b { color: #1e5b96; }
 :host ::ng-deep .dot-good { filter: drop-shadow(0 0 3px rgba(212,160,23,0.65)); }
 :host ::ng-deep .dot-maybe { filter: drop-shadow(0 0 2px rgba(37,99,235,0.5)); }
 
-.filterbar { flex-basis: 100%; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-             padding-bottom: 0.5rem; margin-bottom: 0.3rem; border-bottom: 1px solid #eef0f3; }
-.filterbar label { margin: 0; font-size: 0.7rem; color: #8a919b;
-                   text-transform: uppercase; letter-spacing: 0.03em; }
-.filterbar select, .filterbar .fname { padding: 0.25rem 0.35rem; font-size: 0.8rem;
-                                        border: 1px solid #ddd; border-radius: 3px; }
-.filterbar .fname { width: 11rem; }
+/* --- the filter bar --------------------------------------------------------
+   A long flex row collapses badly below ~900px: controls of unequal width wrap
+   into ragged rows and the labels lose their inputs. A grid of equal columns
+   that reflows by count keeps every control with its label at any width. */
+.filterbar { flex-basis: 100%; width: 100%;
+             display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+             gap: 0.45rem 0.6rem; align-items: end;
+             padding: 0.55rem 0.65rem; margin-bottom: 0.4rem;
+             background: #fafbfc; border: 1px solid #eef0f3; border-radius: 5px; }
+.filterbar > select, .filterbar > .fld { min-width: 0; }   /* let them shrink */
+.filterbar select, .filterbar input { width: 100%; max-width: 100%;
+                                      padding: 0.28rem 0.35rem; font-size: 0.8rem;
+                                      border: 1px solid #ddd; border-radius: 3px;
+                                      background: #fff; }
+.filterbar .fld { display: flex; flex-direction: column; gap: 0.12rem; }
+.filterbar .fld > span:first-child { font-size: 0.63rem; color: #8a919b;
+                                     text-transform: uppercase; letter-spacing: 0.03em;
+                                     white-space: nowrap; overflow: hidden;
+                                     text-overflow: ellipsis; }
+.filterbar .fld .dualnum { display: flex; gap: 0.2rem; }
+.filterbar .fld .dualnum input { flex: 1 1 0; min-width: 0; }
+/* Chips are small and numerous, so they share one full-width row rather than
+   each claiming a grid column. */
+.filterbar .chip, .filterbar .era-filter { grid-column: 1 / -1; }
+.filterbar .era-filter { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+.filterbar .vchips { grid-column: 1 / -1; display: flex; gap: 0.3rem; flex-wrap: wrap;
+                     align-items: center; }
+.filterbar .vchips .chip { grid-column: auto; }
+.filterbar .fsep { display: none; }     /* the grid already separates groups */
 .filterbar .note { font-size: 0.75rem; color: #15803d; }
+.filterbar label { margin: 0; }
+
+/* Presets: a name field that grows, buttons that never wrap mid-word. */
+.presetbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.presetbar .fname { flex: 1 1 12rem; min-width: 8rem; }
+.presetbar button { white-space: nowrap; }
+
+.resultbar .spacer { flex: 1 1 auto; }
+
+@media (max-width: 640px) {
+  /* Two columns is the narrowest that still reads as a form rather than a list. */
+  .filterbar { grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
+  .rangebank { grid-template-columns: 1fr; }
+  .presetbar .fname { flex-basis: 100%; }
+  .resultbar .spacer { display: none; }
+}
 
 /* results table: photo + inline grading */
 td.thumbcell { white-space: nowrap; }
@@ -1032,3 +1070,6 @@ td.verdictcell { white-space: nowrap; }
 .filterbar .fld input[type="number"] { width: 4.6rem; }
 .filterbar .fld input[type="date"] { width: 8.2rem; }
 .filterbar .fsep { flex: 0 0 1px; align-self: stretch; background: #e6e9ee; margin: 0 0.15rem; }
+.filterbar .vchips .vlabel { font-size: 0.63rem; color: #8a919b;
+                             text-transform: uppercase; letter-spacing: 0.03em; }
+.dispnote { flex-basis: 100%; font-size: 0.8rem; line-height: 1.5; }
