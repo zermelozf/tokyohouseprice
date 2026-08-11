@@ -612,7 +612,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * a one-sided cut is just a range with one end open, so a second control for
    * the same dimension is the same field twice. */
   readonly RANGE_SPECS: { key: string; label: string; unit: string; step: number;
-                          hint?: string; pick: (p: Filterable) => number | null }[] = [
+                          hint?: string; pick: (p: Filterable) => number | null;
+                          pickMax?: (p: Filterable) => number | null }[] = [
     // All-in cost, which is the only way one control can price a plot and a
     // house on the same axis: buying land commits you to building on it, so a
     // ¥90M plot is not a ¥90M purchase.
@@ -628,7 +629,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // field repeated. A rental flat tops out around 108m² in this catchment,
     // so a shared floor would delete the whole category.
     { key: 'buym2',  label: 'buy · building', unit: 'm²',  step: 5,
-      pick: p => p.market !== 'rent' && p.category !== 'land' ? p.building_m2 : null },
+      pick: p => p.market !== 'rent' && p.category !== 'land' ? p.building_m2 : null,
+      pickMax: p => p.market !== 'rent' && p.category !== 'land'
+                    ? ((p as any).building_m2_max ?? null) : null },
     { key: 'rentflat', label: 'rent · flat',  unit: 'm²',  step: 5,
       pick: p => p.market === 'rent' && this.isFlat(p) ? p.building_m2 : null },
     { key: 'renthouse', label: 'rent · house', unit: 'm²', step: 5,
@@ -636,7 +639,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // Bare plots only. A house has a plot too, but when you are buying the
     // house its land size is not what you are choosing on.
     { key: 'land',   label: 'land (plots)',   unit: 'm²',  step: 5,
-      pick: p => p.category === 'land' ? p.land_m2 : null },
+      pick: p => p.category === 'land' ? p.land_m2 : null,
+      pickMax: p => p.category === 'land' ? ((p as any).land_m2_max ?? null) : null },
     // What a plot can carry, rather than how big it is — 建ぺい率 and the
     // frontage-road cap decide whether a house actually fits.
     { key: 'buildable', label: 'buildable floor', unit: 'm²', step: 5,
@@ -653,6 +657,13 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   /** The house a plot obliges you to build, at the standard ¥250k/m². */
   buildCost(): number { return this.budgetBuildM2 * 250_000; }
+
+  /** '109.1 – 120.3' for a listing selling several units, else the one area.
+   * Showing only the floor understated these by up to 20%. */
+  areaSpan(lo: number | null | undefined, hi: number | null | undefined): string {
+    if (lo == null) return '—';
+    return hi != null && hi > lo ? `${lo} – ${hi}` : `${lo}`;
+  }
 
   isHouse(p: Filterable): boolean {
     const l = p.property_label || '';
@@ -688,7 +699,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       if (!b || !r) continue;
       const v = spec.pick(p);
       if (v == null) continue;
-      if (v < r.lo || v > r.hi) return false;
+      // A listing selling 109–120m² should survive a "≥115m²" window: one of
+      // its units clears it. So a span is kept when it *overlaps* the window,
+      // not when its floor happens to sit inside.
+      const hi = spec.pickMax ? (spec.pickMax(p) ?? v) : v;
+      if (Math.max(v, hi) < r.lo || Math.min(v, hi) > r.hi) return false;
     }
     return true;
   }

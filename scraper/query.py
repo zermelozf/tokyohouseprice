@@ -288,7 +288,8 @@ _COLS = ", ".join("s." + c for c in (
     "property_id", "scrape_date", "market", "category", "ward", "url", "title",
     "address", "station_raw", "nearest_walk_min", "price_yen", "price_max_yen",
     "price_raw", "admin_fee_yen", "deposit_yen", "key_money_yen", "layout",
-    "land_m2", "building_m2", "floors", "build_year", "age_years",
+    "land_m2", "building_m2", "building_m2_max", "land_m2_max",
+    "floors", "build_year", "age_years",
     "property_label", "image_url"))
 
 

@@ -58,11 +58,36 @@ def parse_price_range(text: str | None) -> tuple[int | None, int | None]:
 
 # --- area -------------------------------------------------------------------
 def parse_area_m2(text: str | None) -> float | None:
-    """'39m2', '92.46m 2', '39㎡' -> float. Ranges return the first value."""
+    """'39m2', '92.46m 2', '39㎡' -> float. The first value; see
+    parse_area_range for what that leaves out."""
     if not text:
         return None
     m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:m|㎡)", text)
     return float(m.group(1)) if m else None
+
+
+# A 分譲 sells several units under one listing and states them as a span or a
+# list: '109.09m2～120.33m2', '114.61m2・118.26m2'. Storing only the first
+# understates the listing by up to 20%.
+#
+# But a second number is not always a second unit. '140.76m2、うち1階車庫
+# 17.55m2' means "of which 17.55 is the garage" — a component of the first
+# figure, not an alternative to it. Anything after うち/内 is therefore cut
+# before the numbers are read, or the smallest unit becomes a car park.
+_AREA_COMPONENT = re.compile(r"[、,]?\s*(?:うち|内)\s*.*$")
+
+
+def parse_area_range(text: str | None) -> tuple[float | None, float | None]:
+    """(smallest, largest) stated area. `largest` is None when only one is."""
+    if not text:
+        return None, None
+    body = _AREA_COMPONENT.sub("", text)
+    nums = [float(n) for n in re.findall(r"([0-9]+(?:\.[0-9]+)?)\s*(?:m|㎡)", body)]
+    nums = [n for n in nums if 0 < n < 100000]
+    if not nums:
+        return None, None
+    lo, hi = min(nums), max(nums)
+    return lo, (hi if hi > lo else None)
 
 
 # --- station ----------------------------------------------------------------

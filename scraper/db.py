@@ -54,6 +54,10 @@ CREATE TABLE IF NOT EXISTS listings_snapshot (
     layout        TEXT,
     land_m2       REAL,
     building_m2   REAL,
+    -- A 分譲 sells several units under one listing: these hold the largest
+    -- stated area, so the table can show the span instead of only its floor.
+    building_m2_max REAL,
+    land_m2_max     REAL,
     unit_floor    TEXT,
     floors        TEXT,
     build_year    INTEGER,
@@ -167,6 +171,13 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if cols and "scrape_date" not in cols:
         conn.execute("DROP TABLE property_detail")
         conn.commit()
+
+    # Added later: the upper end of a multi-unit listing's area.
+    snap = [r[1] for r in conn.execute("PRAGMA table_info(listings_snapshot)").fetchall()]
+    for col in ("building_m2_max", "land_m2_max"):
+        if snap and col not in snap:
+            conn.execute(f"ALTER TABLE listings_snapshot ADD COLUMN {col} REAL")
+            conn.commit()
 
 
 def connect() -> sqlite3.Connection:

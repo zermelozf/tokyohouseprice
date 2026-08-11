@@ -48,6 +48,10 @@ export interface Listing {
   layout: string | null;
   land_m2: number | null;
   building_m2: number | null;
+  // A 分譲 sells several units under one listing; these hold the largest
+  // stated area, null when the listing is a single unit.
+  building_m2_max?: number | null;
+  land_m2_max?: number | null;
   age_years: number | null;
   // Present only for detail-enriched properties (null otherwise).
   lat?: number | null;

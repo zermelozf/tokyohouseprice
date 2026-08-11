@@ -40,6 +40,9 @@ def to_snapshot(rec: dict, scraped_at: datetime | None = None) -> dict:
         "layout": rec.get("layout"),
         "land_m2": N.parse_area_m2(rec.get("land_area_raw")),
         "building_m2": N.parse_area_m2(rec.get("building_area_raw")),
+        # The largest unit when the listing spans several; None when it is one.
+        "building_m2_max": N.parse_area_range(rec.get("building_area_raw"))[1],
+        "land_m2_max": N.parse_area_range(rec.get("land_area_raw"))[1],
         "unit_floor": rec.get("unit_floor"),
         "floors": rec.get("floors"),
         "build_year": build_year,
@@ -55,7 +58,8 @@ _COLS = [
     "building_id", "url", "title", "property_label", "image_url", "address", "station_raw", "stations_json",
     "nearest_walk_min", "price_yen", "price_max_yen", "price_raw",
     "admin_fee_yen", "deposit_yen", "key_money_yen", "layout", "land_m2",
-    "building_m2", "unit_floor", "floors", "build_year", "build_month",
+    "building_m2", "building_m2_max", "land_m2_max",
+    "unit_floor", "floors", "build_year", "build_month",
     "age_years", "scraped_at", "raw_json",
 ]
 

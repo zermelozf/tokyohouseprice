@@ -796,8 +796,8 @@
               <td>{{ fmtYen(r.price_yen) }}</td>
               <td class="c-ppm2">{{ ppm2(r) }}</td>
               <td class="layout c-layout"><span [title]="r.layout || ''">{{ r.layout || '—' }}</span></td>
-              <td>{{ r.building_m2 ?? '—' }}</td>
-              <td class="c-land">{{ r.land_m2 ?? '—' }}</td>
+              <td [title]="r['building_m2_max'] ? 'several units in this listing' : ''">{{ areaSpan(r.building_m2, r['building_m2_max']) }}</td>
+              <td class="c-land" [title]="r['land_m2_max'] ? 'several plots in this listing' : ''">{{ areaSpan(r.land_m2, r['land_m2_max']) }}</td>
               <td>{{ r.age_years ?? '—' }}</td>
               <td class="c-walk">{{ r.nearest_walk_min ?? '—' }}</td>
               <td class="commutecell" [title]="commuteTip(r)">
@@ -854,7 +854,9 @@
           <div class="sheet-info">
             <div class="revline">
               {{ p.layout || '—' }} ·
-              {{ p.building_m2 ? p.building_m2 + ' m²' : (p.land_m2 ? p.land_m2 + ' m² land' : '—') }}
+              <span *ngIf="p.building_m2">{{ areaSpan(p.building_m2, p.building_m2_max) }} m²</span>
+              <span *ngIf="!p.building_m2 && p.land_m2">{{ areaSpan(p.land_m2, p.land_m2_max) }} m² land</span>
+              <span class="muted" *ngIf="p.building_m2_max || p.land_m2_max"> · several units</span>
               <span *ngIf="p.build_year_est"> · built {{ p.build_year_est }}</span>
             </div>
 
