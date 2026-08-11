@@ -114,12 +114,23 @@ def parse_restrictions(raw: str | None) -> list[str]:
     return [note for key, note in RESTRICTION_FLAGS.items() if key in raw]
 
 
+def _norm_key(k: str) -> str:
+    """A spec label, in whichever form it was stored.
+
+    Two things vary. SUUMO writes the separator as either the full-width ・ or
+    the half-width ･, and rows scraped before the extractor learned to drop the
+    'ヒント' help-tooltip still carry it in the key ('建ぺい率･容積率 ヒント').
+    Normalising on read means those rows work without being re-scraped."""
+    k = re.sub(r"\s*ヒント\s*$", "", k.rstrip(":").strip())
+    return k.replace("･", "・")
+
+
 def capacity(land_m2: float | None, specs: dict | None) -> dict | None:
     """What can be built on this plot. None when the zoning is unknown."""
     if not land_m2 or not specs:
         return None
-    s = {k.rstrip(":").strip(): v for k, v in specs.items()}
-    coverage, far = parse_ratios(s.get("建ぺい率・容積率") or s.get("建ぺい率･容積率"))
+    s = {_norm_key(k): v for k, v in specs.items()}
+    coverage, far = parse_ratios(s.get("建ぺい率・容積率"))
     if coverage is None or far is None:
         return None
     zone = (s.get("用途地域") or "").strip() or None
