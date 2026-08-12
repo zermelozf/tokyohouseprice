@@ -25,6 +25,14 @@ ENRICH_COMMUTE_MAX_MIN = 40
 # the detail fetch on it too, or the expensive half of the crawl is spent on
 # properties that were never candidates.
 ENRICH_BUDGET_YEN = 200_000_000
+# A crawl stops when a page comes back with no cards, which is the honest end
+# of a result set — SUUMO answers a page past the end with its station-picker,
+# which parses to zero. So this is a runaway backstop, not a budget: list pages
+# are one fetch per ~30 listings, the expensive half is the detail pass, and
+# out-of-scope rows are dropped before they are stored. A low cap truncated
+# silently instead: the 賃貸 crawl saw 90 of 583 listings, so a different slice
+# surfaced each day and the rest read as "not re-crawled".
+MAX_PAGES = 200
 # How long a detail snapshot is trusted when the page publishes no
 # 次回更新予定日 (sale pages generally do not). Chosen to match the median lead
 # time SUUMO gives on the pages that do state one.
@@ -249,7 +257,7 @@ def enrich_details(fetcher: Fetcher, scraped: dict[str, str], scrape_date: str,
 
 
 def crawl_category_ward(conn, fetcher: Fetcher, category: str, ward: str,
-                        max_pages: int = 5, scraped: dict | None = None) -> dict:
+                        max_pages: int = MAX_PAGES, scraped: dict | None = None) -> dict:
     """Crawl up to `max_pages` of one category+ward. Returns a small summary.
     If `scraped` is given, records each listing's {property_id: url} for the
     post-crawl detail enrichment pass."""
@@ -286,7 +294,7 @@ def crawl_category_ward(conn, fetcher: Fetcher, category: str, ward: str,
             "pages": pages_done, "listings": total_records}
 
 
-def crawl_url(url: str, max_pages: int = 5,
+def crawl_url(url: str, max_pages: int = MAX_PAGES,
               min_delay: float = 2.0, max_delay: float = 4.0,
               enrich: bool = True) -> dict:
     """Crawl a pasted SUUMO search-results URL (bronze+silver), then (if `enrich`)
@@ -330,7 +338,7 @@ def crawl_url(url: str, max_pages: int = 5,
             "enriched": enriched, "seen": len(scraped)}
 
 
-def crawl(categories: list[str], wards: list[str], max_pages: int = 5,
+def crawl(categories: list[str], wards: list[str], max_pages: int = MAX_PAGES,
           min_delay: float = 2.0, max_delay: float = 4.0,
           enrich: bool = True) -> list[dict]:
     """Crawl the cartesian product of categories x wards, then (if `enrich`)

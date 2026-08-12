@@ -35,7 +35,7 @@ _DEFAULTS = {
     "categories": [],       # for mode=categories (empty -> all)
     "wards": [],            # for mode=categories
     "url": "",             # for mode=url
-    "max_pages": 5,
+    "max_pages": 200,   # backstop; the crawl stops when a page has no cards
     "min_delay": 2.0,
     "max_delay": 4.0,
     "interval_minutes": 1440,   # daily

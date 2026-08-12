@@ -23,7 +23,7 @@ import logging
 from . import gold
 from .config import ALL_CATEGORIES, SALE_CATEGORIES, WARDS
 from .detail import scrape_property
-from .pipeline import (ENRICH_BUDGET_YEN, ENRICH_COMMUTE_MAX_MIN, prune,
+from .pipeline import (ENRICH_BUDGET_YEN, ENRICH_COMMUTE_MAX_MIN, MAX_PAGES, prune,
                        reparse_details)
 from .pipeline import crawl, crawl_url
 
@@ -47,13 +47,13 @@ def main(argv: list[str] | None = None) -> None:
     c.add_argument("--category", default="all",
                    help=f"comma list or 'all' (sale-only: 'sale'); options: {ALL_CATEGORIES}")
     c.add_argument("--ward", default="all", help="comma list or 'all' (23 wards)")
-    c.add_argument("--max-pages", type=int, default=5)
+    c.add_argument("--max-pages", type=int, default=MAX_PAGES)
     c.add_argument("--min-delay", type=float, default=2.0)
     c.add_argument("--max-delay", type=float, default=4.0)
 
     cu = sub.add_parser("crawl-url", help="crawl a pasted SUUMO search-results URL")
     cu.add_argument("url")
-    cu.add_argument("--max-pages", type=int, default=5)
+    cu.add_argument("--max-pages", type=int, default=MAX_PAGES)
     cu.add_argument("--min-delay", type=float, default=2.0)
     cu.add_argument("--max-delay", type=float, default=4.0)
 
