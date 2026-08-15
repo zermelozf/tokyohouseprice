@@ -301,8 +301,10 @@
         <thead><tr>
           <th title="cheapest first, by present value over the horizon">#</th>
           <th>listing</th>
-          <th title="what it costs a month once one-off costs are spread over the horizon">
-            monthly equivalent</th>
+          <th title="what leaves your account in year one: rent plus 管理費, or mortgage plus taxes and upkeep">
+            monthly now</th>
+          <th title="the level payment with the same present value over the whole horizon. Higher than today because rent and costs rise while the levelling discounts at the opportunity cost — it is what the years to come average out to, not what you pay next month.">
+            levelled</th>
           <th title="total cost in today's money over the horizon, net of what you could sell it for">
             PV cost</th>
           <th title="how much more than the cheapest on this list">vs best</th>
@@ -324,7 +326,8 @@
                 <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>
                 · {{ likedBy(x.r) }} · {{ x.r.address }}</span>
             </td>
-            <td>{{ x.o ? fmtYen(-x.o.monthly_equivalent) : '—' }}</td>
+            <td>{{ x.o && x.o.monthly_costs?.length ? fmtYen(x.o.monthly_costs[0]) : '—' }}</td>
+            <td class="muted">{{ x.o ? fmtYen(-x.o.monthly_equivalent) : '—' }}</td>
             <td>{{ x.o ? fmtYen(-x.o.pv_cost) : '—' }}</td>
             <td [class.worse]="x.vsBest > 0">{{ x.vsBest ? '+' + fmtYen(x.vsBest) : (x.rank === 1 ? 'best' : '—') }}</td>
             <td>{{ x.o && x.o.pv_cost_per_m2 ? fmtYen(-x.o.pv_cost_per_m2) : '—' }}</td>
@@ -343,6 +346,13 @@
       {{ fmtYen(compareResult.verdict.baseline_monthly_rent) }}/month rent baseline.
       A dash means the figure does not apply — a rental has no equity to exit, and
       IRR needs a rent to measure against.
+      <b>Monthly now</b> is year one; <b>levelled</b> is the constant payment with
+      the same present value across all
+      {{ compareResult.assumptions.simulation_years }} years, so it runs above
+      today's rent — rent rises at
+      {{ compareResult.assumptions.rent_inflation * 100 | number:'1.0-1' }}% while
+      the levelling discounts at
+      {{ (compareResult.assumptions.opportunity_cost || compareResult.assumptions.opportunity_cost_real) * 100 | number:'1.0-1' }}%.
     </p>
 
     <ng-container *ngIf="compareResult && compareResult.options.length <= 4"

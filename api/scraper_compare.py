@@ -626,7 +626,15 @@ def compare(req: CompareRequest) -> dict:
         return (d.get("down_payment", 0) + d.get("acquisition_cost", 0)
                 + d.get("loan_upfront_fee", 0)) if d["mode"] != "rent" else 0.0
 
-    ladder = sorted(range(len(options)), key=lambda i: upfront(options[i]))
+    # Ties on capital are common — every rental commits nothing on day one — and
+    # the tie-break decides the anchor, so it cannot be arbitrary. Cheapest
+    # first: anchoring on the cheapest of the zero-capital options makes every
+    # other option "spend more, get more", which is the investing shape IRR can
+    # rank. Anchoring on an expensive rental instead makes moving to a cheaper
+    # one release cash, whose IRR is a borrowing rate and is not comparable.
+    # (pv_cost is negative, so the least negative is the cheapest.)
+    ladder = sorted(range(len(options)),
+                    key=lambda i: (upfront(options[i]), -options[i]["pv_cost"]))
     steps = []
     hurdle = a.opportunity_cost
     for lo, hi in zip(ladder, ladder[1:]):
