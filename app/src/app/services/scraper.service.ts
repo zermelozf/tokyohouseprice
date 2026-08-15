@@ -662,26 +662,26 @@ export class ScraperService {
   // --- people and groups ----------------------------------------------------
   // Who may use the tool, and who shares reviews and saved views with whom.
   access() {
-    return this.http.get<AccessOverview>(`${this.base}/access`);
+    return this.http.get<AccessOverview>(`${this.base}/scraper/access`);
   }
   addAccessUser(email: string, name?: string) {
-    return this.http.post<any>(`${this.base}/access/users`, { email, name });
+    return this.http.post<any>(`${this.base}/scraper/access/users`, { email, name });
   }
   removeAccessUser(email: string) {
-    return this.http.delete<any>(`${this.base}/access/users/${encodeURIComponent(email)}`);
+    return this.http.delete<any>(`${this.base}/scraper/access/users/${encodeURIComponent(email)}`);
   }
   createGroup(name: string) {
-    return this.http.post<any>(`${this.base}/access/groups`, { name });
+    return this.http.post<any>(`${this.base}/scraper/access/groups`, { name });
   }
   addGroupMember(groupId: number, email: string) {
-    return this.http.post<any>(`${this.base}/access/groups/${groupId}/members`, { email });
+    return this.http.post<any>(`${this.base}/scraper/access/groups/${groupId}/members`, { email });
   }
   setAdmin(email: string, isAdmin: boolean) {
     return this.http.post<any>(
-      `${this.base}/access/users/${encodeURIComponent(email)}/admin`, { is_admin: isAdmin });
+      `${this.base}/scraper/access/users/${encodeURIComponent(email)}/admin`, { is_admin: isAdmin });
   }
   removeGroupMember(groupId: number, email: string) {
     return this.http.delete<any>(
-      `${this.base}/access/groups/${groupId}/members/${encodeURIComponent(email)}`);
+      `${this.base}/scraper/access/groups/${groupId}/members/${encodeURIComponent(email)}`);
   }
 }
