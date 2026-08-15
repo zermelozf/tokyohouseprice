@@ -541,12 +541,38 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * already looked at is worth more than a first opinion on a place neither of
    * you has seen — it is the one that settles whether it stays on the list. */
   awaitingMe(rows: any[] = this.searchRows): any[] {
-    return rows.filter(r => !r.verdict && (r.reviews || []).some((x: any) => !x.mine));
+    const seen = new Set<string>();
+    return rows.filter(r => {
+      if (r.verdict || r.verdict_via) return false;
+      if (!(r.reviews || []).some((x: any) => !x.mine)) return false;
+      if (r.dup_key && seen.has(r.dup_key)) return false;   // count a house once
+      if (r.dup_key) seen.add(r.dup_key);
+      return true;
+    });
+  }
+
+  /** How many listings the current results collapse to. */
+  distinctCount(rows: any[] = this.searchRows): number {
+    const keys = new Set<string>();
+    let loose = 0;
+    for (const r of rows) r.dup_key ? keys.add(r.dup_key) : loose++;
+    return keys.size + loose;
   }
 
   startReview(onlyUnreviewed = true, source: 'map' | 'search' = 'map'): void {
     const all = source === 'search' ? this.searchRows : this.mapPoints;
-    const pool = onlyUnreviewed ? all.filter((p: any) => !p.verdict) : all;
+    // One posting per house. Agents list the same property up to eight times,
+    // and judging a house is judging the house, not the advert.
+    const seen = new Set<string>();
+    const distinct = all.filter((p: any) => {
+      if (!p.dup_key) return true;
+      if (seen.has(p.dup_key)) return false;
+      seen.add(p.dup_key);
+      return true;
+    });
+    const pool = onlyUnreviewed
+      ? distinct.filter((p: any) => !p.verdict && !p.verdict_via)
+      : distinct;
     if (!pool.length) return;
     // Sort, don't filter: everything stays reviewable, but what your group is
     // waiting on comes up first.

@@ -1288,3 +1288,6 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
            color: #fff; border: none; box-shadow: none; border-radius: 3px;
            padding: 0.15rem 0.5rem; font-size: 1.1rem; cursor: pointer; z-index: 2; }
 .galzoom:hover { background: rgba(0,0,0,0.75); transform: none; }
+.duppill, .inheritpill { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 10px; }
+.duppill { background: #eef2f7; color: #475569; border: 1px solid #dbe3ec; }
+.inheritpill { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }

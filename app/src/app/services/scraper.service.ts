@@ -38,6 +38,14 @@ export interface Listing {
   // Everyone's verdicts on this listing, yours included. Two people hunting
   // together disagree, and which of them liked it is the point of recording it.
   reviews?: ListingReview[];
+  // The same house is posted by several agents. dup_key groups them, dup_first
+  // marks one per group, and verdict_via says a copy inherited its judgement.
+  dup_key?: string | null;
+  dup_count?: number;
+  dup_first?: boolean;
+  dup_ids?: string[];
+  verdict_via?: { property_id: string; verdict: Verdict } | null;
+  effective_verdict?: Verdict | null;
   market: string;
   category: string;
   ward: string;

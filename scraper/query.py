@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from . import access, commute, geocode, hazard, zoning
+from . import access, commute, dedupe, geocode, hazard, zoning
 from .db import connect, init_db as init_db_conn
 
 # Filters is a plain dict with any of these optional keys:
@@ -391,6 +391,9 @@ def search_db(f: dict) -> list[dict]:
     rows = hazard.annotate(geocode.annotate(annotate_images(
         annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))),
                          f.get("user_email")))))
+    # After reviews, so a verdict on one posting can stand for the house, and
+    # after geocoding, since the key needs coordinates.
+    rows = dedupe.spread_verdicts(dedupe.annotate(rows))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     rows = apply_rent_kinds(apply_verdicts(rows, f), f)

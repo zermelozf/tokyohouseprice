@@ -336,8 +336,12 @@
 
     <div class="actions searchbar resultbar">
       <button (click)="startReview(true, 'search')" [disabled]="!searchRows.length">
-        🔍 Review {{ searchRows.length }}
+        🔍 Review {{ distinctCount() }}
       </button>
+      <span class="muted" *ngIf="distinctCount() < searchRows.length"
+            title="agents post the same house several times; the queue asks once">
+        {{ searchRows.length - distinctCount() }} of these are re-posts
+      </span>
       <span class="waiting" *ngIf="awaitingMe().length"
             title="someone in your group judged these and you have not — they come first in the queue">
         👥 {{ awaitingMe().length }} waiting on you
@@ -924,6 +928,12 @@
                 [title]="showBadges ? 'hide the verdict and 耐震基準 badges'
                                     : 'show the verdict and 耐震基準 badges — hidden so an earlier call does not colour this one'">
           {{ showBadges ? '🏷️ hide' : '🏷️' }}</button>
+        <span class="duppill" *ngIf="p.dup_count > 1"
+              [title]="'the same house is posted by ' + p.dup_count + ' agents: ' + (p.dup_ids || []).join(', ')">
+          ×{{ p.dup_count }} listed</span>
+        <span class="inheritpill" *ngIf="p.verdict_via"
+              [title]="'you judged this house already, as listing ' + p.verdict_via.property_id">
+          judged as a re-post: {{ p.verdict_via.verdict }}</span>
         <span class="waitingpill" *ngIf="!p.verdict && othersReviews(p).length"
               title="your group judged this; your call is what settles it">👥 your turn</span>
         <span class="othersaid" *ngFor="let r of othersReviews(p)"
