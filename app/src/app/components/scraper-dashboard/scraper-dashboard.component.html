@@ -273,37 +273,6 @@
       Nothing marked ♥︎ yet — grade some listings and they turn up here.
     </p>
 
-    <div class="tablewrap" *ngIf="shortlist().length">
-      <table>
-        <thead><tr>
-          <th>compare</th><th>type</th><th>price</th><th>size</th>
-          <th>🎓 LFIT</th><th>liked by</th><th>address</th>
-        </tr></thead>
-        <tbody>
-          <!-- The row opens the listing, as it does everywhere else; the tick
-               box is what chooses what to chart. Making the whole row toggle a
-               selection meant looking at a house changed the comparison. -->
-          <tr *ngFor="let r of shortlist()" class="rowlink"
-              [class.picked]="isCompared(r.property_id)" (click)="openDetails(r)">
-            <td class="pickcol">
-              <input type="checkbox" [checked]="isCompared(r.property_id)"
-                     (click)="$event.stopPropagation(); toggleCompare(r)">
-            </td>
-            <td class="cattag">{{ r['property_label'] || catLabel(r.category) }}</td>
-            <td>{{ r.price_raw || fmtYen(r.price_yen) }}</td>
-            <td>{{ areaSpan(r.building_m2, r['building_m2_max']) }}<span
-                  *ngIf="!r.building_m2 && r.land_m2">{{ areaSpan(r.land_m2, r['land_m2_max']) }} land</span></td>
-            <td>{{ r['commute_min'] != null ? r['commute_min'] + '′' : '—' }}</td>
-            <td class="muted">{{ likedBy(r) }}</td>
-            <td class="addr">{{ r.address }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- A plot is not a home, so the price of one is the plot plus the house.
-         Stated rather than asked: the shortlist is whatever the group liked,
-         and a confirm step there is a door with nothing behind it. -->
     <div class="landask" *ngIf="shortlistHasLand()">
       <span class="landask-q">🏗️ Plots are priced with a house on them:</span>
       <label>house size
@@ -338,16 +307,20 @@
     <div class="err" *ngIf="compareError">⚠ {{ compareError }}</div>
 
     <!-- The financial answer, one row per house, in the model's own ranking. -->
-    <div class="tablewrap" *ngIf="compareResult && rankedOptions().length">
+    <!-- One table: the shortlist with its prices in it. Two tables meant
+         finding the same house twice to read what it costs. -->
+    <div class="tablewrap" *ngIf="shortlistRows().length">
       <table class="cmptable">
         <thead><tr>
           <th title="cheapest first, by present value over the horizon">#</th>
+          <th title="tick to chart it against the others">📈</th>
           <th>listing</th>
+          <th>liked by</th>
           <th title="what it costs a month once one-off costs are spread over the horizon">
             monthly equivalent</th>
           <th title="total cost in today's money over the horizon, net of what you could sell it for">
             PV cost</th>
-          <th title="how much more than the cheapest option on this list">vs best</th>
+          <th title="how much more than the cheapest on this list">vs best</th>
           <th title="present value per m² of building, or of land for a plot">¥/m²</th>
           <th title="deposit, taxes and fees on day one">upfront</th>
           <th title="what the equity is worth in today's money at the horizon">exit value</th>
@@ -355,26 +328,35 @@
           <th title="the year that return peaks">best sell</th>
         </tr></thead>
         <tbody>
-          <tr *ngFor="let r of rankedOptions()" [class.best]="r.rank === 1">
-            <td>{{ r.rank }}</td>
-            <td class="cmpname">
-              <a [href]="r.o.url" target="_blank" rel="noopener">{{ r.o.price_raw }}</a>
-              <span class="muted">{{ r.o.category === 'rent' ? '賃貸' : catLabel(r.o.category) }}
-                · {{ r.o.building_m2 || r.o.land_m2 }} m²
-                <span *ngIf="r.o.commute_min != null">· 🎓 {{ r.o.commute_min }}′</span></span>
+          <tr *ngFor="let x of shortlistRows()" class="rowlink"
+              [class.best]="x.rank === 1" [class.picked]="isCompared(x.r.property_id)"
+              (click)="openDetails(x.r)">
+            <td>{{ x.rank || '—' }}</td>
+            <td class="pickcol" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="isCompared(x.r.property_id)"
+                     (click)="toggleCompare(x.r)">
             </td>
-            <td>{{ fmtYen(-r.o.monthly_equivalent) }}</td>
-            <td>{{ fmtYen(-r.o.pv_cost) }}</td>
-            <td [class.worse]="r.vsBest > 0">{{ r.vsBest ? '+' + fmtYen(r.vsBest) : '—' }}</td>
-            <td>{{ r.o.pv_cost_per_m2 ? fmtYen(-r.o.pv_cost_per_m2) : '—' }}</td>
-            <td>{{ fmtYen(r.o.upfront_cash) }}</td>
-            <td>{{ r.o.exit_value_pv ? fmtYen(r.o.exit_value_pv) : '—' }}</td>
-            <td>{{ r.irr != null ? (r.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
-            <td>{{ r.sellYear != null ? 'year ' + r.sellYear : '—' }}</td>
+            <td class="cmpname">
+              <b>{{ x.r.price_raw || fmtYen(x.r.price_yen) }}</b>
+              <span class="muted">{{ x.r['property_label'] || catLabel(x.r.category) }}
+                · {{ x.r.building_m2 || x.r.land_m2 }} m²
+                <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>
+                · {{ x.r.address }}</span>
+            </td>
+            <td class="muted">{{ likedBy(x.r) }}</td>
+            <td>{{ x.o ? fmtYen(-x.o.monthly_equivalent) : '—' }}</td>
+            <td>{{ x.o ? fmtYen(-x.o.pv_cost) : '—' }}</td>
+            <td [class.worse]="x.vsBest > 0">{{ x.vsBest ? '+' + fmtYen(x.vsBest) : (x.rank === 1 ? 'best' : '—') }}</td>
+            <td>{{ x.o && x.o.pv_cost_per_m2 ? fmtYen(-x.o.pv_cost_per_m2) : '—' }}</td>
+            <td>{{ x.o ? fmtYen(x.o.upfront_cash) : '—' }}</td>
+            <td>{{ x.o && x.o.exit_value_pv ? fmtYen(x.o.exit_value_pv) : '—' }}</td>
+            <td>{{ x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
+            <td>{{ x.sellYear != null ? 'year ' + x.sellYear : '—' }}</td>
           </tr>
         </tbody>
       </table>
     </div>
+
     <p class="muted note" *ngIf="compareResult">
       Present values over {{ compareResult.assumptions.simulation_years }} years at
       {{ (compareResult.assumptions.opportunity_cost || compareResult.assumptions.opportunity_cost_real) * 100 | number:'1.1-1' }}%, against a
@@ -386,7 +368,6 @@
     <ng-container *ngIf="compareResult && compareResult.options.length <= 4"
                   [ngTemplateOutlet]="compareBodyTpl"></ng-container>
   </section>
-
   <!-- ============ GROUPS TAB (admin only) ============ -->
   <section class="card" *ngIf="activeTab === 'groups'">
     <h2>People &amp; groups</h2>

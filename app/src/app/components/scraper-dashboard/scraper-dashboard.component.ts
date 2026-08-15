@@ -2617,6 +2617,32 @@ ${folders}
     });
   }
 
+  /** The shortlist and its prices as one list.
+   *
+   * They were two tables listing the same houses — one to look at, one to read
+   * the numbers off — which means finding the same row twice. Priced order when
+   * there is a price, shortlist order before that, and the financial columns
+   * simply empty until the model has run. */
+  shortlistRows(): any[] {
+    const ranked = this.rankedOptions();
+    if (!ranked.length) {
+      return this.shortlist().map(r => ({ r, rank: null, o: null,
+                                          vsBest: null, irr: null, sellYear: null }));
+    }
+    const byId = new Map(this.shortlist().map(r => [r.property_id, r]));
+    const rows: any[] = ranked.map(x => ({ ...x, r: byId.get(x.o.property_id) || x.o }));
+    // Anything the model could not price — beyond the 24 it takes at a time —
+    // still belongs on the list, at the end, rather than disappearing because
+    // it could not be ranked.
+    const priced = new Set(ranked.map(x => x.o.property_id));
+    for (const r of this.shortlist()) {
+      if (!priced.has(r.property_id)) {
+        rows.push({ r, rank: null, o: null, vsBest: null, irr: null, sellYear: null });
+      }
+    }
+    return rows;
+  }
+
   runCompare(): void {
     if (this.compareSel.length < 2) return;
     if (this.hasLandPick() && !this.landSizeConfirmed) return;
