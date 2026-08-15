@@ -281,12 +281,12 @@
                (input)="onHorizon(+$any($event.target).value)"
                title="how long you keep the place. Buying earns its advantage late, so this can change the ranking.">
       </label>
-      <span class="baselinenote" *ngIf="compareAnchor != null">
-        measured against <b>{{ (compareResult?.options)?.[compareAnchor]?.price_raw }}</b>
+      <span class="baselinenote" *ngIf="compareAnchorId">
+        measured against <b>{{ baselineLabel() }}</b>
         <button class="linkbtn" (click)="setBaseline(null)"
-                title="back to measuring from the cheapest option">✕</button>
+                title="back to measuring from the option needing least cash up front">✕</button>
       </span>
-      <span class="muted hint" *ngIf="compareAnchor == null">
+      <span class="muted hint" *ngIf="!compareAnchorId">
         measured against <b>{{ baselineLabel() }}</b>, the option needing least cash
         up front — press and hold a row to use that one instead
       </span>

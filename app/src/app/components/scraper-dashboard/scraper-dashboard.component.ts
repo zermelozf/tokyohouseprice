@@ -204,7 +204,21 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   // Which option every IRR is measured against. null -> server picks the
   // least-capital option, which is the only anchor that keeps every stream
   // investing-shaped and therefore rankable on one rule.
-  compareAnchor: number | null = null;
+  // The baseline, held as a listing rather than a position.
+  //
+  // It used to be an index into the options array — but that array is rebuilt
+  // from the shortlist on every run, so toggling a filter or grading a listing
+  // shifted every index and the anchor silently became a different house. An
+  // id survives the list changing; it is resolved to an index per request, and
+  // dropped if that listing is no longer being compared.
+  compareAnchorId: string | null = null;
+
+  /** Position of the chosen baseline in the ids being sent, or null. */
+  private anchorIndexIn(ids: string[]): number | null {
+    if (!this.compareAnchorId) return null;
+    const i = ids.indexOf(this.compareAnchorId);
+    return i >= 0 ? i : null;
+  }
 
   // --- saved filters -------------------------------------------------------
   // The map carries eight ranges plus a dozen scalars, so re-tuning a search
@@ -426,17 +440,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * cost more over the horizon. Naming it beats calling it "cheapest" and
    * being wrong whenever those differ. */
   baselineLabel(): string {
-    const i = this.compareAnchor ?? this.compareResult?.verdict?.anchor_index;
+    // What the server actually measured against, not what we asked for: if the
+    // chosen listing dropped out of the comparison the model falls back, and
+    // the label has to follow or it names a house nothing was measured from.
+    const i = this.compareResult?.verdict?.anchor_index;
     const o = (i != null) ? this.compareResult?.options?.[i] : null;
     return o ? (o.price_raw || this.fmtYen(o.price_yen)) : 'the baseline';
   }
 
   /** Which row is currently the baseline, as a property id ('' = the cheapest). */
-  baselineId(): string {
-    const i = this.compareAnchor;
-    if (i == null) return '';
-    return this.compareResult?.options?.[i]?.property_id ?? '';
-  }
+  baselineId(): string { return this.compareAnchorId ?? ''; }
 
   /** Compare everything against this row instead of the cheapest.
    *
@@ -445,9 +458,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * comparison an investment rather than a loan — but "against the flat we
    * live in now" is a question worth being able to ask. */
   setBaseline(propertyId: string | null): void {
-    if (!propertyId) { this.compareAnchor = null; this.runShortlist(); return; }
-    const idx = this.compareResult?.options?.findIndex(o => o.property_id === propertyId);
-    this.compareAnchor = (idx != null && idx >= 0) ? idx : null;
+    this.compareAnchorId = propertyId;
     this.runShortlist();
   }
 
@@ -2731,13 +2742,16 @@ ${folders}
   }
 
   setAnchor(i: number | null): void {
-    this.compareAnchor = i;
+    // The tray hands us a position in the current result; store the listing it
+    // refers to, so it still means that listing after the next run.
+    this.compareAnchorId = (i == null) ? null
+      : (this.compareResult?.options?.[i]?.property_id ?? null);
     this.runCompare();
   }
 
   clearCompare(): void {
     this.compareSel = [];
-    this.compareAnchor = null;
+    this.compareAnchorId = null;
     this.landSizeConfirmed = false;
     this.compareResult = null;
     this.compareOpen = false;
@@ -2763,8 +2777,15 @@ ${folders}
     // when changed.
     this.compareLoading = true;
     this.compareError = '';
+    // If the chosen baseline is not among the listings being compared, say so
+    // rather than quietly measuring from something else.
+    if (this.compareAnchorId && !ids.includes(this.compareAnchorId)) {
+      this.compareAnchorId = null;
+      this.compareError = 'The baseline you chose is no longer in this list, so '
+                        + 'everything is measured from the least-capital option again.';
+    }
     this.api.compare(ids, this.compareAssumptions,
-                     this.shared.dateTo || null, this.compareAnchor).subscribe({
+                     this.shared.dateTo || null, this.anchorIndexIn(ids)).subscribe({
       next: res => {
         this.compareLoading = false;
         if (res.error) { this.compareError = res.error; this.compareResult = null; }
@@ -2860,8 +2881,9 @@ ${folders}
     this.compareOpen = true;
     this.compareLoading = true;
     this.compareError = '';
-    this.api.compare(this.compareSel.map(s => s.property_id), this.compareAssumptions,
-                     this.shared.dateTo || null, this.compareAnchor).subscribe({
+    const trayIds = this.compareSel.map(s => s.property_id);
+    this.api.compare(trayIds, this.compareAssumptions,
+                     this.shared.dateTo || null, this.anchorIndexIn(trayIds)).subscribe({
       next: res => {
         this.compareLoading = false;
         if (res.error) { this.compareError = res.error; this.compareResult = null; }
