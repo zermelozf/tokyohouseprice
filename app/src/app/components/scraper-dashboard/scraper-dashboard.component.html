@@ -384,8 +384,12 @@
                 <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>
                 · {{ likedBy(x.r) }} · {{ x.r.address }}</span>
             </td>
-            <td class="lead" [class.worse]="x.vsBest > 0">
-              {{ x.isAnchor ? '—' : x.vsBest ? '+' + fmtYen(x.vsBest) : (x.o ? 'best' : '—') }}
+            <td class="lead" [class.worse]="x.vsBest > 0" [class.better]="x.vsBest < 0">
+              {{ x.isAnchor ? 'baseline'
+                 : !x.o ? '—'
+                 : x.vsBest > 0 ? '+' + fmtYen(x.vsBest)
+                 : x.vsBest < 0 ? '−' + fmtYen(-x.vsBest)
+                 : 'same' }}
             </td>
             <td class="lead">{{ x.isAnchor ? 'baseline'
                  : x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>

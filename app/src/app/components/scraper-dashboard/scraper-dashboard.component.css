@@ -1329,3 +1329,4 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmptable th.lead, .cmptable td.lead { font-weight: 700; }
 .cmptable th.lead { border-bottom: 2px solid #cbd5e1; }
 .cmptable td.lead { font-variant-numeric: tabular-nums; }
+.cmptable td.better { color: #15803d; }

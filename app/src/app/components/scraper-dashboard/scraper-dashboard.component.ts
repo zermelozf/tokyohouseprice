@@ -408,8 +408,13 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     if (!x?.o) return '';
     const gaps = this.shortlistRows().filter(r => r.o).map(r => r.vsBest ?? 0);
     const worst = Math.max(...gaps, 0);
-    if (worst <= 0) return '';
-    const t = Math.min(1, Math.max(0, (x.vsBest ?? 0) / worst));
+    const bestSaving = Math.min(...gaps, 0);
+    const v = x.vsBest ?? 0;
+    // Two half-scales meeting at the baseline: cheaper than it runs into green,
+    // dearer runs to red, and the baseline itself sits at the join.
+    const t = v >= 0
+      ? (worst > 0 ? 0.5 + 0.5 * (v / worst) : 0.5)
+      : (bestSaving < 0 ? 0.5 - 0.5 * (v / bestSaving) : 0.5);
     // 130° green through amber to 0° red, at a lightness that keeps text legible.
     return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 5 * t)}%)`;
   }
@@ -2781,7 +2786,12 @@ ${folders}
     const order = res.verdict?.ranking?.length
       ? res.verdict.ranking
       : res.options.map((_, i) => i).sort((a, b) => res.options[a].pv_cost - res.options[b].pv_cost);
-    const best = res.options[order[0]]?.pv_cost ?? 0;
+    // Measured from the baseline, not from the cheapest row. Measuring from
+    // the cheapest made every figure positive by construction — nothing can be
+    // cheaper than the cheapest — so a column headed "vs baseline" could never
+    // show a saving, which is half of what it is for.
+    const anchorIdx = res.verdict?.anchor_index ?? order[0];
+    const base = res.options[anchorIdx]?.pv_cost ?? 0;
     // IRR against the anchor — the cheapest option on the list — at the same
     // horizon the ranking uses. It used to come from buy_vs_rent_by_option,
     // which measures against the *generic rent baseline* rather than against
@@ -2803,7 +2813,8 @@ ${folders}
         // that is worse. Quoted against the cheapest, so the column reads
         // "what this one costs you extra" rather than a present value nobody
         // can size on its own.
-        vsBest: best - res.options[idx].pv_cost,
+        // Positive: this costs more than the baseline. Negative: it saves.
+        vsBest: base - res.options[idx].pv_cost,
         // An IRR only means "return" when the stream invests: money out first,
         // money back later. The model marks the shape; anything else is a
         // borrowing rate and is shown as a dash rather than a number that
