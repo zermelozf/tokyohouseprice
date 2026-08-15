@@ -298,6 +298,26 @@
       </table>
     </div>
 
+    <!-- A plot is not a home, so the price of one is the plot plus the house.
+         Stated rather than asked: the shortlist is whatever the group liked,
+         and a confirm step there is a door with nothing behind it. -->
+    <div class="landask" *ngIf="shortlistHasLand()">
+      <span class="landask-q">🏗️ Plots are priced with a house on them:</span>
+      <label>house size
+        <input type="number" min="20" max="500" step="10"
+               [(ngModel)]="compareAssumptions.land_build_m2"
+               (ngModelChange)="repriceShortlist()"> m²
+      </label>
+      <label>build cost ¥/m²
+        <input type="number" step="10000" [(ngModel)]="compareAssumptions.build_cost_per_m2"
+               (ngModelChange)="repriceShortlist()">
+      </label>
+      <span class="landask-cost">
+        = {{ fmtYen(compareAssumptions.land_build_m2 * compareAssumptions.build_cost_per_m2) }}
+        added to every plot
+      </span>
+    </div>
+
     <div class="actions searchbar resultbar" *ngIf="shortlist().length">
       <button (click)="runShortlist()" [disabled]="compareLoading">
         💴 Price all {{ shortlist().length > 24 ? 24 : shortlist().length }}
@@ -359,21 +379,6 @@
       A dash means the figure does not apply — a rental has no equity to exit, and
       IRR needs a rent to measure against.
     </p>
-
-    <!-- A plot is not a home: the model needs to know what would be built. -->
-    <div class="landask" *ngIf="hasLandPick() && compareSel.length >= 2">
-      <span class="landask-q">🏗️ A plot can’t be lived in — what would you build on it?</span>
-      <label>house size
-        <input type="number" min="20" max="500" step="10"
-               [(ngModel)]="compareAssumptions.land_build_m2"
-               (ngModelChange)="landSizeConfirmed = false"> m²
-      </label>
-      <label>build cost ¥/m²
-        <input type="number" step="10000" [(ngModel)]="compareAssumptions.build_cost_per_m2"
-               (ngModelChange)="landSizeConfirmed = false">
-      </label>
-      <button (click)="confirmLandSize()">Confirm &amp; run</button>
-    </div>
 
     <ng-container *ngIf="compareResult && compareResult.options.length <= 4"
                   [ngTemplateOutlet]="compareBodyTpl"></ng-container>

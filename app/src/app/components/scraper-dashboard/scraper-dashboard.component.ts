@@ -310,10 +310,22 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   openCompare(): void {
     this.activeTab = 'compare';
-    // Pre-pick the shortlist, up to what the model can chart legibly.
-    if (!this.compareSel.length) {
-      for (const r of this.shortlist().slice(0, this.COMPARE_MAX)) this.toggleCompare(r);
-    }
+    // Price it on arrival. The tab exists to answer one question, and making
+    // you press a button to ask it — after ticking boxes, as it first did — is
+    // ceremony in front of the answer.
+    if (!this.compareResult && !this.compareLoading) this.runShortlist();
+  }
+
+  /** Does the shortlist contain a plot? Then the build assumption is part of
+   * the answer and has to be visible, not buried in a confirm step. */
+  shortlistHasLand(): boolean {
+    return this.shortlist().some(r => r.category === 'land');
+  }
+
+  /** Re-price after changing an assumption, but only if a run already happened
+   * — otherwise editing the field before pressing anything fires a request. */
+  repriceShortlist(): void {
+    if (this.compareResult || this.compareError) this.runShortlist();
   }
 
   /** Who liked it, for the shortlist table. */
@@ -2550,8 +2562,15 @@ ${folders}
    * the answer belongs on the tab you are already looking at. */
   runShortlist(): void {
     const ids = this.shortlist().map(r => r.property_id).slice(0, 24);
-    if (ids.length < 2) return;
-    if (this.shortlist().some(r => r.category === 'land') && !this.landSizeConfirmed) return;
+    if (ids.length < 2) {
+      this.compareError = 'Mark at least two listings ♥︎ — there is nothing to compare yet.';
+      return;
+    }
+    // Deliberately not gated on confirming the build assumption. The tray asks
+    // because you picked one specific plot; here the plots are whatever the
+    // group liked, and refusing to run left the button doing nothing with no
+    // way to say yes. The assumption is stated above the table and re-prices
+    // when changed.
     this.compareLoading = true;
     this.compareError = '';
     this.api.compare(ids, this.compareAssumptions,
