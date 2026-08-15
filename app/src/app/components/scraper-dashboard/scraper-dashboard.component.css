@@ -1325,3 +1325,7 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmpcontrols .hint { font-size: 0.76rem; }
 /* A long press on a table row otherwise selects the text under the finger. */
 .cmptable tr.rowlink { user-select: none; -webkit-touch-callout: none; }
+/* The two columns the decision turns on. */
+.cmptable th.lead, .cmptable td.lead { font-weight: 700; }
+.cmptable th.lead { border-bottom: 2px solid #cbd5e1; }
+.cmptable td.lead { font-variant-numeric: tabular-nums; }

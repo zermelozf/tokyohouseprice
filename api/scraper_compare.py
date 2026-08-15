@@ -438,7 +438,7 @@ def _pv_series(flows: list, mode: str, rate: float) -> list[dict]:
 # question a shortlist exists to answer — so the cap is now what the model can
 # compute in one request, and the UI decides what to draw rather than what to
 # calculate.
-MAX_OPTIONS = 24
+MAX_OPTIONS = 40
 
 
 def _monthly_recurring(yearly: list[float], derived: dict) -> list[float]:

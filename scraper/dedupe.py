@@ -34,7 +34,12 @@ def key(row: dict) -> str | None:
     lat, lng = row.get("lat"), row.get("lng")
     if lat is None or lng is None:
         return None
-    parts = (row.get("category") or "", f"{lat:.6f}", f"{lng:.6f}",
+    # 4 decimals, about 11 m. Six was too strict: the same building posted by
+    # two agents comes back with pins a fraction of a metre apart — 35.7338516
+    # against 35.7338544 — and matched on nothing. Combined with price, area and
+    # category, 11 m cannot merge two different properties: they would have to
+    # be the same size, at the same price, next door to each other.
+    parts = (row.get("category") or "", f"{lat:.4f}", f"{lng:.4f}",
              str(row.get("price_yen") or ""), str(row.get("building_m2") or ""),
              str(row.get("land_m2") or ""))
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:12]

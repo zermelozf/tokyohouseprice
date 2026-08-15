@@ -414,6 +414,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 5 * t)}%)`;
   }
 
+  /** What everything is measured against, for the column headers.
+   *
+   * The default baseline is the least-capital option, which is not the same as
+   * the cheapest overall — a rental commits nothing on day one but can still
+   * cost more over the horizon. Naming it beats calling it "cheapest" and
+   * being wrong whenever those differ. */
+  baselineLabel(): string {
+    const i = this.compareAnchor ?? this.compareResult?.verdict?.anchor_index;
+    const o = (i != null) ? this.compareResult?.options?.[i] : null;
+    return o ? (o.price_raw || this.fmtYen(o.price_yen)) : 'the baseline';
+  }
+
   /** Which row is currently the baseline, as a property id ('' = the cheapest). */
   baselineId(): string {
     const i = this.compareAnchor;
@@ -2734,7 +2746,7 @@ ${folders}
    * the best deal" is the question the shortlist exists to ask. Opens nothing —
    * the answer belongs on the tab you are already looking at. */
   runShortlist(): void {
-    const ids = this.shortlist().map(r => r.property_id).slice(0, 24);
+    const ids = this.shortlist().map(r => r.property_id).slice(0, 40);
     if (ids.length < 2) {
       this.compareError = 'Mark at least two listings ♥︎ — there is nothing to compare yet.';
       return;
@@ -2780,7 +2792,9 @@ ${folders}
     const anchor = res.verdict?.anchor_index;
     return order.map((idx, n) => {
       const vs: any = (res.verdict as any)?.irr_vs_anchor?.[idx];
-      const atHorizon = vs?.series?.length ? vs.series[vs.series.length - 1] : null;
+      const atHorizon = vs?.irr_at_horizon !== undefined
+        ? { irr: vs.irr_at_horizon }
+        : (vs?.series?.length ? vs.series[vs.series.length - 1] : null);
       return {
         o: res.options[idx],
         rank: n + 1,
@@ -2796,7 +2810,9 @@ ${folders}
         // reads fine and is wrong.
         irr: (idx === anchor || vs?.shape !== 'investing') ? null : (atHorizon?.irr ?? null),
         isAnchor: idx === anchor,
-        sellYear: (idx === anchor || vs?.shape !== 'investing') ? null : (vs?.peak_irr_year ?? null),
+        // peak_year — not peak_irr_year, which is nothing and left the column
+        // empty on every row.
+        sellYear: (idx === anchor || vs?.shape !== 'investing') ? null : (vs?.peak_year ?? null),
       };
     });
   }

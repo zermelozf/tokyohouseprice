@@ -287,7 +287,8 @@
                 title="back to measuring from the cheapest option">✕</button>
       </span>
       <span class="muted hint" *ngIf="compareAnchor == null">
-        press and hold a row to measure everything against it
+        measured against <b>{{ baselineLabel() }}</b>, the option needing least cash
+        up front — press and hold a row to use that one instead
       </span>
       <button type="button" class="chip" [class.sel]="agreedOnly" (click)="toggleAgreedOnly()"
               [disabled]="!agreedCount() && !agreedOnly"
@@ -345,26 +346,25 @@
         <thead><tr>
           <th title="cheapest first, by present value over the horizon">#</th>
           <th>listing</th>
+          <!-- The decision, first: what this costs over the baseline, and what
+               the extra capital returns. The rest is how those two arise. -->
+          <th class="lead" [title]="'Present value of the difference against ' + baselineLabel()
+                + ' — what choosing this one costs you over the whole horizon, in today\'s money.'">
+            PV vs baseline</th>
+          <th class="lead" [title]="'Return on the extra money this needs compared with '
+                + baselineLabel() + '. Above the hurdle rate means the extra capital earns '
+                + 'its keep; a dash means the comparison frees cash rather than committing '
+                + 'it, so its IRR is a borrowing rate, not a return.'">
+            IRR vs baseline</th>
           <th title="what leaves your account in year one: rent plus 管理費, or mortgage plus taxes and upkeep">
             monthly now</th>
           <th title="the level payment with the same present value over the whole horizon. Higher than today because rent and costs rise while the levelling discounts at the opportunity cost — it is what the years to come average out to, not what you pay next month.">
             levelled</th>
           <th title="total cost in today's money over the horizon, net of what you could sell it for">
             PV cost</th>
-          <th [title]="compareAnchor == null
-                ? 'how much more than the cheapest on this list'
-                : 'how much more than the row you chose as the baseline'">
-            {{ compareAnchor == null ? 'vs best' : 'vs baseline' }}</th>
           <th title="present value per m² of building, or of land for a plot">¥/m²</th>
           <th title="deposit, taxes and fees on day one">upfront</th>
           <th title="what the equity is worth in today's money at the horizon">exit value</th>
-          <th [title]="'Return on the extra money this needs compared with '
-                + (compareAnchor == null ? 'the cheapest option on the list'
-                                         : 'the row you chose as the baseline')
-                + '. Above the hurdle rate means the extra capital earns its keep; '
-                + 'a dash means the comparison frees cash rather than committing it, '
-                + 'so its IRR is a borrowing rate, not a return.'">
-            IRR vs {{ compareAnchor == null ? 'cheapest' : 'baseline' }}</th>
           <th title="the year that return peaks">best sell</th>
         </tr></thead>
         <tbody>
@@ -384,15 +384,17 @@
                 <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>
                 · {{ likedBy(x.r) }} · {{ x.r.address }}</span>
             </td>
+            <td class="lead" [class.worse]="x.vsBest > 0">
+              {{ x.isAnchor ? '—' : x.vsBest ? '+' + fmtYen(x.vsBest) : (x.o ? 'best' : '—') }}
+            </td>
+            <td class="lead">{{ x.isAnchor ? 'baseline'
+                 : x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
             <td>{{ x.o && x.o.monthly_costs?.length ? fmtYen(x.o.monthly_costs[0]) : '—' }}</td>
             <td class="muted">{{ x.o ? fmtYen(-x.o.monthly_equivalent) : '—' }}</td>
             <td>{{ x.o ? fmtYen(-x.o.pv_cost) : '—' }}</td>
-            <td [class.worse]="x.vsBest > 0">{{ x.vsBest ? '+' + fmtYen(x.vsBest) : (x.rank === 1 ? 'best' : '—') }}</td>
             <td>{{ x.o && x.o.pv_cost_per_m2 ? fmtYen(-x.o.pv_cost_per_m2) : '—' }}</td>
             <td>{{ x.o ? fmtYen(x.o.upfront_cash) : '—' }}</td>
             <td>{{ x.o && x.o.exit_value_pv ? fmtYen(x.o.exit_value_pv) : '—' }}</td>
-            <td>{{ x.isAnchor ? (x.rank === 1 ? 'cheapest' : 'baseline')
-                 : x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
             <td>{{ x.sellYear != null ? 'year ' + x.sellYear : '—' }}</td>
           </tr>
         </tbody>
