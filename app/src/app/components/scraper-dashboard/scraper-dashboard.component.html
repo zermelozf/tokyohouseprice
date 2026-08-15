@@ -301,8 +301,8 @@
     <!-- The assumptions, editable. A comparison is only as good as what it
          assumes, and hiding that behind a defaults file makes the answer look
          like a fact. -->
-    <details class="assumptions" [open]="assumptionsOpen">
-      <summary (click)="assumptionsOpen = !assumptionsOpen">
+    <details class="assumptions" (toggle)="assumptionsOpen = $any($event.target).open">
+      <summary>
         Assumptions
         <span class="muted">— {{ fmtYen(compareAssumptions.baseline_monthly_rent) }}/month
           to rent instead, {{ compareAssumptions.loan_rate * 100 | number:'1.1-2' }}% loan,
@@ -313,10 +313,14 @@
         <label class="fld" *ngFor="let f of COMPARE_FIELDS" [title]="f.hint">
           <span>{{ f.label }}<span *ngIf="f.kind === 'pct'"> %</span></span>
           <input type="number" [step]="f.step" [value]="fieldValue(f)"
-                 (change)="setField(f, $any($event.target).value)">
+                 (input)="setField(f, $any($event.target).value)">
         </label>
       </div>
-      <button class="ghost tiny" (click)="resetAssumptions()">reset to defaults</button>
+      <div class="assumfoot">
+        <button class="ghost tiny" (click)="resetAssumptions()">reset to defaults</button>
+        <span class="muted">every change re-prices the table</span>
+        <span class="note" *ngIf="compareLoading">pricing…</span>
+      </div>
     </details>
 
     <div class="landask" *ngIf="shortlistHasLand()">
