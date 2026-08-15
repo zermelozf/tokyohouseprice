@@ -301,11 +301,29 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
         || r['verdict_via']?.verdict === 'good'
         || (r['reviews'] || []).some((x: any) => x.verdict === 'good');
       if (!yes) return false;
+      if (this.agreedOnly && this.groupMark(r) !== 'agreed') return false;
       const k = r['dup_key'];
       if (k && seen.has(k)) return false;
       if (k) seen.add(k);
       return true;
     });
+  }
+
+  toggleAgreedOnly(): void {
+    this.agreedOnly = !this.agreedOnly;
+    this.runShortlist();
+  }
+
+  /** How many of the shortlist the whole group agreed on. */
+  agreedCount(): number {
+    const seen = new Set<string>();
+    return this.searchAll.filter(r => {
+      if (this.groupMark(r) !== 'agreed') return false;
+      const k = r['dup_key'];
+      if (k && seen.has(k)) return false;
+      if (k) seen.add(k);
+      return true;
+    }).length;
   }
 
   openCompare(): void {
@@ -314,6 +332,27 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // you press a button to ask it — after ticking boxes, as it first did — is
     // ceremony in front of the answer.
     if (!this.compareResult && !this.compareLoading) this.runShortlist();
+  }
+
+  /** Only what the whole group said yes to.
+   *
+   * "We both liked it" is a different shortlist from "one of us liked it", and
+   * it is the one you act on. Agreement needs at least two opinions and no no —
+   * a single ♥︎ is not a consensus, however keen. */
+  agreedOnly = false;
+
+  /** Horizon in years. A slider rather than a constant because it decides the
+   * answer: buying accrues its advantage late, so the ranking can flip between
+   * a stay you would actually make and one you would not. */
+  horizonYears = 20;
+  private horizonTimer: any = null;
+
+  onHorizon(years: number): void {
+    this.horizonYears = years;
+    this.compareAssumptions.simulation_years = years;
+    // Debounced: a slider fires per pixel and each run prices 24 houses.
+    clearTimeout(this.horizonTimer);
+    this.horizonTimer = setTimeout(() => this.runShortlist(), 350);
   }
 
   /** Does the shortlist contain a plot? Then the build assumption is part of
@@ -2238,7 +2277,9 @@ ${folders}
     const good = revs.filter((r: any) => r.verdict === 'good').length;
     const bad = revs.filter((r: any) => r.verdict === 'bad').length;
     if (good && bad) return 'conflict';
-    if (revs.length >= 2 && !bad) return 'agreed';
+    // Agreement needs someone to have actually said yes: two "maybe"s are two
+    // people withholding judgement, which is not a shortlist.
+    if (revs.length >= 2 && !bad && good) return 'agreed';
     if (revs.length >= 2 && !good && bad === revs.length) return 'agreed-no';
     if (!p.verdict && revs.some((r: any) => !r.mine)) return 'awaiting';
     return null;
@@ -2600,8 +2641,17 @@ ${folders}
       ? res.verdict.ranking
       : res.options.map((_, i) => i).sort((a, b) => res.options[a].pv_cost - res.options[b].pv_cost);
     const best = res.options[order[0]]?.pv_cost ?? 0;
+    // IRR against the anchor — the cheapest option on the list — at the same
+    // horizon the ranking uses. It used to come from buy_vs_rent_by_option,
+    // which measures against the *generic rent baseline* rather than against
+    // anything in the table, so a house could show 14% while ranking below a
+    // rental that cost less. Two columns answering different questions read as
+    // a contradiction; on one basis, an IRR above the hurdle and a better PV
+    // are the same statement.
+    const anchor = res.verdict?.anchor_index;
     return order.map((idx, n) => {
-      const bvr = res.verdict?.buy_vs_rent_by_option?.[idx];
+      const vs: any = (res.verdict as any)?.irr_vs_anchor?.[idx];
+      const atHorizon = vs?.series?.length ? vs.series[vs.series.length - 1] : null;
       return {
         o: res.options[idx],
         rank: n + 1,
@@ -2611,8 +2661,13 @@ ${folders}
         // "what this one costs you extra" rather than a present value nobody
         // can size on its own.
         vsBest: best - res.options[idx].pv_cost,
-        irr: bvr?.irr_at_horizon ?? null,
-        sellYear: bvr?.peak_irr_year ?? null,
+        // An IRR only means "return" when the stream invests: money out first,
+        // money back later. The model marks the shape; anything else is a
+        // borrowing rate and is shown as a dash rather than a number that
+        // reads fine and is wrong.
+        irr: (idx === anchor || vs?.shape !== 'investing') ? null : (atHorizon?.irr ?? null),
+        isAnchor: idx === anchor,
+        sellYear: (idx === anchor || vs?.shape !== 'investing') ? null : (vs?.peak_irr_year ?? null),
       };
     });
   }

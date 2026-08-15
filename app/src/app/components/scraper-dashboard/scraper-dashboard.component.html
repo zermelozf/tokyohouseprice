@@ -274,6 +274,21 @@
       Nothing marked ♥︎ yet — grade some listings and they turn up here.
     </p>
 
+    <div class="cmpcontrols">
+      <label class="fld horizon">
+        <span>hold for {{ horizonYears }} years</span>
+        <input type="range" min="5" max="40" step="1" [value]="horizonYears"
+               (input)="onHorizon(+$any($event.target).value)"
+               title="how long you keep the place. Buying earns its advantage late, so this can change the ranking.">
+      </label>
+      <button type="button" class="chip" [class.sel]="agreedOnly" (click)="toggleAgreedOnly()"
+              [disabled]="!agreedCount() && !agreedOnly"
+              [title]="agreedCount() ? 'only the houses everyone who looked said yes to'
+                                     : 'nobody has agreed on one yet — it needs two ♥︎ and no ✕'">
+        ✓ agreed only <span class="cnt">{{ agreedCount() }}</span>
+      </button>
+    </div>
+
     <div class="landask" *ngIf="shortlistHasLand()">
       <span class="landask-q">🏗️ Plots are priced with a house on them:</span>
       <label>house size
@@ -311,7 +326,8 @@
           <th title="present value per m² of building, or of land for a plot">¥/m²</th>
           <th title="deposit, taxes and fees on day one">upfront</th>
           <th title="what the equity is worth in today's money at the horizon">exit value</th>
-          <th title="return against the rent baseline, at the horizon">IRR</th>
+          <th title="return on the extra money this needs compared with the cheapest option on the list. Above the hurdle rate means the extra capital earns its keep; a dash means the comparison frees cash rather than committing it, so its IRR is a borrowing rate, not a return.">
+            IRR vs cheapest</th>
           <th title="the year that return peaks">best sell</th>
         </tr></thead>
         <tbody>
@@ -333,7 +349,8 @@
             <td>{{ x.o && x.o.pv_cost_per_m2 ? fmtYen(-x.o.pv_cost_per_m2) : '—' }}</td>
             <td>{{ x.o ? fmtYen(x.o.upfront_cash) : '—' }}</td>
             <td>{{ x.o && x.o.exit_value_pv ? fmtYen(x.o.exit_value_pv) : '—' }}</td>
-            <td>{{ x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
+            <td>{{ x.isAnchor ? 'cheapest'
+                 : x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
             <td>{{ x.sellYear != null ? 'year ' + x.sellYear : '—' }}</td>
           </tr>
         </tbody>

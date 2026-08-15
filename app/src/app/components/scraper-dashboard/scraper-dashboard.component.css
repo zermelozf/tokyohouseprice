@@ -1302,3 +1302,8 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmptable .cmpname { white-space: normal; min-width: 12rem; }
 .cmptable .cmpname .muted { display: block; font-size: 0.72rem; font-weight: 400; }
 .cmptable td.worse { color: #b45309; }
+.cmpcontrols { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap;
+               margin: 0.2rem 0 0.6rem; }
+.cmpcontrols .horizon { min-width: 15rem; }
+.cmpcontrols .horizon input { width: 100%; }
+.cmpcontrols .cnt { opacity: 0.6; }

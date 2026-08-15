@@ -638,8 +638,21 @@ def compare(req: CompareRequest) -> dict:
     # rank. Anchoring on an expensive rental instead makes moving to a cheaper
     # one release cash, whose IRR is a borrowing rate and is not comparable.
     # (pv_cost is negative, so the least negative is the cheapest.)
-    ladder = sorted(range(len(options)),
-                    key=lambda i: (upfront(options[i]), -options[i]["pv_cost"]))
+    ordered = sorted(range(len(options)),
+                     key=lambda i: (upfront(options[i]), -options[i]["pv_cost"]))
+    # Only the options worth stepping to. An option is on the ladder if nothing
+    # cheaper to enter also costs less overall — otherwise the rung measures the
+    # step against something already beaten, and reads as a return that is not
+    # there. With sixteen rentals at zero capital the ladder walked all of them
+    # in rising order and then priced the plot against the *worst* rental: 16%,
+    # while the same plot loses to the cheapest rental on present value. A rung
+    # now compares against the best option available for less money, which is
+    # the only comparison an incremental IRR can answer.
+    ladder, best_pv = [], None
+    for i in ordered:
+        if best_pv is None or options[i]["pv_cost"] > best_pv:
+            ladder.append(i)
+            best_pv = options[i]["pv_cost"]
     steps = []
     hurdle = a.opportunity_cost
     for lo, hi in zip(ladder, ladder[1:]):
