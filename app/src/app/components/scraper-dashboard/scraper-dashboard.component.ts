@@ -2760,7 +2760,7 @@ ${folders}
       next: res => {
         this.compareLoading = false;
         if (res.error) { this.compareError = res.error; this.compareResult = null; }
-        else this.compareResult = res;
+        else { this.compareResult = res; this.resultSeq++; }
       },
       error: err => {
         this.compareLoading = false;
@@ -2838,13 +2838,17 @@ ${folders}
   // stopped opening and a long press never completed. Same objects out for the
   // same inputs, plus trackBy in the template, and the rows stay put.
   private rowsCache: { key: string; rows: any[] } | null = null;
+  /** Bumped whenever a new set of prices arrives. */
+  private resultSeq = 0;
 
   shortlistRows(): any[] {
     const short = this.shortlist();
-    const key = [this.compareResult?.verdict?.anchor_index,
-                 this.compareResult?.options?.length,
-                 this.compareResult?.assumptions?.simulation_years,
-                 this.agreedOnly, short.length,
+    // resultSeq, not the shape of the result: changing an assumption re-prices
+    // the same listings in the same order, so a key built from counts and
+    // indexes is identical afterwards and the table kept showing the old
+    // numbers. Raising the build cost by ¥150k/m² moves a plot's present value
+    // by ¥26M and nothing appeared to happen.
+    const key = [this.resultSeq, this.agreedOnly, short.length,
                  short.map(r => r.property_id + ':' + (r['verdict'] || '')).join(',')].join('|');
     if (this.rowsCache?.key === key) return this.rowsCache.rows;
     const rows = this.buildShortlistRows(short);
@@ -2887,6 +2891,7 @@ ${folders}
         this.compareLoading = false;
         if (res.error) { this.compareError = res.error; this.compareResult = null; }
         else { this.compareResult = res; }
+        this.resultSeq++;
       },
       error: err => {
         this.compareLoading = false;
