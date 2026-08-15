@@ -281,6 +281,17 @@
                (input)="onHorizon(+$any($event.target).value)"
                title="how long you keep the place. Buying earns its advantage late, so this can change the ranking.">
       </label>
+      <label class="fld">
+        <span>measured against</span>
+        <select [value]="baselineId()"
+                (change)="setBaseline($any($event.target).value || null)"
+                title="what 'vs best' and the IRR are measured from. The cheapest option is the only choice that makes every comparison an investment rather than a loan — anything else can produce returns that are borrowing rates.">
+          <option value="">the cheapest option</option>
+          <option *ngFor="let x of shortlistRows()" [value]="x.r.property_id">
+            {{ x.r.price_raw }} · {{ x.r['property_label'] || catLabel(x.r.category) }}
+          </option>
+        </select>
+      </label>
       <button type="button" class="chip" [class.sel]="agreedOnly" (click)="toggleAgreedOnly()"
               [disabled]="!agreedCount() && !agreedOnly"
               [title]="agreedCount() ? 'only the houses everyone who looked said yes to'
@@ -288,6 +299,27 @@
         ✓ agreed only <span class="cnt">{{ agreedCount() }}</span>
       </button>
     </div>
+
+    <!-- The assumptions, editable. A comparison is only as good as what it
+         assumes, and hiding that behind a defaults file makes the answer look
+         like a fact. -->
+    <details class="assumptions" [open]="assumptionsOpen">
+      <summary (click)="assumptionsOpen = !assumptionsOpen">
+        Assumptions
+        <span class="muted">— {{ fmtYen(compareAssumptions.baseline_monthly_rent) }}/month
+          to rent instead, {{ compareAssumptions.loan_rate * 100 | number:'1.1-2' }}% loan,
+          {{ compareAssumptions.opportunity_cost_real * 100 | number:'1.1-2' }}% real
+          opportunity cost</span>
+      </summary>
+      <div class="assumgrid">
+        <label class="fld" *ngFor="let f of COMPARE_FIELDS" [title]="f.hint">
+          <span>{{ f.label }}<span *ngIf="f.kind === 'pct'"> %</span></span>
+          <input type="number" [step]="f.step" [value]="fieldValue(f)"
+                 (change)="setField(f, $any($event.target).value)">
+        </label>
+      </div>
+      <button class="ghost tiny" (click)="resetAssumptions()">reset to defaults</button>
+    </details>
 
     <div class="landask" *ngIf="shortlistHasLand()">
       <span class="landask-q">🏗️ Plots are priced with a house on them:</span>

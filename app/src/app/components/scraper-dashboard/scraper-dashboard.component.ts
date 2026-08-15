@@ -309,6 +309,83 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     });
   }
 
+  /** The assumptions worth arguing about, as editable fields.
+   *
+   * Everything the model takes is adjustable through the API; these are the
+   * ones that change an answer rather than a detail — a rate, a horizon, what
+   * you would pay to rent instead. The rest keep their defaults, which are
+   * documented in api/scraper_compare.py. */
+  readonly COMPARE_FIELDS: { key: keyof CompareAssumptions; label: string;
+                             kind: 'pct' | 'yen' | 'num'; step: number;
+                             hint: string }[] = [
+    { key: 'baseline_monthly_rent', label: 'rent instead', kind: 'yen', step: 10000,
+      hint: 'What you would pay to rent if you bought nothing. It cancels out '
+          + 'between two purchases, but it is what a purchase is measured against.' },
+    { key: 'loan_rate', label: 'loan rate', kind: 'pct', step: 0.1,
+      hint: 'Nominal mortgage rate.' },
+    { key: 'loan_term', label: 'loan years', kind: 'num', step: 1, hint: '' },
+    { key: 'down_payment_pct', label: 'down payment', kind: 'pct', step: 1,
+      hint: 'Share of the price paid in cash on day one.' },
+    { key: 'opportunity_cost_real', label: 'opportunity cost', kind: 'pct', step: 0.5,
+      hint: 'REAL return on the money you would otherwise invest. This is the '
+          + 'hurdle a purchase has to clear, and the rate everything is '
+          + 'discounted at.' },
+    { key: 'rent_inflation', label: 'rent inflation', kind: 'pct', step: 0.25,
+      hint: 'Rents and running costs both rise at this, unless cost inflation '
+          + 'is set separately.' },
+    { key: 'maintenance_rate', label: 'maintenance', kind: 'pct', step: 0.1,
+      hint: 'Yearly, as a share of the building value — not of the price, since '
+          + 'land needs no upkeep.' },
+    { key: 'land_spread_vs_rent', label: 'land growth vs rent', kind: 'pct', step: 0.25,
+      hint: 'How much faster (or slower) land prices rise than rents. Zero '
+          + 'means land tracks rents.' },
+    { key: 'build_cost_per_m2', label: 'build cost ¥/m²', kind: 'yen', step: 10000,
+      hint: 'Used to price a plot as plot plus house, and to split a price into '
+          + 'land and building for depreciation.' },
+    { key: 'land_build_m2', label: 'house on a plot m²', kind: 'num', step: 5,
+      hint: 'The house assumed on a bare plot.' },
+  ];
+
+  /** Percentages are stored as fractions and shown as percents. */
+  fieldValue(f: any): number {
+    const v: any = (this.compareAssumptions as any)[f.key];
+    return f.kind === 'pct' ? Math.round((v ?? 0) * 10000) / 100 : v;
+  }
+
+  setField(f: any, raw: string): void {
+    const n = Number(raw);
+    if (!isFinite(n)) return;
+    (this.compareAssumptions as any)[f.key] = f.kind === 'pct' ? n / 100 : n;
+    clearTimeout(this.horizonTimer);
+    this.horizonTimer = setTimeout(() => this.runShortlist(), 400);
+  }
+
+  resetAssumptions(): void {
+    this.compareAssumptions = { ...this._defaults,
+                                simulation_years: this.horizonYears };
+    this.runShortlist();
+  }
+
+  /** Which row is currently the baseline, as a property id ('' = the cheapest). */
+  baselineId(): string {
+    const i = this.compareAnchor;
+    if (i == null) return '';
+    return this.compareResult?.options?.[i]?.property_id ?? '';
+  }
+
+  /** Compare everything against this row instead of the cheapest.
+   *
+   * The anchor sets what "extra capital" and "IRR" are measured from. The
+   * default is the cheapest option, which is the only choice that makes every
+   * comparison an investment rather than a loan — but "against the flat we
+   * live in now" is a question worth being able to ask. */
+  setBaseline(propertyId: string | null): void {
+    if (!propertyId) { this.compareAnchor = null; this.runShortlist(); return; }
+    const idx = this.compareResult?.options?.findIndex(o => o.property_id === propertyId);
+    this.compareAnchor = (idx != null && idx >= 0) ? idx : null;
+    this.runShortlist();
+  }
+
   toggleAgreedOnly(): void {
     this.agreedOnly = !this.agreedOnly;
     this.runShortlist();
@@ -340,6 +417,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * it is the one you act on. Agreement needs at least two opinions and no no —
    * a single ♥︎ is not a consensus, however keen. */
   agreedOnly = false;
+  assumptionsOpen = false;
 
   /** Horizon in years. A slider rather than a constant because it decides the
    * answer: buying accrues its advantage late, so the ranking can flip between
@@ -1180,8 +1258,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     cgt_short_rate: 0.3963, cgt_long_rate: 0.20315, cgt_short_years: 5,
     cgt_exemption: 30_000_000, sale_discount_pct: 0,
     key_money_months: 1, guarantee_months: 0.5, moving_cost: 300_000, move_every_years: 0,
-    land_build_m2: 120, residential_land_relief: true, baseline_monthly_rent: 250_000,
+    land_build_m2: 120, residential_land_relief: true, baseline_monthly_rent: 300_000,
   };
+  // Snapshot before anything edits the live object, so "reset" restores what
+  // the model documents rather than whatever was last typed.
+  private readonly _defaults = { ...this.compareAssumptions };
   // A plot needs a house before it can be compared with one, and the size is a
   // decision the user must make rather than inherit silently from a default.
   landSizeConfirmed = false;

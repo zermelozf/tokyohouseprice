@@ -126,7 +126,12 @@ class Assumptions(BaseModel):
     # the reduction applies.
     residential_land_relief: bool = True
     # Rent baseline for buy-vs-buy (cancels out of the difference).
-    baseline_monthly_rent: int = 250_000
+    # What you would otherwise pay to rent. It cancels out of comparisons
+    # between two purchases, but it is the thing a purchase is measured against
+    # when no rental is on the table, so it should look like the rent you would
+    # actually sign — 30万 for a family-sized flat in this catchment, not the
+    # market median.
+    baseline_monthly_rent: int = 300_000
 
 
     @property

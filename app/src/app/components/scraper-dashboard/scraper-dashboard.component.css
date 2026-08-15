@@ -1307,3 +1307,13 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmpcontrols .horizon { min-width: 15rem; }
 .cmpcontrols .horizon input { width: 100%; }
 .cmpcontrols .cnt { opacity: 0.6; }
+.assumptions { border: 1px solid #eef0f3; border-radius: 5px; padding: 0.5rem 0.7rem;
+               margin-bottom: 0.6rem; background: #fafbfc; }
+.assumptions summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+.assumptions summary .muted { font-weight: 400; font-size: 0.78rem; }
+.assumgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+             gap: 0.5rem 0.8rem; margin: 0.6rem 0; }
+.assumgrid .fld input { width: 100%; padding: 0.28rem 0.35rem; font-size: 0.8rem;
+                        border: 1px solid #ddd; border-radius: 3px; }
+.cmpcontrols .fld select { padding: 0.28rem 0.35rem; font-size: 0.8rem;
+                           border: 1px solid #ddd; border-radius: 3px; max-width: 16rem; }
