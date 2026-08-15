@@ -420,15 +420,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * not a chart. */
   rowTint(x: any): string {
     if (!x?.o) return '';
-    const gaps = this.shortlistRows().filter(r => r.o).map(r => r.vsBest ?? 0);
-    const worst = Math.max(...gaps, 0);
-    const bestSaving = Math.min(...gaps, 0);
-    const v = x.vsBest ?? 0;
-    // Two half-scales meeting at the baseline: cheaper than it runs into green,
-    // dearer runs to red, and the baseline itself sits at the join.
+    // vsBest is a saving, so cost is its negative — the scale runs from the
+    // biggest saving (green) through the baseline to the dearest (red).
+    const costs = this.shortlistRows().filter(r => r.o).map(r => -(r.vsBest ?? 0));
+    const dearest = Math.max(...costs, 0);
+    const cheapest = Math.min(...costs, 0);
+    const v = -(x.vsBest ?? 0);
+    // Two half-scales meeting at the baseline, which sits at the join.
     const t = v >= 0
-      ? (worst > 0 ? 0.5 + 0.5 * (v / worst) : 0.5)
-      : (bestSaving < 0 ? 0.5 - 0.5 * (v / bestSaving) : 0.5);
+      ? (dearest > 0 ? 0.5 + 0.5 * (v / dearest) : 0.5)
+      : (cheapest < 0 ? 0.5 - 0.5 * (v / cheapest) : 0.5);
     // 130° green through amber to 0° red, at a lightness that keeps text legible.
     return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 5 * t)}%)`;
   }
@@ -2834,8 +2835,11 @@ ${folders}
         // that is worse. Quoted against the cheapest, so the column reads
         // "what this one costs you extra" rather than a present value nobody
         // can size on its own.
-        // Positive: this costs more than the baseline. Negative: it saves.
-        vsBest: base - res.options[idx].pv_cost,
+        // Positive means money in your pocket: this option saves that much
+        // against the baseline over the horizon. Negative means it costs that
+        // much more. The other way round — positive for "extra cost" — reads
+        // backwards next to a green row.
+        vsBest: res.options[idx].pv_cost - base,
         // An IRR only means "return" when the stream invests: money out first,
         // money back later. The model marks the shape; anything else is a
         // borrowing rate and is shown as a dash rather than a number that

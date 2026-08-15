@@ -348,9 +348,10 @@
           <th>listing</th>
           <!-- The decision, first: what this costs over the baseline, and what
                the extra capital returns. The rest is how those two arise. -->
-          <th class="lead" [title]="'Present value of the difference against ' + baselineLabel()
-                + ' — what choosing this one costs you over the whole horizon, in today\'s money.'">
-            PV vs baseline</th>
+          <th class="lead" [title]="'Against ' + baselineLabel() + ', in today\'s money over '
+                + 'the whole horizon. Positive is money you keep by choosing this one; '
+                + 'negative is what it costs you over the baseline.'">
+            PV saved vs baseline</th>
           <th class="lead" [title]="'Return on the extra money this needs compared with '
                 + baselineLabel() + '. Above the hurdle rate means the extra capital earns '
                 + 'its keep; a dash means the comparison frees cash rather than committing '
@@ -384,7 +385,7 @@
                 <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>
                 · {{ likedBy(x.r) }} · {{ x.r.address }}</span>
             </td>
-            <td class="lead" [class.worse]="x.vsBest > 0" [class.better]="x.vsBest < 0">
+            <td class="lead" [class.better]="x.vsBest > 0" [class.worse]="x.vsBest < 0">
               {{ x.isAnchor ? 'baseline'
                  : !x.o ? '—'
                  : x.vsBest > 0 ? '+' + fmtYen(x.vsBest)
