@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { Auth, authState } from '@angular/fire/auth';
 import { map, take } from 'rxjs';
 
@@ -17,5 +17,12 @@ import { map, take } from 'rxjs';
  */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(Auth);
-  return authState(auth).pipe(take(1), map(user => !!user));
+  const router = inject(Router);
+  // Redirect rather than return false: refusing a direct visit to /scraper
+  // cancels the navigation, which on a fresh load leaves an empty page with no
+  // way out. Sending them home at least lands somewhere with a sign-in button.
+  return authState(auth).pipe(
+    take(1),
+    map(user => user ? true : router.parseUrl('/')),
+  );
 };

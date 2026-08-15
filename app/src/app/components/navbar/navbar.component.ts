@@ -48,8 +48,10 @@ import { AuthService } from '../../services/auth.service';
               Rent vs Buy
             </a>
             
-            <!-- Local-only SUUMO scraper dashboard; hidden in production builds. -->
-            <a *ngIf="showScraper"
+            <!-- Local-only SUUMO scraper dashboard: hidden in production builds,
+                 and hidden until you are signed in — the route and the API both
+                 refuse anyway, so offering the link is just a dead end. -->
+            <a *ngIf="showScraper && (auth.user$ | async)"
                routerLink="/scraper"
                class="navbar-item"
                routerLinkActive="active"
@@ -399,8 +401,8 @@ export class NavbarComponent implements OnInit {
   currentLang: string;
   isMenuOpen = false;
   isBlogMenuOpen = false;
-  // Only show the link when the scraper route actually exists in this build
-  // (i.e. local dev). Empty devRoutes in deploy builds → link hidden.
+  // The route has to exist in this build (local dev; devRoutes is emptied in
+  // deploy builds) *and* you have to be signed in — see the template.
   showScraper = devRoutes.some(r => r.path === 'scraper');
   busy = false;
   authError = '';
