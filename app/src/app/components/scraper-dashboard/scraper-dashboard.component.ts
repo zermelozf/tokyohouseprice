@@ -1131,7 +1131,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   compareAssumptions: CompareAssumptions = {
     loan_rate: 0.015, loan_term: 35, down_payment_pct: 0.20, broker_fee_pct: 0.035,
     maintenance_rate: 0.007, land_spread_vs_rent: 0, rent_inflation: 0.01,
-    renewal_fee_months: 1, opportunity_cost_real: 0.05, simulation_years: 40,
+    renewal_fee_months: 1, opportunity_cost_real: 0.05, simulation_years: 20,
     build_cost_per_m2: 250_000, build_cost_per_m2_rc: 350_000,
     cost_inflation: null, property_tax_rate: 0.014, city_planning_rate: 0.003,
     building_assessment_ratio: 0.55, new_build_relief_years: 3,

@@ -83,7 +83,12 @@ class Assumptions(BaseModel):
     # nominal 6% while inflation moves silently cuts the real return, which
     # made high inflation look like a windfall for buying. Nominal is derived.
     opportunity_cost_real: float = 0.05
-    simulation_years: int = 40
+    # 20, not 40. A horizon is a claim about how long you will hold the place,
+    # and 40 years asserts you never move again — while quietly deciding the
+    # answer, since buying's advantage accrues late and a long horizon lets it
+    # accumulate. It also makes the levelled monthly figure drift further from
+    # what you actually pay. Twenty years is a house move away, not a lifetime.
+    simulation_years: int = 20
     # Replacement cost of the building as new. Used to split an asking price
     # into land and building, which is what drives depreciation.
     build_cost_per_m2: int = 250_000          # 木造
