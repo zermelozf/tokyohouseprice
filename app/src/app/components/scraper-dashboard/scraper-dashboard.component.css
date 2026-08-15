@@ -1295,3 +1295,5 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .grouplegend .lgdot { background: #94a3b8; }      /* a stand-in for "any type" */
 .grouplegend .lgdot.dot-goodring { border: 2px solid #15803d; }
 .grouplegend .lgdot.dot-fade { opacity: 0.35; border: 2px solid #d7dce2; }
+.tabcount { background: #FF69B4; color: #fff; border-radius: 9px; padding: 0 0.35rem;
+            font-size: 0.7rem; font-weight: 700; }

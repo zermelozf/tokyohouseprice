@@ -127,7 +127,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   showJobForm = false;
 
   // Which tab is visible. Crawlers (running/scheduled + status) is the default.
-  activeTab: 'crawlers' | 'search' | 'report' | 'map' | 'groups' = 'crawlers';
+  activeTab: 'crawlers' | 'search' | 'report' | 'map' | 'groups' | 'compare' = 'crawlers';
 
   // --- Report tab: what changed between two crawls ---------------------------
   crawlDates: CrawlDate[] = [];
@@ -285,6 +285,42 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   centreTab(e: Event): void {
     const btn = (e.target as HTMLElement)?.closest('button');
     btn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  }
+
+  // --- the shortlist -------------------------------------------------------
+  /** Everything anyone in the group said yes to, one row per house.
+   *
+   * A re-post inherits the verdict, so a house liked once does not appear four
+   * times here; and a listing you rejected but your partner liked still counts
+   * as a candidate — the point of the tab is to price what is still in play,
+   * not to settle who was right. */
+  shortlist(): any[] {
+    const seen = new Set<string>();
+    return this.searchAll.filter(r => {
+      const yes = r['verdict'] === 'good'
+        || r['verdict_via']?.verdict === 'good'
+        || (r['reviews'] || []).some((x: any) => x.verdict === 'good');
+      if (!yes) return false;
+      const k = r['dup_key'];
+      if (k && seen.has(k)) return false;
+      if (k) seen.add(k);
+      return true;
+    });
+  }
+
+  openCompare(): void {
+    this.activeTab = 'compare';
+    // Pre-pick the shortlist, up to what the model can chart legibly.
+    if (!this.compareSel.length) {
+      for (const r of this.shortlist().slice(0, this.COMPARE_MAX)) this.toggleCompare(r);
+    }
+  }
+
+  /** Who liked it, for the shortlist table. */
+  likedBy(r: any): string {
+    const names = (r.reviews || []).filter((x: any) => x.verdict === 'good')
+      .map((x: any) => x.mine ? 'you' : x.name);
+    return names.join(', ') || (r.verdict_via ? 'you (as a re-post)' : 'you');
   }
 
   openGroups(): void {

@@ -136,6 +136,10 @@
     <button [class.sel]="activeTab === 'search'" (click)="activeTab = 'search'">Search</button>
     <button [class.sel]="activeTab === 'report'" (click)="openDiffReport()">Report</button>
     <button [class.sel]="activeTab === 'map'" (click)="openMap()">Map</button>
+    <button [class.sel]="activeTab === 'compare'" (click)="openCompare()">
+      Compare
+      <span class="tabcount" *ngIf="shortlist().length">{{ shortlist().length }}</span>
+    </button>
     <!-- Admin only: managing who may sign in is not a thing to leave lying
          around for people who cannot act on it. -->
     <button *ngIf="accessInfo?.is_admin" [class.sel]="activeTab === 'groups'"
@@ -254,6 +258,72 @@
     <p class="cfgline muted" *ngIf="config">
       config · data: <code>{{ config.data_dir }}</code> · db: <code>{{ config.db_path }}</code> · default delay {{ config.default_min_delay }}–{{ config.default_max_delay }}s
     </p>
+  </section>
+
+  <!-- ============ COMPARE TAB (the shortlist, priced) ============ -->
+  <section class="card" *ngIf="activeTab === 'compare'">
+    <h2>Compare the shortlist</h2>
+    <p class="muted top0">
+      Everything anyone in your group said yes to, priced against each other with
+      the same rent-vs-buy model. A house liked once appears once, however many
+      agents posted it.
+    </p>
+
+    <p class="muted" *ngIf="!shortlist().length">
+      Nothing marked ♥︎ yet — grade some listings and they turn up here.
+    </p>
+
+    <div class="tablewrap" *ngIf="shortlist().length">
+      <table>
+        <thead><tr>
+          <th>compare</th><th>type</th><th>price</th><th>size</th>
+          <th>🎓 LFIT</th><th>liked by</th><th>address</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngFor="let r of shortlist()" class="rowlink"
+              [class.picked]="isCompared(r.property_id)" (click)="toggleCompare(r)">
+            <td class="pickcol">
+              <input type="checkbox" [checked]="isCompared(r.property_id)"
+                     (click)="$event.stopPropagation(); toggleCompare(r)">
+            </td>
+            <td class="cattag">{{ r['property_label'] || catLabel(r.category) }}</td>
+            <td>{{ r.price_raw || fmtYen(r.price_yen) }}</td>
+            <td>{{ areaSpan(r.building_m2, r['building_m2_max']) }}<span
+                  *ngIf="!r.building_m2 && r.land_m2">{{ areaSpan(r.land_m2, r['land_m2_max']) }} land</span></td>
+            <td>{{ r['commute_min'] != null ? r['commute_min'] + '′' : '—' }}</td>
+            <td class="muted">{{ likedBy(r) }}</td>
+            <td class="addr">{{ r.address }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions searchbar resultbar" *ngIf="shortlist().length">
+      <span class="muted">{{ compareSel.length }} of {{ COMPARE_MAX }} picked</span>
+      <button (click)="runCompare()"
+              [disabled]="compareSel.length < 2 || hasLandPick() && !landSizeConfirmed">
+        Run the model
+      </button>
+      <button class="ghost tiny" (click)="clearCompare()" *ngIf="compareSel.length">clear</button>
+      <span class="muted" *ngIf="compareSel.length < 2">pick at least two</span>
+    </div>
+
+    <!-- A plot is not a home: the model needs to know what would be built. -->
+    <div class="landask" *ngIf="hasLandPick() && compareSel.length >= 2">
+      <span class="landask-q">🏗️ A plot can’t be lived in — what would you build on it?</span>
+      <label>house size
+        <input type="number" min="20" max="500" step="10"
+               [(ngModel)]="compareAssumptions.land_build_m2"
+               (ngModelChange)="landSizeConfirmed = false"> m²
+      </label>
+      <label>build cost ¥/m²
+        <input type="number" step="10000" [(ngModel)]="compareAssumptions.build_cost_per_m2"
+               (ngModelChange)="landSizeConfirmed = false">
+      </label>
+      <button (click)="confirmLandSize()">Confirm &amp; run</button>
+    </div>
+
+    <ng-container *ngTemplateOutlet="compareBodyTpl"></ng-container>
   </section>
 
   <!-- ============ GROUPS TAB (admin only) ============ -->
@@ -1162,13 +1232,10 @@
 </div>
 
 <!-- ============ compare results ============ -->
-<div class="modal-backdrop" *ngIf="compareOpen" (click)="compareOpen = false">
-  <div class="modal cmpmodal" (click)="$event.stopPropagation()">
-    <div class="modal-head">
-      <b>Rent vs buy — two listings, one model</b>
-      <button class="ghost tiny" (click)="compareOpen = false">✕ close</button>
-    </div>
-    <div class="modal-body">
+<!-- The comparison itself, shown either in the tray modal or on the Compare -->
+<!-- tab. One copy: the model output is long, and two versions of it would    -->
+<!-- drift the moment either changed.                                          -->
+<ng-template #compareBodyTpl>
       <p class="muted" *ngIf="compareLoading">Running the NPV model…</p>
       <div class="err" *ngIf="compareError">⚠ {{ compareError }}</div>
 
@@ -1496,6 +1563,16 @@
           <button (click)="runCompare()">Re-run with these</button>
         </details>
       </ng-container>
+</ng-template>
+
+<div class="modal-backdrop" *ngIf="compareOpen" (click)="compareOpen = false">
+  <div class="modal cmpmodal" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <b>Rent vs buy — two listings, one model</b>
+      <button class="ghost tiny" (click)="compareOpen = false">✕ close</button>
+    </div>
+    <div class="modal-body">
+      <ng-container *ngTemplateOutlet="compareBodyTpl"></ng-container>
     </div>
   </div>
 </div>
