@@ -290,7 +290,7 @@ button.xtiny.danger:hover { background: #fdf0f4; }
   width: 26px; height: 26px; border-radius: 50%;
   color: #fff; font-size: 12px; font-weight: 700;
   font-family: -apple-system, "Segoe UI", sans-serif;
-  border: 2.5px solid #fff; box-sizing: border-box;
+  border: 2.5px solid rgba(255,255,255,0.9); box-sizing: border-box;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   cursor: pointer; transition: transform 0.12s ease;
 }

@@ -2197,6 +2197,9 @@ ${folders}
   }
 
   private markerStyle(p: MapPoint, radius: number): any {
+    // Fill is the type, always. The ring is the opinion. Nothing here touches
+    // fillColor: painting a verdict into it meant a 賃貸 you had agreed on was
+    // drawn in 土地's gold.
     const base = { pane: 'listings', radius, opacity: 1, fillOpacity: 1,
                    weight: 2.5, color: '#ffffff', className: 'listing-dot',
                    fillColor: this.pointColor(p) };
@@ -2206,38 +2209,40 @@ ${folders}
     if (mark === 'conflict') {
       // Deliberately loud. One of you wants this house and the other does not,
       // which is a conversation to have, not a dot to lose.
-      return { ...base, radius: radius + 2, fillColor: '#d4a017',
-               color: '#c2410c', weight: 4, className: 'listing-dot dot-conflict' };
+      return { ...base, radius: radius + 2, color: this.RING.conflict, weight: 4,
+               className: 'listing-dot dot-conflict' };
     }
     if (mark === 'agreed') {
-      return { ...base, radius: radius + 3, fillColor: '#d4a017',
-               color: '#15803d', weight: 4, className: 'listing-dot dot-agreed' };
+      return { ...base, radius: radius + 3, color: this.RING.agreed, weight: 4,
+               className: 'listing-dot dot-agreed' };
     }
     if (mark === 'awaiting') {
-      const theirs = (p as any).reviews.find((r: any) => !r.mine)?.verdict;
-      return { ...base, radius: radius + 1,
-               fillColor: theirs === 'bad' ? '#b6bdc6' : '#d4a017',
-               color: '#7c3aed', weight: 3, className: 'listing-dot dot-awaiting' };
+      return { ...base, radius: radius + 1, color: this.RING.awaiting, weight: 3,
+               className: 'listing-dot dot-awaiting' };
     }
     if (mark === 'agreed-no') {
-      return { ...base, radius: Math.max(3, radius - 3), fillColor: '#c9ced5',
-               fillOpacity: 0.3, color: '#e3e7ec', weight: 1,
+      return { ...base, radius: Math.max(3, radius - 3), fillOpacity: 0.25,
+               opacity: 0.5, color: this.RING.bad, weight: 1,
                className: 'listing-dot dot-bad' };
     }
 
-    if (p.verdict === 'bad') {
-      // Greyed out and shrunk: still there so you know it was judged, but it
-      // stops competing for attention.
-      return { ...base, radius: Math.max(4, radius - 2), fillColor: '#b6bdc6',
-               fillOpacity: 0.45, color: '#d7dce2', weight: 1.5,
+    // Your own verdict, when the group has not spoken. A re-post inherits it,
+    // so the same house looks the same however many times it is listed.
+    const mine = p.verdict || (p as any)['verdict_via']?.verdict;
+    if (mine === 'bad') {
+      // Faded and shrunk: still there so you know it was judged, but it stops
+      // competing for attention. It keeps its type colour, dimmed, so you can
+      // still see what it was without opening it.
+      return { ...base, radius: Math.max(4, radius - 2), fillOpacity: 0.35,
+               opacity: 0.6, color: this.RING.bad, weight: 1.5,
                className: 'listing-dot dot-bad' };
     }
-    if (p.verdict === 'good') {
-      return { ...base, radius: radius + 1, fillColor: '#d4a017',
-               color: '#8a6d0b', weight: 3, className: 'listing-dot dot-good' };
+    if (mine === 'good') {
+      return { ...base, radius: radius + 1, color: this.RING.good, weight: 3.5,
+               className: 'listing-dot dot-good' };
     }
-    if (p.verdict === 'maybe') {
-      return { ...base, color: '#2563eb', weight: 3.5,
+    if (mine === 'maybe') {
+      return { ...base, color: this.RING.maybe, weight: 3.5,
                className: 'listing-dot dot-maybe' };
     }
     return base;
@@ -2279,18 +2284,34 @@ ${folders}
     const [lat, lng] = [points[0].lat, points[0].lng];
     // Mixed groups read as grey; a uniform one keeps its colour — under
     // whichever dimension the dots are currently coloured by.
+    // Same rule as a single dot: the fill says what these are, the ring says
+    // what you make of them. A cluster that painted itself gold when it held
+    // anything you liked was saying "opinion" in the channel that everywhere
+    // else says "type" — and gold is 土地, so a group of 賃貸 read as plots.
     const shades = new Set(points.map(p => this.pointColor(p)));
-    let color = shades.size === 1 ? this.pointColor(points[0]) : '#6b7280';
-    // A cluster where everything has been rejected should fade too, and one
-    // holding anything you liked should say so without opening it.
-    if (points.every(p => p.verdict === 'bad')) color = '#b6bdc6';
-    else if (points.some(p => p.verdict === 'good')) color = '#d4a017';
+    const color = shades.size === 1 ? this.pointColor(points[0]) : '#6b7280';
+
+    const marks = points.map(p => this.groupMark(p));
+    const verdicts = points.map(p => p.verdict || (p as any)['verdict_via']?.verdict);
+    let ring = 'rgba(255,255,255,0.9)';
+    let dim = '';
+    if (marks.includes('conflict')) ring = this.RING.conflict;
+    else if (marks.includes('agreed')) ring = this.RING.agreed;
+    else if (marks.includes('awaiting')) ring = this.RING.awaiting;
+    else if (verdicts.includes('good')) ring = this.RING.good;
+    else if (verdicts.includes('maybe')) ring = this.RING.maybe;
+    // Everything here has been rejected: fade it, keeping the type colour.
+    if (verdicts.length && verdicts.every(v => v === 'bad')) {
+      ring = this.RING.bad;
+      dim = 'opacity:0.45;';
+    }
 
     const badge = this.L.marker([lat, lng], {
       pane: 'listings',
       icon: this.L.divIcon({
         className: 'cluster-dot',
-        html: `<span style="background:${color}">${points.length}</span>`,
+        html: `<span style="background:${color};border-color:${ring};${dim}">`
+            + `${points.length}</span>`,
         iconSize: [26, 26], iconAnchor: [13, 13],
       }),
     });
