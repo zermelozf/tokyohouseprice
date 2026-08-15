@@ -387,37 +387,50 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   // still reachable on a phone, where a dropdown of 24 listings is not.
   private pressTimer: any = null;
   private pressed = false;
+  private pressX = 0;
+  private pressY = 0;
 
   pressStart(row: any, e: PointerEvent): void {
+    if (e.button !== undefined && e.button !== 0) return;     // right-click is not a press
     this.pressed = false;
+    this.pressX = e.clientX;
+    this.pressY = e.clientY;
     clearTimeout(this.pressTimer);
     this.pressTimer = setTimeout(() => {
-      this.pressed = true;                       // so the click does not open it
+      this.pressed = true;
       const label = `${row.price_raw || this.fmtYen(row.price_yen)} · `
                   + `${row['property_label'] || this.catLabel(row.category)}`;
-      if (confirm(`Measure everything against this one?\n\n${label}\n\n`
-                + `"vs best" and the IRR are then differences from it, instead of `
-                + `from the cheapest option.`)) {
-        this.setBaseline(row.property_id);
-      }
+      const yes = confirm(`Measure everything against this one?\n\n${label}\n\n`
+                        + `"PV saved" and the IRR become differences from it.`);
+      // Whatever they answer, the press is over. Leaving the flag set meant a
+      // cancelled dialog swallowed the next ordinary click on the table.
+      if (yes) this.setBaseline(row.property_id);
+      setTimeout(() => this.pressed = false, 0);
     }, 550);
   }
 
-  pressEnd(): void { clearTimeout(this.pressTimer); }
+  /** A drag is a scroll, not a press. */
+  pressMove(e: PointerEvent): void {
+    if (!this.pressTimer) return;
+    if (Math.abs(e.clientX - this.pressX) > 8 || Math.abs(e.clientY - this.pressY) > 8) {
+      this.pressEnd();
+    }
+  }
 
-  /** The click that follows a long press should not also open the listing. */
+  pressEnd(): void { clearTimeout(this.pressTimer); this.pressTimer = null; }
+
+  /** The click that ends a long press should not also open the listing. */
   rowClick(row: any): void {
-    if (this.pressed) { this.pressed = false; return; }
+    if (this.pressed) return;
     this.openDetails(row);
   }
 
-  /** A green-to-red wash by how much worse than the baseline a row is.
+  /** A green-to-red wash by how a row compares with the baseline.
    *
-   * Scaled against the worst row on the table rather than an absolute yen
-   * figure: the spread between options is what you are reading, and a fixed
-   * scale would paint everything the same colour on a tight shortlist and
-   * everything red on a wide one. Kept pale — it is a background for numbers,
-   * not a chart. */
+   * Scaled against the spread on the table rather than an absolute yen figure:
+   * the gap between options is what you are reading, and a fixed scale would
+   * paint a tight shortlist uniformly and a wide one entirely red. Kept pale —
+   * it is a background for numbers, not a chart. */
   rowTint(x: any): string {
     if (!x?.o) return '';
     // vsBest is a saving, so cost is its negative — the scale runs from the
@@ -426,12 +439,10 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     const dearest = Math.max(...costs, 0);
     const cheapest = Math.min(...costs, 0);
     const v = -(x.vsBest ?? 0);
-    // Two half-scales meeting at the baseline, which sits at the join.
     const t = v >= 0
       ? (dearest > 0 ? 0.5 + 0.5 * (v / dearest) : 0.5)
       : (cheapest < 0 ? 0.5 - 0.5 * (v / cheapest) : 0.5);
-    // 130° green through amber to 0° red, at a lightness that keeps text legible.
-    return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 5 * t)}%)`;
+    return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 4 * Math.abs(t - 0.5) * 2)}%)`;
   }
 
   /** What everything is measured against, for the column headers.

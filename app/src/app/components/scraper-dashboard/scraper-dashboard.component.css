@@ -1304,8 +1304,6 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmptable td.worse { color: #b45309; }
 .cmpcontrols { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap;
                margin: 0.2rem 0 0.6rem; }
-.cmpcontrols .horizon { min-width: 15rem; }
-.cmpcontrols .horizon input { width: 100%; }
 .cmpcontrols .cnt { opacity: 0.6; }
 .assumptions { border: 1px solid #eef0f3; border-radius: 5px; padding: 0.5rem 0.7rem;
                margin-bottom: 0.6rem; background: #fafbfc; }
@@ -1331,3 +1329,13 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmptable td.lead { font-variant-numeric: tabular-nums; }
 .cmptable td.better { color: #15803d; }
 .assumfoot { display: flex; align-items: center; gap: 0.6rem; font-size: 0.76rem; }
+.rankcell { white-space: nowrap; }
+.anchorbtn { background: none; border: none; box-shadow: none; cursor: pointer;
+             opacity: 0; padding: 0 0.15rem; font-size: 0.8rem; }
+tr:hover .anchorbtn { opacity: 0.55; }
+.anchorbtn:hover { opacity: 1; transform: none; background: none; }
+
+/* The horizon lives with the other assumptions, full width above them: it is
+   the one that moves the answer most. */
+.assumptions .horizon { display: block; margin: 0.6rem 0 0.2rem; }
+.assumptions .horizon input[type="range"] { width: 100%; max-width: 26rem; display: block; }

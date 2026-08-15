@@ -275,12 +275,6 @@
     </p>
 
     <div class="cmpcontrols">
-      <label class="fld horizon">
-        <span>hold for {{ horizonYears }} years</span>
-        <input type="range" min="5" max="40" step="1" [value]="horizonYears"
-               (input)="onHorizon(+$any($event.target).value)"
-               title="how long you keep the place. Buying earns its advantage late, so this can change the ranking.">
-      </label>
       <span class="baselinenote" *ngIf="compareAnchorId">
         measured against <b>{{ baselineLabel() }}</b>
         <button class="linkbtn" (click)="setBaseline(null)"
@@ -304,11 +298,18 @@
     <details class="assumptions" (toggle)="assumptionsOpen = $any($event.target).open">
       <summary>
         Assumptions
-        <span class="muted">— {{ fmtYen(compareAssumptions.baseline_monthly_rent) }}/month
-          to rent instead, {{ compareAssumptions.loan_rate * 100 | number:'1.1-2' }}% loan,
+        <span class="muted">— held {{ horizonYears }} years,
+          {{ fmtYen(compareAssumptions.baseline_monthly_rent) }}/month to rent instead,
+          {{ compareAssumptions.loan_rate * 100 | number:'1.1-2' }}% loan,
           {{ compareAssumptions.opportunity_cost_real * 100 | number:'1.1-2' }}% real
           opportunity cost</span>
       </summary>
+      <label class="fld horizon" title="How long you keep the place. Buying earns its
+             advantage late, so this decides the answer as much as any rate does.">
+        <span>hold for <b>{{ horizonYears }}</b> years</span>
+        <input type="range" min="5" max="40" step="1" [value]="horizonYears"
+               (input)="onHorizon(+$any($event.target).value)">
+      </label>
       <div class="assumgrid">
         <label class="fld" *ngFor="let f of COMPARE_FIELDS" [title]="f.hint">
           <span>{{ f.label }}<span *ngIf="f.kind === 'pct'"> %</span></span>
@@ -376,12 +377,17 @@
           <tr *ngFor="let x of shortlistRows()" class="rowlink"
               [class.baseline]="x.isAnchor" [style.background]="rowTint(x)"
               (click)="rowClick(x.r)"
-              (pointerdown)="pressStart(x.r, $event)" (pointerup)="pressEnd()"
-              (pointerleave)="pressEnd()" (pointercancel)="pressEnd()"
+              (pointerdown)="pressStart(x.r, $event)" (pointermove)="pressMove($event)"
+              (pointerup)="pressEnd()" (pointerleave)="pressEnd()" (pointercancel)="pressEnd()"
               (contextmenu)="$event.preventDefault()"
               [title]="x.isAnchor ? 'everything is measured against this one'
                                   : 'click to open · press and hold to measure against it'">
-            <td>{{ x.rank || '—' }}</td>
+            <td class="rankcell">
+              {{ x.rank || '—' }}
+              <button class="anchorbtn" *ngIf="!x.isAnchor && x.o"
+                      (click)="$event.stopPropagation(); setBaseline(x.r.property_id)"
+                      title="measure everything against this one">⚓</button>
+            </td>
             <td class="cmpname">
               <b>{{ x.r.price_raw || fmtYen(x.r.price_yen) }}</b>
               <span class="muted">{{ x.r['property_label'] || catLabel(x.r.category) }}
