@@ -281,17 +281,14 @@
                (input)="onHorizon(+$any($event.target).value)"
                title="how long you keep the place. Buying earns its advantage late, so this can change the ranking.">
       </label>
-      <label class="fld">
-        <span>measured against</span>
-        <select [value]="baselineId()"
-                (change)="setBaseline($any($event.target).value || null)"
-                title="what 'vs best' and the IRR are measured from. The cheapest option is the only choice that makes every comparison an investment rather than a loan — anything else can produce returns that are borrowing rates.">
-          <option value="">the cheapest option</option>
-          <option *ngFor="let x of shortlistRows()" [value]="x.r.property_id">
-            {{ x.r.price_raw }} · {{ x.r['property_label'] || catLabel(x.r.category) }}
-          </option>
-        </select>
-      </label>
+      <span class="baselinenote" *ngIf="compareAnchor != null">
+        measured against <b>{{ (compareResult?.options)?.[compareAnchor]?.price_raw }}</b>
+        <button class="linkbtn" (click)="setBaseline(null)"
+                title="back to measuring from the cheapest option">✕</button>
+      </span>
+      <span class="muted hint" *ngIf="compareAnchor == null">
+        press and hold a row to measure everything against it
+      </span>
       <button type="button" class="chip" [class.sel]="agreedOnly" (click)="toggleAgreedOnly()"
               [disabled]="!agreedCount() && !agreedOnly"
               [title]="agreedCount() ? 'only the houses everyone who looked said yes to'
@@ -364,8 +361,13 @@
         </tr></thead>
         <tbody>
           <tr *ngFor="let x of shortlistRows()" class="rowlink"
-              [class.best]="x.rank === 1" [class.picked]="isCompared(x.r.property_id)"
-              (click)="openDetails(x.r)">
+              [class.baseline]="x.isAnchor" [style.background]="rowTint(x)"
+              (click)="rowClick(x.r)"
+              (pointerdown)="pressStart(x.r, $event)" (pointerup)="pressEnd()"
+              (pointerleave)="pressEnd()" (pointercancel)="pressEnd()"
+              (contextmenu)="$event.preventDefault()"
+              [title]="x.isAnchor ? 'everything is measured against this one'
+                                  : 'click to open · press and hold to measure against it'">
             <td>{{ x.rank || '—' }}</td>
             <td class="cmpname">
               <b>{{ x.r.price_raw || fmtYen(x.r.price_yen) }}</b>

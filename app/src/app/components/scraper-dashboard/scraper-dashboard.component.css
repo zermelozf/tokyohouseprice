@@ -1298,7 +1298,7 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .tabcount { background: #FF69B4; color: #fff; border-radius: 9px; padding: 0 0.35rem;
             font-size: 0.7rem; font-weight: 700; }
 .cmptable td, .cmptable th { white-space: nowrap; }
-.cmptable tr.best td { background: #f0fdf4; font-weight: 600; }
+.cmptable tr:first-child td { font-weight: 600; }
 .cmptable .cmpname { white-space: normal; min-width: 12rem; }
 .cmptable .cmpname .muted { display: block; font-size: 0.72rem; font-weight: 400; }
 .cmptable td.worse { color: #b45309; }
@@ -1317,3 +1317,11 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
                         border: 1px solid #ddd; border-radius: 3px; }
 .cmpcontrols .fld select { padding: 0.28rem 0.35rem; font-size: 0.8rem;
                            border: 1px solid #ddd; border-radius: 3px; max-width: 16rem; }
+/* The baseline keeps its marker but not its own background — the wash is
+   relative to it, so painting it over would hide the zero point. */
+.cmptable tr.baseline td:first-child { box-shadow: inset 3px 0 0 #6366f1; }
+.cmptable tr.baseline { outline: 1px solid #c7d2fe; outline-offset: -1px; }
+.baselinenote { font-size: 0.8rem; }
+.cmpcontrols .hint { font-size: 0.76rem; }
+/* A long press on a table row otherwise selects the text under the finger. */
+.cmptable tr.rowlink { user-select: none; -webkit-touch-callout: none; }

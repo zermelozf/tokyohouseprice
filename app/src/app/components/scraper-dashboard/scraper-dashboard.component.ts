@@ -366,6 +366,54 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.runShortlist();
   }
 
+  // --- long press to set the baseline ---------------------------------------
+  // A row already opens the listing on a click, and the baseline is a rare,
+  // consequential choice — it decides what every other number is measured
+  // from. A press-and-hold keeps it out of the way of ordinary browsing and
+  // still reachable on a phone, where a dropdown of 24 listings is not.
+  private pressTimer: any = null;
+  private pressed = false;
+
+  pressStart(row: any, e: PointerEvent): void {
+    this.pressed = false;
+    clearTimeout(this.pressTimer);
+    this.pressTimer = setTimeout(() => {
+      this.pressed = true;                       // so the click does not open it
+      const label = `${row.price_raw || this.fmtYen(row.price_yen)} · `
+                  + `${row['property_label'] || this.catLabel(row.category)}`;
+      if (confirm(`Measure everything against this one?\n\n${label}\n\n`
+                + `"vs best" and the IRR are then differences from it, instead of `
+                + `from the cheapest option.`)) {
+        this.setBaseline(row.property_id);
+      }
+    }, 550);
+  }
+
+  pressEnd(): void { clearTimeout(this.pressTimer); }
+
+  /** The click that follows a long press should not also open the listing. */
+  rowClick(row: any): void {
+    if (this.pressed) { this.pressed = false; return; }
+    this.openDetails(row);
+  }
+
+  /** A green-to-red wash by how much worse than the baseline a row is.
+   *
+   * Scaled against the worst row on the table rather than an absolute yen
+   * figure: the spread between options is what you are reading, and a fixed
+   * scale would paint everything the same colour on a tight shortlist and
+   * everything red on a wide one. Kept pale — it is a background for numbers,
+   * not a chart. */
+  rowTint(x: any): string {
+    if (!x?.o) return '';
+    const gaps = this.shortlistRows().filter(r => r.o).map(r => r.vsBest ?? 0);
+    const worst = Math.max(...gaps, 0);
+    if (worst <= 0) return '';
+    const t = Math.min(1, Math.max(0, (x.vsBest ?? 0) / worst));
+    // 130° green through amber to 0° red, at a lightness that keeps text legible.
+    return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 5 * t)}%)`;
+  }
+
   /** Which row is currently the baseline, as a property id ('' = the cheapest). */
   baselineId(): string {
     const i = this.compareAnchor;
