@@ -2990,11 +2990,28 @@ ${folders}
     this.loadCard();
   }
 
-  /** Card photo first (it is the one you already recognise), then the rest. */
+  /** The file a photo URL points at, ignoring how it was requested.
+   *
+   * The same image arrives in two forms — the search card's and the detail
+   * page's — differing only in the resize parameters, so comparing URLs made
+   * every gallery open on the same photo twice. */
+  private photoKey(u: string): string {
+    return (u.match(/([^/%]+\.(?:jpg|jpeg|png))/i)?.[1] || u).toLowerCase();
+  }
+
+  /** Card photo first (it is the one you already recognise), then the rest,
+   * each file once. */
   private setPhotos(card: any, images?: string[]): void {
     if (!images?.length) return;
-    const rest = images.filter(u => u !== card.image_url);
-    this.reviewPhotos = card.image_url ? [card.image_url, ...rest] : rest;
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const u of (card.image_url ? [card.image_url, ...images] : images)) {
+      const k = this.photoKey(u);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(u);
+    }
+    this.reviewPhotos = out;
     this.reviewPhotoIndex = 0;
   }
 
