@@ -11,15 +11,29 @@
 .hd .status { margin-left: auto; }
 
 /* tab bar */
+/* Five tabs do not fit a phone. They scroll sideways rather than wrapping onto
+   a second line, which would push the content down and leave the underline
+   running through the middle of the page. `scroll-snap` stops a flick landing
+   half way across a tab, and the selected one is scrolled into view in the
+   component, so arriving on a narrow screen never hides where you are. */
 .tabs {
   display: flex; gap: 0.4rem; margin-bottom: 1.5rem;
   border-bottom: 1px solid #eee;
+  overflow-x: auto; overflow-y: hidden;
+  flex-wrap: nowrap; scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tabs button {
   background: none; border: none; box-shadow: none; cursor: pointer;
   padding: 0.7rem 1.1rem; font-size: 0.95rem; font-weight: 600; font-family: inherit;
   color: #888; border-bottom: 2px solid transparent; border-radius: 0;
   margin-bottom: -1px; display: inline-flex; align-items: center; gap: 0.4rem;
+  flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start;
+}
+@media (max-width: 560px) {
+  .tabs { margin-bottom: 1rem; }
+  .tabs button { padding: 0.6rem 0.7rem; font-size: 0.85rem; }
 }
 .tabs button:hover { color: #FF69B4; background: none; transform: none; box-shadow: none; }
 .tabs button.sel { color: #FF1493; border-bottom-color: #FF69B4; }

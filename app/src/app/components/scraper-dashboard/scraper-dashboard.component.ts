@@ -278,6 +278,15 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   newGroupName = '';
   newMemberEmail: Record<number, string> = {};
 
+  /** Keep the tab you just picked visible when the bar is scrolled.
+   *
+   * Delegated from the nav rather than wired to each button: a tab added later
+   * gets the behaviour without anyone remembering to ask for it. */
+  centreTab(e: Event): void {
+    const btn = (e.target as HTMLElement)?.closest('button');
+    btn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  }
+
   openGroups(): void {
     this.activeTab = 'groups';
     this.loadAccess();

@@ -128,7 +128,7 @@
   <div class="api-error" *ngIf="apiError">{{ apiError }}</div>
 
   <!-- tabs -->
-  <nav class="tabs">
+  <nav class="tabs" (click)="centreTab($event)">
     <button [class.sel]="activeTab === 'crawlers'" (click)="activeTab = 'crawlers'">
       Crawlers
       <span class="tabdot" *ngIf="liveStatus && liveStatus.state === 'running'" title="a crawl is running"></span>
