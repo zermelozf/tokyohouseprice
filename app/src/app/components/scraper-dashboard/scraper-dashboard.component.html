@@ -785,6 +785,9 @@
                        (click)="$event.stopPropagation(); toggleCompare(r)">
               </td>
               <td class="verdictcell" (click)="$event.stopPropagation()">
+                <span class="othermark" *ngFor="let o of othersReviews(r)"
+                      [title]="o.name + ' — ' + o.verdict"
+                      [style.background]="verdictMeta(o.verdict)?.color">{{ o.name.charAt(0) }}</span>
                 <button type="button" class="vbtn bad" [class.on]="r['verdict'] === 'bad'"
                         (click)="quickGrade(r, 'bad')" title="bad (click again to clear)">✕</button>
                 <button type="button" class="vbtn maybe" [class.on]="r['verdict'] === 'maybe'"
@@ -841,6 +844,11 @@
                 [title]="showBadges ? 'hide the verdict and 耐震基準 badges'
                                     : 'show the verdict and 耐震基準 badges — hidden so an earlier call does not colour this one'">
           {{ showBadges ? '🏷️ hide' : '🏷️' }}</button>
+        <span class="othersaid" *ngFor="let r of othersReviews(p)"
+              [title]="r.name + ' — ' + r.verdict + (r.note ? ': ' + r.note : '')"
+              [style.borderColor]="verdictMeta(r.verdict)?.color">
+          {{ verdictMeta(r.verdict)?.icon }} {{ r.name }}
+        </span>
         <span class="revprog" *ngIf="queue">{{ reviewIndex + 1 }} / {{ reviewQueue.length }}</span>
         <span class="muted" *ngIf="queue && showBadges">
           {{ reviewCounts['good'] || 0 }} ♥︎ · {{ reviewCounts['maybe'] || 0 }} ? ·

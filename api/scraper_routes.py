@@ -14,8 +14,10 @@ from pathlib import Path
 from statistics import median
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from auth import User, current_user
 
 # The scraper package lives at the repo root; make it importable from api/.
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +37,11 @@ from scraper_compare import CompareRequest, compare  # noqa: E402
 # exist on an already-created DB, before any endpoint touches them.
 init_db().close()
 
-router = APIRouter(prefix="/scraper", tags=["scraper"])
+# Every route here requires a verified caller. It is a router-wide dependency
+# rather than a decoration on each function, so a route added later is closed
+# by default instead of open by omission.
+router = APIRouter(prefix="/scraper", tags=["scraper"],
+                   dependencies=[Depends(current_user)])
 
 
 class Filters(BaseModel):
@@ -163,25 +169,34 @@ class ReviewBody(BaseModel):
 
 
 @router.post("/review")
-def save_review(body: ReviewBody):
-    """Record a manual verdict on one listing."""
+def save_review(body: ReviewBody, user: User = Depends(current_user)):
+    """Record a manual verdict on one listing, as the signed-in caller."""
     if body.verdict not in (None, "good", "maybe", "bad"):
         return {"error": f"unknown verdict {body.verdict!r}"}
-    return query.save_review(body.property_id, body.verdict, body.tags, body.note)
+    return query.save_review(body.property_id, body.verdict, body.tags, body.note,
+                             user=user)
 
 
 @router.get("/reviews")
-def list_reviews():
-    rows = list(query.reviews().values())
+def list_reviews(user: User = Depends(current_user)):
+    """Counts are the caller's own — they drive their filter chips — with
+    everyone's totals alongside, so you can see the pile is shared."""
+    everyone = [r for rs in query.reviews().values() for r in rs]
+    mine = [r for r in everyone if (r.get("user_email") or "") == user.email]
     counts: dict[str, int] = {}
-    for r in rows:
+    for r in mine:
         counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    by_user: dict[str, int] = {}
+    for r in everyone:
+        by_user[r.get("user_name") or r.get("user_email") or "?"] = \
+            by_user.get(r.get("user_name") or r.get("user_email") or "?", 0) + 1
     tags: dict[str, int] = {}
-    for r in rows:
+    for r in mine:
         for t in (r["tags"] or "").split(","):
             if t:
                 tags[t] = tags.get(t, 0) + 1
-    return {"reviews": rows, "counts": counts, "tags": tags}
+    return {"reviews": mine, "counts": counts, "tags": tags,
+            "by_user": by_user, "me": {"email": user.email, "name": user.name}}
 
 
 class SavedFilterBody(BaseModel):
@@ -260,15 +275,15 @@ def crawl_diff(date_from: str, date_to: str):
 
 
 @router.post("/search")
-def search(f: Filters):
-    rows = query.search_db(f.model_dump())
+def search(f: Filters, user: User = Depends(current_user)):
+    rows = query.search_db({**f.model_dump(), "user_email": user.email})
     return {"stats": _stats(rows), "rows": rows}
 
 
 @router.post("/map")
-def map_points(f: Filters):
+def map_points(f: Filters, user: User = Depends(current_user)):
     """Crawled listings that have an enriched exact location, for the Report map."""
-    points = query.map_points(f.model_dump())
+    points = query.map_points({**f.model_dump(), "user_email": user.email})
     return {"points": points, "mapped": len(points)}
 
 

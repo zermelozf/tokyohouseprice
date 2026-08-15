@@ -1,6 +1,7 @@
 """SQLite connection + schema for the manifest (bronze meta) and silver tables."""
 from __future__ import annotations
 
+import os
 import sqlite3
 
 from .config import DB_PATH, DATA_DIR
@@ -127,12 +128,20 @@ CREATE TABLE IF NOT EXISTS saved_filter (
 -- Manual verdicts. Keyed on property_id alone, not (property_id, date): a
 -- judgement about a place does not expire when the crawl re-runs, and it must
 -- survive the listing being relisted under a new price.
+-- One verdict per person per listing. Keyed by email rather than by Firebase
+-- uid: an email is stable across sign-in methods, is what an allowlist is
+-- written in, and is readable when you are looking at who said what. The uid
+-- is kept alongside for provenance.
 CREATE TABLE IF NOT EXISTS listing_review (
-    property_id  TEXT PRIMARY KEY,
+    property_id  TEXT NOT NULL,
+    user_email   TEXT NOT NULL,
+    user_uid     TEXT,
+    user_name    TEXT,
     verdict      TEXT,          -- good | maybe | bad
     tags         TEXT,          -- comma-separated, free-form
     note         TEXT,
-    reviewed_at  TEXT
+    reviewed_at  TEXT,
+    PRIMARY KEY (property_id, user_email)
 );
 
 -- Transit time from a station to the Lycée Français. Timetables move rarely,
@@ -170,6 +179,27 @@ def _migrate(conn: sqlite3.Connection) -> None:
     cols = [r[1] for r in conn.execute("PRAGMA table_info(property_detail)").fetchall()]
     if cols and "scrape_date" not in cols:
         conn.execute("DROP TABLE property_detail")
+        conn.commit()
+
+    # Reviews gained an owner. The rows that predate sign-in were all made by
+    # whoever was running the tool locally, so they are attributed to the owner
+    # rather than dropped or left ownerless — SCRAPER_OWNER_EMAIL names them.
+    rev = [r[1] for r in conn.execute("PRAGMA table_info(listing_review)").fetchall()]
+    if rev and "user_email" not in rev:
+        owner = os.environ.get("SCRAPER_OWNER_EMAIL", "arnaud@linalgo.com").lower()
+        conn.executescript(f'''
+            ALTER TABLE listing_review RENAME TO listing_review_old;
+            CREATE TABLE listing_review (
+                property_id TEXT NOT NULL, user_email TEXT NOT NULL,
+                user_uid TEXT, user_name TEXT, verdict TEXT, tags TEXT,
+                note TEXT, reviewed_at TEXT,
+                PRIMARY KEY (property_id, user_email));
+            INSERT INTO listing_review
+                (property_id, user_email, verdict, tags, note, reviewed_at)
+            SELECT property_id, '{owner}', verdict, tags, note, reviewed_at
+            FROM listing_review_old;
+            DROP TABLE listing_review_old;
+        ''')
         conn.commit()
 
     # Added later: the upper end of a multi-unit listing's area.

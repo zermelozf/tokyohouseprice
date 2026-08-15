@@ -32,9 +32,12 @@ export interface Stats {
 export interface Listing {
   property_id: string;
   image_url?: string | null;
-  verdict?: Verdict | null;
+  verdict?: Verdict | null;          // yours
   review_tags?: string[];
   review_note?: string | null;
+  // Everyone's verdicts on this listing, yours included. Two people hunting
+  // together disagree, and which of them liked it is the point of recording it.
+  reviews?: ListingReview[];
   market: string;
   category: string;
   ward: string;
@@ -217,6 +220,16 @@ export interface PlotCapacity {
   setback_status: 'done' | 'required' | 'none' | 'unclear' | 'unknown';
   road_burden_m2: number | null;
   deducted_m2: number | null;
+}
+
+export interface ListingReview {
+  email: string;
+  name: string;
+  verdict: Verdict;
+  tags: string[];
+  note: string | null;
+  at: string;
+  mine: boolean;
 }
 
 export type Verdict = 'good' | 'maybe' | 'bad';

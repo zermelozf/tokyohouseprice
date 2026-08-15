@@ -117,45 +117,76 @@ def apply_verdicts(rows: list[dict], f: dict) -> list[dict]:
     return [r for r in rows if (r.get("verdict") or "none") in want]
 
 
-def reviews() -> dict[str, dict]:
+def reviews() -> dict[str, list[dict]]:
+    """Every verdict, grouped by listing. A listing can carry one per person:
+    two people hunting together disagree, and which of them liked it is the
+    point of recording it at all."""
     conn = connect()
     try:
-        return {r["property_id"]: dict(r)
-                for r in conn.execute("SELECT * FROM listing_review")}
+        out: dict[str, list[dict]] = {}
+        for r in conn.execute("SELECT * FROM listing_review ORDER BY reviewed_at"):
+            out.setdefault(r["property_id"], []).append(dict(r))
+        return out
     finally:
         conn.close()
 
 
 def save_review(property_id: str, verdict: str | None,
-                tags: list[str] | None = None, note: str | None = None) -> dict:
-    """Record (or clear) a verdict. Clearing removes the row so an unreviewed
-    listing is indistinguishable from one never seen."""
+                tags: list[str] | None = None, note: str | None = None,
+                user: dict | None = None) -> dict:
+    """Record (or clear) one person's verdict. Clearing removes their row, so
+    an unreviewed listing is indistinguishable from one never seen — and
+    removes only theirs, not anyone else's."""
     from datetime import datetime as _dt
+    email = ((user or {}).get("email") or "").lower()
+    if not email:
+        raise ValueError("a review needs a signed-in user")
     conn = init_db_conn()
     try:
         if verdict is None:
-            conn.execute("DELETE FROM listing_review WHERE property_id = ?", (property_id,))
+            conn.execute("DELETE FROM listing_review WHERE property_id = ? AND user_email = ?",
+                         (property_id, email))
             conn.commit()
-            return {"property_id": property_id, "verdict": None}
-        row = (property_id, verdict, ",".join(tags or []), note or "",
-               _dt.now().isoformat())
+            return {"property_id": property_id, "verdict": None, "user_email": email}
+        now = _dt.now().isoformat()
         conn.execute(
             "INSERT OR REPLACE INTO listing_review "
-            "(property_id, verdict, tags, note, reviewed_at) VALUES (?,?,?,?,?)", row)
+            "(property_id, user_email, user_uid, user_name, verdict, tags, note, reviewed_at) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (property_id, email, (user or {}).get("uid"),
+             (user or {}).get("name") or email, verdict,
+             ",".join(tags or []), note or "", now))
         conn.commit()
-        return {"property_id": property_id, "verdict": verdict,
-                "tags": tags or [], "note": note or "", "reviewed_at": row[4]}
+        return {"property_id": property_id, "verdict": verdict, "tags": tags or [],
+                "note": note or "", "reviewed_at": now, "user_email": email}
     finally:
         conn.close()
 
 
-def annotate_reviews(rows: list[dict]) -> list[dict]:
+def annotate_reviews(rows: list[dict], user_email: str | None = None) -> list[dict]:
+    """Attach this caller's own verdict, plus everyone's for attribution.
+
+    `verdict` stays the caller's own, because that is what the filters, the
+    map colours and the review queue mean by it. `reviews` carries the whole
+    set so the UI can show that someone else already looked — seeing a
+    housemate's ♥ is useful; having it silently become yours is not.
+    """
     seen = reviews()
+    me = (user_email or "").lower()
     for r in rows:
-        rev = seen.get(r.get("property_id"))
-        r["verdict"] = rev["verdict"] if rev else None
-        r["review_tags"] = [t for t in (rev["tags"] or "").split(",") if t] if rev else []
-        r["review_note"] = rev["note"] if rev else None
+        all_rev = seen.get(r.get("property_id"), [])
+        mine = next((x for x in all_rev if (x.get("user_email") or "") == me), None)
+        r["verdict"] = mine["verdict"] if mine else None
+        r["review_tags"] = [t for t in (mine["tags"] or "").split(",") if t] if mine else []
+        r["review_note"] = mine["note"] if mine else None
+        r["reviews"] = [{"email": x.get("user_email"),
+                         "name": x.get("user_name") or x.get("user_email"),
+                         "verdict": x.get("verdict"),
+                         "tags": [t for t in (x.get("tags") or "").split(",") if t],
+                         "note": x.get("note"),
+                         "at": x.get("reviewed_at"),
+                         "mine": (x.get("user_email") or "") == me}
+                        for x in all_rev]
     return rows
 
 
@@ -354,7 +385,8 @@ def search_db(f: dict) -> list[dict]:
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
     rows = hazard.annotate(geocode.annotate(annotate_images(
-        annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows)))))))
+        annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))),
+                         f.get("user_email")))))
     if f.get("eras"):
         rows = [r for r in rows if r["era"] in f["eras"]]
     rows = apply_rent_kinds(apply_verdicts(rows, f), f)

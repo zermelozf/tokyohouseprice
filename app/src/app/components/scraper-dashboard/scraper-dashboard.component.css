@@ -1186,3 +1186,11 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .lightbox .modal-close { top: 0.8rem; right: 1rem; color: #ddd; font-size: 1.5rem; }
 .lightbox .galcount { bottom: 1rem; right: 1.2rem; }
 .galtrack { cursor: zoom-in; }
+
+/* What other people said. Yours is the buttons; theirs is a name. */
+.othersaid { font-size: 0.72rem; padding: 0.1rem 0.4rem; border: 1px solid;
+             border-radius: 10px; color: #555; }
+.othermark { display: inline-flex; align-items: center; justify-content: center;
+             width: 15px; height: 15px; border-radius: 50%; color: #fff;
+             font-size: 0.6rem; font-weight: 700; margin-right: 2px;
+             vertical-align: middle; }

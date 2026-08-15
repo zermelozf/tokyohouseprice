@@ -455,6 +455,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
                          'good layout', 'odd layout', 'needs work', 'nice street',
                          'no parking', 'steep', 'overlooked'];
 
+  /** What other people said about this listing. Yours is shown by the buttons
+   * you are about to press, so it is left out here. */
+  othersReviews(p: any): any[] {
+    return (p?.reviews || []).filter((r: any) => !r.mine && r.verdict);
+  }
+
   verdictMeta(v: Verdict | null | undefined) {
     return v ? VERDICT_META[v] : null;
   }

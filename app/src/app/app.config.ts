@@ -1,7 +1,7 @@
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeEn from '@angular/common/locales/en';
 import localeJa from '@angular/common/locales/ja';
@@ -14,6 +14,7 @@ import { getAuth, provideAuth } from '@angular/fire/auth';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { AnalyticsService } from './services/analytics.service';
+import { authInterceptor } from './services/auth-interceptor';
 
 // Register locale data
 registerLocaleData(localeEn, 'en-US');
@@ -26,7 +27,7 @@ export const appConfig: ApplicationConfig = {
       withPreloading(PreloadAllModules)
     ),
     provideAnimations(),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideAnalytics(() => getAnalytics()),
     provideFirestore(() => getFirestore()),
