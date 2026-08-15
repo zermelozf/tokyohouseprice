@@ -662,7 +662,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.dragX = 0;
     this.swipeX = e.clientX;
     this.swipeY = e.clientY;
-    this.swipeW = (e.currentTarget as HTMLElement).clientWidth || 1;
+    const el = e.currentTarget as HTMLElement;
+    this.swipeW = el.clientWidth || 1;
+    // Keep receiving the drag after the pointer leaves the image — full screen
+    // is edge to edge, so a swipe that starts near the side would otherwise
+    // stop halfway.
+    try { el.setPointerCapture(e.pointerId); } catch { /* mouse without capture */ }
   }
 
   swipeMove(e: PointerEvent): void {

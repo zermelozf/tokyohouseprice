@@ -1196,7 +1196,6 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 /* Full-screen photo, above every other overlay. */
 .lightbox { position: fixed; inset: 0; z-index: 5000; background: rgba(8,10,13,0.94);
             display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
-.lightbox img { max-width: 96vw; max-height: 94dvh; object-fit: contain; cursor: default; }
 .lightbox .modal-close { top: 0.8rem; right: 1rem; color: #ddd; font-size: 1.5rem; }
 .lightbox .galcount { bottom: 1rem; right: 1.2rem; }
 .galtrack { cursor: zoom-in; }
@@ -1233,8 +1232,17 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 /* Full-screen viewer: swipeable stage, thumbnails to jump around. */
 .lightbox { flex-direction: column; gap: 0.6rem; }
 .lightstage { position: relative; overflow: hidden; width: 100vw;
-              height: calc(94dvh - 92px); cursor: default; }
-.lightstage .galtrack img { background: transparent; object-fit: contain; }
+              height: calc(94dvh - 92px); cursor: grab;
+              /* Without this the browser claims the horizontal gesture for its
+                 own panning and the drag never reaches the handlers. */
+              touch-action: none; user-select: none; }
+.lightstage:active { cursor: grabbing; }
+.lightstage .galtrack { cursor: inherit; }
+.lightstage .galtrack img { background: transparent; object-fit: contain;
+                            max-width: none; max-height: none;
+                            -webkit-user-drag: none; user-drag: none; }
+/* Thumbnails keep their own size; they are not part of the track. */
+.lightstrip img { -webkit-user-drag: none; user-drag: none; }
 .lightstrip { display: flex; gap: 0.35rem; max-width: 96vw; overflow-x: auto;
               padding: 0.2rem 0.4rem 0.5rem; scrollbar-width: thin; }
 .lightstrip img { height: 56px; width: 76px; object-fit: cover; border-radius: 3px;
