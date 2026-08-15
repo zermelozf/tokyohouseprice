@@ -1330,10 +1330,15 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .cmptable td.better { color: #15803d; }
 .assumfoot { display: flex; align-items: center; gap: 0.6rem; font-size: 0.76rem; }
 .rankcell { white-space: nowrap; }
-.anchorbtn { background: none; border: none; box-shadow: none; cursor: pointer;
-             opacity: 0; padding: 0 0.15rem; font-size: 0.8rem; }
-tr:hover .anchorbtn { opacity: 0.55; }
-.anchorbtn:hover { opacity: 1; transform: none; background: none; }
+/* Visible on every row, not hidden behind a hover or a gesture: choosing what
+   the table is measured against is a normal thing to do. */
+.anchorcell { width: 1%; text-align: center; }
+.anchorbtn { background: #fff; border: 1px solid #dde2e8; box-shadow: none;
+             cursor: pointer; opacity: 0.45; padding: 0.1rem 0.35rem;
+             font-size: 0.85rem; border-radius: 4px; line-height: 1.2; }
+.anchorbtn:hover { opacity: 1; transform: none; border-color: #6366f1; background: #fff; }
+.anchorbtn.on { opacity: 1; background: #6366f1; border-color: #6366f1; color: #fff; }
+.anchorbtn:disabled { opacity: 0.15; cursor: default; }
 
 /* The horizon lives with the other assumptions, full width above them: it is
    the one that moves the answer most. */

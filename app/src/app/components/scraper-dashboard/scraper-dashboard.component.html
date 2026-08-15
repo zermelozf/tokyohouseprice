@@ -282,7 +282,7 @@
       </span>
       <span class="muted hint" *ngIf="!compareAnchorId">
         measured against <b>{{ baselineLabel() }}</b>, the option needing least cash
-        up front — press and hold a row to use that one instead
+        up front — click a row's ⚓ to measure against that one instead
       </span>
       <button type="button" class="chip" [class.sel]="agreedOnly" (click)="toggleAgreedOnly()"
               [disabled]="!agreedCount() && !agreedOnly"
@@ -350,6 +350,7 @@
       <table class="cmptable">
         <thead><tr>
           <th title="cheapest first, by present value over the horizon">#</th>
+          <th title="the baseline everything is measured against">⚓</th>
           <th>listing</th>
           <!-- The decision, first: what this costs over the baseline, and what
                the extra capital returns. The rest is how those two arise. -->
@@ -374,19 +375,18 @@
           <th title="the year that return peaks">best sell</th>
         </tr></thead>
         <tbody>
-          <tr *ngFor="let x of shortlistRows()" class="rowlink"
+          <tr *ngFor="let x of shortlistRows(); trackBy: trackRow" class="rowlink"
               [class.baseline]="x.isAnchor" [style.background]="rowTint(x)"
-              (click)="rowClick(x.r)"
-              (pointerdown)="pressStart(x.r, $event)" (pointermove)="pressMove($event)"
-              (pointerup)="pressEnd()" (pointerleave)="pressEnd()" (pointercancel)="pressEnd()"
-              (contextmenu)="$event.preventDefault()"
+              (click)="openDetails(x.r)"
               [title]="x.isAnchor ? 'everything is measured against this one'
-                                  : 'click to open · press and hold to measure against it'">
-            <td class="rankcell">
-              {{ x.rank || '—' }}
-              <button class="anchorbtn" *ngIf="!x.isAnchor && x.o"
-                      (click)="$event.stopPropagation(); setBaseline(x.r.property_id)"
-                      title="measure everything against this one">⚓</button>
+                                  : 'click to open the listing'">
+            <td class="rankcell">{{ x.rank || '—' }}</td>
+            <td class="anchorcell" (click)="$event.stopPropagation()">
+              <button class="anchorbtn" [class.on]="x.isAnchor" [disabled]="!x.o"
+                      (click)="x.isAnchor ? setBaseline(null) : setBaseline(x.r.property_id)"
+                      [title]="x.isAnchor
+                        ? 'the baseline — everything is measured against this one. Click to go back to the default.'
+                        : 'measure everything against this one'">⚓</button>
             </td>
             <td class="cmpname">
               <b>{{ x.r.price_raw || fmtYen(x.r.price_yen) }}</b>

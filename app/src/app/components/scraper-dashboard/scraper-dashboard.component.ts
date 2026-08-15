@@ -380,51 +380,10 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.runShortlist();
   }
 
-  // --- long press to set the baseline ---------------------------------------
-  // A row already opens the listing on a click, and the baseline is a rare,
-  // consequential choice — it decides what every other number is measured
-  // from. A press-and-hold keeps it out of the way of ordinary browsing and
-  // still reachable on a phone, where a dropdown of 24 listings is not.
-  private pressTimer: any = null;
-  private pressed = false;
-  private pressX = 0;
-  private pressY = 0;
-
-  pressStart(row: any, e: PointerEvent): void {
-    if (e.button !== undefined && e.button !== 0) return;     // right-click is not a press
-    this.pressed = false;
-    this.pressX = e.clientX;
-    this.pressY = e.clientY;
-    clearTimeout(this.pressTimer);
-    this.pressTimer = setTimeout(() => {
-      this.pressed = true;
-      const label = `${row.price_raw || this.fmtYen(row.price_yen)} · `
-                  + `${row['property_label'] || this.catLabel(row.category)}`;
-      const yes = confirm(`Measure everything against this one?\n\n${label}\n\n`
-                        + `"PV saved" and the IRR become differences from it.`);
-      // Whatever they answer, the press is over. Leaving the flag set meant a
-      // cancelled dialog swallowed the next ordinary click on the table.
-      if (yes) this.setBaseline(row.property_id);
-      setTimeout(() => this.pressed = false, 0);
-    }, 550);
-  }
-
-  /** A drag is a scroll, not a press. */
-  pressMove(e: PointerEvent): void {
-    if (!this.pressTimer) return;
-    if (Math.abs(e.clientX - this.pressX) > 8 || Math.abs(e.clientY - this.pressY) > 8) {
-      this.pressEnd();
-    }
-  }
-
-  pressEnd(): void { clearTimeout(this.pressTimer); this.pressTimer = null; }
-
-  /** The click that ends a long press should not also open the listing. */
-  rowClick(row: any): void {
-    if (this.pressed) return;
-    this.openDetails(row);
-  }
-
+  // The baseline is set by the anchor button on each row. A long press used to
+  // do it, which hid a consequential choice behind an invisible gesture and,
+  // worse, swallowed the click that opens a listing whenever the dialog was
+  // dismissed.
   /** A green-to-red wash by how a row compares with the baseline.
    *
    * Scaled against the spread on the table rather than an absolute yen figure:
@@ -435,7 +394,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     if (!x?.o) return '';
     // vsBest is a saving, so cost is its negative — the scale runs from the
     // biggest saving (green) through the baseline to the dearest (red).
-    const costs = this.shortlistRows().filter(r => r.o).map(r => -(r.vsBest ?? 0));
+    const costs = (this.rowsCache?.rows ?? []).filter(r => r.o).map(r => -(r.vsBest ?? 0));
     const dearest = Math.max(...costs, 0);
     const cheapest = Math.min(...costs, 0);
     const v = -(x.vsBest ?? 0);
@@ -2870,19 +2829,44 @@ ${folders}
    * the numbers off — which means finding the same row twice. Priced order when
    * there is a price, shortlist order before that, and the financial columns
    * simply empty until the model has run. */
+  // Rebuilt only when something it depends on changes.
+  //
+  // The template iterates this, and returning a fresh array on every
+  // change-detection pass makes Angular destroy and recreate every row —
+  // constantly, since ngDoCheck and each pointer event trigger a pass. A click
+  // then lands on a node that has already been replaced, which is why rows
+  // stopped opening and a long press never completed. Same objects out for the
+  // same inputs, plus trackBy in the template, and the rows stay put.
+  private rowsCache: { key: string; rows: any[] } | null = null;
+
   shortlistRows(): any[] {
+    const short = this.shortlist();
+    const key = [this.compareResult?.verdict?.anchor_index,
+                 this.compareResult?.options?.length,
+                 this.compareResult?.assumptions?.simulation_years,
+                 this.agreedOnly, short.length,
+                 short.map(r => r.property_id + ':' + (r['verdict'] || '')).join(',')].join('|');
+    if (this.rowsCache?.key === key) return this.rowsCache.rows;
+    const rows = this.buildShortlistRows(short);
+    this.rowsCache = { key, rows };
+    return rows;
+  }
+
+  trackRow = (_: number, x: any) => x.r?.property_id ?? _;
+
+  private buildShortlistRows(shortlist: any[]): any[] {
     const ranked = this.rankedOptions();
     if (!ranked.length) {
-      return this.shortlist().map(r => ({ r, rank: null, o: null,
-                                          vsBest: null, irr: null, sellYear: null }));
+      return shortlist.map(r => ({ r, rank: null, o: null,
+                                   vsBest: null, irr: null, sellYear: null }));
     }
-    const byId = new Map(this.shortlist().map(r => [r.property_id, r]));
+    const byId = new Map(shortlist.map(r => [r.property_id, r]));
     const rows: any[] = ranked.map(x => ({ ...x, r: byId.get(x.o.property_id) || x.o }));
     // Anything the model could not price — beyond the 24 it takes at a time —
     // still belongs on the list, at the end, rather than disappearing because
     // it could not be ranked.
     const priced = new Set(ranked.map(x => x.o.property_id));
-    for (const r of this.shortlist()) {
+    for (const r of shortlist) {
       if (!priced.has(r.property_id)) {
         rows.push({ r, rank: null, o: null, vsBest: null, irr: null, sellYear: null });
       }
