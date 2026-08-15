@@ -623,6 +623,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   private swipeX = 0;
   private swipeY = 0;
   private swipeW = 1;
+  private lastX = 0;
+  private lastY = 0;
   private locked: 'x' | 'y' | null = null;
 
   /** The same photo at a chosen width.
@@ -657,6 +659,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   closeLightbox(): void {
     if (!this.lightbox) return;
     this.lightbox = false;
+    this.resetZoom();
     this.popOverlay();
   }
 
@@ -700,14 +703,43 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return this.reviewPhotos[(this.reviewPhotoIndex + offset + n) % n];
   }
 
+  // --- zoom ------------------------------------------------------------------
+  // Pinch is the browser's (touch-action: pinch-zoom). This is the same thing
+  // for a mouse, and it doubles as the way to look closely at one corner of a
+  // room without leaving the viewer.
+  zoom = 1;
+  panX = 0;
+  panY = 0;
+
+  toggleZoom(e: MouseEvent): void {
+    const el = e.currentTarget as HTMLElement;
+    if (this.zoom > 1) { this.resetZoom(); return; }
+    const r = el.getBoundingClientRect();
+    this.zoom = 2.5;
+    // Zoom towards the point clicked, so double-tapping a window shows that
+    // window rather than the middle of the photo.
+    this.panX = (r.width / 2 - (e.clientX - r.left)) * (this.zoom - 1);
+    this.panY = (r.height / 2 - (e.clientY - r.top)) * (this.zoom - 1);
+    this.clampPan(r);
+  }
+
+  resetZoom(): void { this.zoom = 1; this.panX = this.panY = 0; }
+
+  private clampPan(r: DOMRect): void {
+    const maxX = r.width * (this.zoom - 1) / 2;
+    const maxY = r.height * (this.zoom - 1) / 2;
+    this.panX = Math.max(-maxX, Math.min(maxX, this.panX));
+    this.panY = Math.max(-maxY, Math.min(maxY, this.panY));
+  }
+
   swipeStart(e: PointerEvent): void {
     if (this.reviewPhotos.length < 2) return;
     this.swiping = true;
     this.locked = null;
     this.gliding = false;
     this.dragX = 0;
-    this.swipeX = e.clientX;
-    this.swipeY = e.clientY;
+    this.swipeX = this.lastX = e.clientX;
+    this.swipeY = this.lastY = e.clientY;
     const el = e.currentTarget as HTMLElement;
     this.swipeW = el.clientWidth || 1;
     // Keep receiving the drag after the pointer leaves the image — full screen
@@ -719,6 +751,15 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   swipeMove(e: PointerEvent): void {
     if (!this.swiping) return;
     const dx = e.clientX - this.swipeX, dy = e.clientY - this.swipeY;
+    // Zoomed in, a drag moves the photo rather than paging to the next one.
+    if (this.zoom > 1) {
+      e.preventDefault();
+      this.panX += e.clientX - this.lastX;
+      this.panY += e.clientY - this.lastY;
+      this.lastX = e.clientX; this.lastY = e.clientY;
+      this.clampPan((e.currentTarget as HTMLElement).getBoundingClientRect());
+      return;
+    }
     // Decide once whether this gesture is the gallery's or the sheet's, so a
     // diagonal drag does not fight between scrolling and paging.
     if (!this.locked && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
@@ -734,6 +775,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   swipeEnd(): void {
     if (!this.swiping) return;
     this.swiping = false;
+    if (this.zoom > 1) { this.dragX = 0; return; }   // that was a pan
     const dx = this.dragX;
     // Remember whether this gesture was a drag, so the click it also fires
     // does not open the lightbox.
@@ -759,6 +801,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   photoStep(step: number): void {
     if (!this.reviewPhotos.length) return;
+    this.resetZoom();
     const n = this.reviewPhotos.length;
     this.reviewPhotoIndex = (this.reviewPhotoIndex + step + n) % n;
   }

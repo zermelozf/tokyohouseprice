@@ -1080,13 +1080,15 @@
 <div class="lightbox" *ngIf="lightbox" (click)="closeLightbox()">
   <!-- Swipe on the image and a thumbnail strip below it: the same photo set as
        the sheet, at the size the screen can actually show. -->
-  <div class="lightstage" (click)="$event.stopPropagation()"
+  <div class="lightstage" [class.zoomed]="zoom > 1" (click)="$event.stopPropagation()"
+       (dblclick)="toggleZoom($event)"
        (pointerdown)="swipeStart($event)" (pointermove)="swipeMove($event)"
        (pointerup)="swipeEnd()" (pointerleave)="swipeEnd()" (pointercancel)="swipeEnd()">
     <div class="galtrack" [class.gliding]="gliding"
          [style.transform]="'translate3d(calc(-100% + ' + dragX + 'px), 0, 0)'">
       <img [src]="photoUrl(photoAt(-1), 1600)" alt="">
-      <img [src]="photoUrl(photoAt(0), 1600)" alt="">
+      <img [src]="photoUrl(photoAt(0), 1600)" alt=""
+           [style.transform]="'translate3d(' + panX + 'px,' + panY + 'px,0) scale(' + zoom + ')'">
       <img [src]="photoUrl(photoAt(1), 1600)" alt="">
     </div>
   </div>
@@ -1096,7 +1098,11 @@
           (click)="$event.stopPropagation(); photoStep(-1)" title="previous (←)">‹</button>
   <button class="galnav next" *ngIf="reviewPhotos.length > 1"
           (click)="$event.stopPropagation(); photoStep(1)" title="next (→)">›</button>
-  <span class="galcount">{{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}</span>
+  <span class="galcount">{{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}
+    <span *ngIf="zoom > 1"> · {{ zoom }}×</span></span>
+  <button class="galzoom" (click)="$event.stopPropagation(); zoom > 1 ? resetZoom() : (zoom = 2.5)"
+          [title]="zoom > 1 ? 'back to fit (double-tap)' : 'zoom in (double-tap, or pinch)'">
+    {{ zoom > 1 ? '⊖' : '⊕' }}</button>
 
   <div class="lightstrip" *ngIf="reviewPhotos.length > 1" (click)="$event.stopPropagation()">
     <img *ngFor="let ph of reviewPhotos; let i = index"

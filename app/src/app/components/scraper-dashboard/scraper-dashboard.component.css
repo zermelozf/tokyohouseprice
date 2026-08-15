@@ -1230,12 +1230,18 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
                background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 
 /* Full-screen viewer: swipeable stage, thumbnails to jump around. */
-.lightbox { flex-direction: column; gap: 0.6rem; }
+.lightbox { flex-direction: column; gap: 0; }
+/* The stage takes the whole screen and the thumbnails float over it, so a photo
+   is as large as the display allows rather than as large as what is left after
+   a strip. */
 .lightstage { position: relative; overflow: hidden; width: 100vw;
-              height: calc(94dvh - 92px); cursor: grab;
-              /* Without this the browser claims the horizontal gesture for its
-                 own panning and the drag never reaches the handlers. */
-              touch-action: none; user-select: none; }
+              height: 100dvh; cursor: grab; user-select: none;
+              /* pinch-zoom, not none: `none` took the horizontal gesture back
+                 from the browser — which is what makes the swipe work — but it
+                 took pinch with it, and a photo of a room is exactly the thing
+                 you want to zoom into. Two fingers stay the browser's, one
+                 finger is ours. */
+              touch-action: pinch-zoom; }
 .lightstage:active { cursor: grabbing; }
 .lightstage .galtrack { cursor: inherit; }
 .lightstage .galtrack img { background: transparent; object-fit: contain;
@@ -1243,16 +1249,18 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
                             -webkit-user-drag: none; user-drag: none; }
 /* Thumbnails keep their own size; they are not part of the track. */
 .lightstrip img { -webkit-user-drag: none; user-drag: none; }
-.lightstrip { display: flex; gap: 0.35rem; max-width: 96vw; overflow-x: auto;
-              padding: 0.2rem 0.4rem 0.5rem; scrollbar-width: thin; }
+.lightstrip { position: absolute; bottom: 0; left: 0; right: 0;
+              display: flex; gap: 0.35rem; overflow-x: auto; justify-content: center;
+              padding: 0.4rem 0.5rem 0.6rem; scrollbar-width: none;
+              background: linear-gradient(transparent, rgba(8,10,13,0.85) 45%); }
+.lightstrip::-webkit-scrollbar { display: none; }
 .lightstrip img { height: 56px; width: 76px; object-fit: cover; border-radius: 3px;
                   opacity: 0.45; cursor: pointer; flex: none;
                   border: 2px solid transparent; background: #1b2027; }
 .lightstrip img.on { opacity: 1; border-color: #FF69B4; }
 .lightstrip img:hover { opacity: 0.85; }
 @media (max-width: 600px) {
-  .lightstage { height: calc(92dvh - 78px); }
-  .lightstrip img { height: 44px; width: 60px; }
+  .lightstrip img { height: 40px; width: 54px; }
 }
 .galfull { position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.55);
            color: #fff; border: none; box-shadow: none; border-radius: 3px;
@@ -1273,3 +1281,10 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .grouplegend .lgdot.dot-agreed { border: 2px solid #15803d; }
 .grouplegend .lgdot.dot-conflict { border: 2px solid #c2410c; }
 .grouplegend .lgdot.dot-awaiting { border: 2px solid #7c3aed; }
+.lightstage.zoomed { cursor: move; touch-action: none; }
+.lightstage .galtrack img { transition: transform 0.15s ease-out; }
+.lightstage.zoomed .galtrack img { transition: none; }
+.galzoom { position: absolute; bottom: 1rem; left: 1.2rem; background: rgba(0,0,0,0.55);
+           color: #fff; border: none; box-shadow: none; border-radius: 3px;
+           padding: 0.15rem 0.5rem; font-size: 1.1rem; cursor: pointer; z-index: 2; }
+.galzoom:hover { background: rgba(0,0,0,0.75); transform: none; }
