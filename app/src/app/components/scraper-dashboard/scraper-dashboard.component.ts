@@ -523,9 +523,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * opened that listing deliberately. */
   showBadges = false;
 
-  readonly QUICK_TAGS = ['bright', 'dark', 'noisy', 'main road', 'narrow street',
-                         'good layout', 'odd layout', 'needs work', 'nice street',
-                         'no parking', 'steep', 'overlooked'];
 
   /** What other people said about this listing. Yours is shown by the buttons
    * you are about to press, so it is left out here. */
@@ -755,16 +752,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.loadCard();
   }
 
-  toggleQuickTag(tag: string): void {
-    const cur = this.reviewTagInput.split(',').map(t => t.trim()).filter(Boolean);
-    const i = cur.indexOf(tag);
-    if (i >= 0) cur.splice(i, 1); else cur.push(tag);
-    this.reviewTagInput = cur.join(', ');
-  }
 
-  hasQuickTag(tag: string): boolean {
-    return this.reviewTagInput.split(',').map(t => t.trim()).includes(tag);
-  }
 
   /** How many of your verdicts the current filters actually show. A verdict
    * sits on the property for good, but the filters are free to exclude it —

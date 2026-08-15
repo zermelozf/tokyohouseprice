@@ -957,6 +957,9 @@
             {{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}
             <span *ngIf="reviewPhotosLoading">· loading…</span>
           </span>
+          <button class="galfull" *ngIf="reviewPhotos.length"
+                  (click)="$event.stopPropagation(); lightbox = true"
+                  title="full screen — swipe or ← → to browse, Esc to close">⛶</button>
         </div>
 
         <div class="sheet-info">
@@ -1053,11 +1056,6 @@
         <button class="ghost tiny" (click)="toggleCompare(p)" [class.sel]="isCompared(p.property_id)"
                 title="pick listings, then run the rent-vs-buy model">
           {{ isCompared(p.property_id) ? '✓ picked' : '⚖️ compare' }}</button>
-        <span class="triage-why">
-          <button type="button" class="chip" *ngFor="let t of QUICK_TAGS"
-                  [class.sel]="hasQuickTag(t)" (click)="toggleQuickTag(t)"
-                  title="why — saved with the verdict">{{ t }}</button>
-        </span>
         <input class="sheet-note" [(ngModel)]="reviewNote"
                [placeholder]="p.review_note || 'note (saved with the verdict)'">
         <span class="muted keyshint">1 / 2 / 3 verdict<span *ngIf="queue"> · space next</span>
@@ -1077,14 +1075,31 @@
 <!-- Full-screen photo. Above every other overlay, since it is opened from
      inside one, and dismissed the same three ways. -->
 <div class="lightbox" *ngIf="lightbox" (click)="closeLightbox()">
-  <img [src]="photoUrl(reviewPhotos[reviewPhotoIndex], 1600)" alt=""
-       (click)="$event.stopPropagation()">
+  <!-- Swipe on the image and a thumbnail strip below it: the same photo set as
+       the sheet, at the size the screen can actually show. -->
+  <div class="lightstage" (click)="$event.stopPropagation()"
+       (pointerdown)="swipeStart($event)" (pointermove)="swipeMove($event)"
+       (pointerup)="swipeEnd()" (pointerleave)="swipeEnd()" (pointercancel)="swipeEnd()">
+    <div class="galtrack" [class.gliding]="gliding"
+         [style.transform]="'translate3d(calc(-100% + ' + dragX + 'px), 0, 0)'">
+      <img [src]="photoUrl(photoAt(-1), 1600)" alt="">
+      <img [src]="photoUrl(photoAt(0), 1600)" alt="">
+      <img [src]="photoUrl(photoAt(1), 1600)" alt="">
+    </div>
+  </div>
+
   <button class="modal-close" (click)="closeLightbox()" title="close (Esc)">✕</button>
   <button class="galnav prev" *ngIf="reviewPhotos.length > 1"
           (click)="$event.stopPropagation(); photoStep(-1)" title="previous (←)">‹</button>
   <button class="galnav next" *ngIf="reviewPhotos.length > 1"
           (click)="$event.stopPropagation(); photoStep(1)" title="next (→)">›</button>
   <span class="galcount">{{ reviewPhotoIndex + 1 }} / {{ reviewPhotos.length }}</span>
+
+  <div class="lightstrip" *ngIf="reviewPhotos.length > 1" (click)="$event.stopPropagation()">
+    <img *ngFor="let ph of reviewPhotos; let i = index"
+         [src]="photoUrl(ph, 160)" [class.on]="i === reviewPhotoIndex"
+         (click)="reviewPhotoIndex = i" alt="" loading="lazy">
+  </div>
 </div>
 
 <!-- ============ compare tray: two picks, then run the model ============ -->

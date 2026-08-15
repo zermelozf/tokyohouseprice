@@ -1229,3 +1229,24 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .waiting { font-size: 0.78rem; color: #b45309; font-weight: 600; }
 .waitingpill { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 10px;
                background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+/* Full-screen viewer: swipeable stage, thumbnails to jump around. */
+.lightbox { flex-direction: column; gap: 0.6rem; }
+.lightstage { position: relative; overflow: hidden; width: 100vw;
+              height: calc(94dvh - 92px); cursor: default; }
+.lightstage .galtrack img { background: transparent; object-fit: contain; }
+.lightstrip { display: flex; gap: 0.35rem; max-width: 96vw; overflow-x: auto;
+              padding: 0.2rem 0.4rem 0.5rem; scrollbar-width: thin; }
+.lightstrip img { height: 56px; width: 76px; object-fit: cover; border-radius: 3px;
+                  opacity: 0.45; cursor: pointer; flex: none;
+                  border: 2px solid transparent; background: #1b2027; }
+.lightstrip img.on { opacity: 1; border-color: #FF69B4; }
+.lightstrip img:hover { opacity: 0.85; }
+@media (max-width: 600px) {
+  .lightstage { height: calc(92dvh - 78px); }
+  .lightstrip img { height: 44px; width: 60px; }
+}
+.galfull { position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.55);
+           color: #fff; border: none; box-shadow: none; border-radius: 3px;
+           padding: 0.1rem 0.4rem; font-size: 0.9rem; cursor: pointer; line-height: 1.3; }
+.galfull:hover { background: rgba(0,0,0,0.75); transform: none; }
