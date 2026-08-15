@@ -351,12 +351,20 @@
             levelled</th>
           <th title="total cost in today's money over the horizon, net of what you could sell it for">
             PV cost</th>
-          <th title="how much more than the cheapest on this list">vs best</th>
+          <th [title]="compareAnchor == null
+                ? 'how much more than the cheapest on this list'
+                : 'how much more than the row you chose as the baseline'">
+            {{ compareAnchor == null ? 'vs best' : 'vs baseline' }}</th>
           <th title="present value per m² of building, or of land for a plot">¥/m²</th>
           <th title="deposit, taxes and fees on day one">upfront</th>
           <th title="what the equity is worth in today's money at the horizon">exit value</th>
-          <th title="return on the extra money this needs compared with the cheapest option on the list. Above the hurdle rate means the extra capital earns its keep; a dash means the comparison frees cash rather than committing it, so its IRR is a borrowing rate, not a return.">
-            IRR vs cheapest</th>
+          <th [title]="'Return on the extra money this needs compared with '
+                + (compareAnchor == null ? 'the cheapest option on the list'
+                                         : 'the row you chose as the baseline')
+                + '. Above the hurdle rate means the extra capital earns its keep; '
+                + 'a dash means the comparison frees cash rather than committing it, '
+                + 'so its IRR is a borrowing rate, not a return.'">
+            IRR vs {{ compareAnchor == null ? 'cheapest' : 'baseline' }}</th>
           <th title="the year that return peaks">best sell</th>
         </tr></thead>
         <tbody>
@@ -383,7 +391,7 @@
             <td>{{ x.o && x.o.pv_cost_per_m2 ? fmtYen(-x.o.pv_cost_per_m2) : '—' }}</td>
             <td>{{ x.o ? fmtYen(x.o.upfront_cash) : '—' }}</td>
             <td>{{ x.o && x.o.exit_value_pv ? fmtYen(x.o.exit_value_pv) : '—' }}</td>
-            <td>{{ x.isAnchor ? 'cheapest'
+            <td>{{ x.isAnchor ? (x.rank === 1 ? 'cheapest' : 'baseline')
                  : x.irr != null ? (x.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
             <td>{{ x.sellYear != null ? 'year ' + x.sellYear : '—' }}</td>
           </tr>
