@@ -350,7 +350,6 @@
       <button class="ghost tiny" [class.sel]="comparePick" (click)="toggleComparePick()"
               title="tick several rows, then run the rent-vs-buy model on them">
         ⚖️ {{ comparePick ? 'picking…' : 'compare' }}</button>
-      <button class="ghost tiny" (click)="load()" title="re-query the local DB">🔄 refresh</button>
       <span class="exportlinks" *ngIf="searchRows.length">
         <span class="muted" title="download these results for Google My Maps (mymaps.google.com)">export</span>
         <button class="linkbtn" (click)="exportCsv()"
@@ -630,7 +629,6 @@
             </button>
             <span class="muted">unreviewed first · keys 1/2/3</span>
           </div>
-          <button (click)="loadMap()">🔄 Refresh</button>
           <div class="legend" *ngIf="colorBy === 'category'">
             <span class="lg" *ngFor="let c of catColors"><i [style.background]="c.color"></i>{{ c.label }}</span>
           </div>

@@ -1876,6 +1876,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
    * requests could only ever agree by coincidence, and they did not: the map
    * used to hold listings the table had already cut. */
   load(): void {
+    this.lastLoad = Date.now();
     this.api.search(this.buildFilters()).subscribe({
       next: res => {
         this.searched = true;
@@ -3066,9 +3067,32 @@ ${folders}
     if (this.pollTimer) return;
     this.pollTimer = setInterval(() => {
       this.loadJobs();
-      this.api.crawlStatus().subscribe({ next: s => this.liveStatus = s, error: () => {} });
+      this.api.crawlStatus().subscribe({
+        next: s => {
+          // A crawl that just finished has added listings the screen cannot
+          // know about, which is the only reason a refresh button existed.
+          // Noticing the transition is the machine's job, not yours.
+          const wasRunning = this.liveStatus?.state === 'running';
+          this.liveStatus = s;
+          if (wasRunning && s.state !== 'running') this.load();
+        },
+        error: () => {},
+      });
     }, 5000);
   }
+
+  /** Coming back to the tab picks up what other people did while you were away
+   * — a partner's verdicts, a crawl someone else started. Cheaper and more
+   * timely than polling for it, and it is the moment you would have reached for
+   * a refresh button. */
+  @HostListener('document:visibilitychange')
+  onVisible(): void {
+    if (document.visibilityState !== 'visible' || !this.searched) return;
+    if (Date.now() - this.lastLoad < 30_000) return;   // just looked; leave it alone
+    this.load();
+    this.loadReviewCounts();
+  }
+  private lastLoad = 0;
 
   loadJobs(): void {
     this.api.jobs().subscribe({ next: s => this.sched = s, error: () => {} });
