@@ -966,8 +966,8 @@ td.commutecell b { color: #1e5b96; }
 }
 /* a rejected listing recedes; the ones you liked stand out */
 :host ::ng-deep .dot-bad { filter: saturate(0.2); }
-:host ::ng-deep .dot-good { filter: drop-shadow(0 0 3px rgba(212,160,23,0.65)); }
-:host ::ng-deep .dot-maybe { filter: drop-shadow(0 0 2px rgba(37,99,235,0.5)); }
+:host ::ng-deep .dot-good { filter: drop-shadow(0 0 3px rgba(21,128,61,0.6)); }
+:host ::ng-deep .dot-maybe { filter: drop-shadow(0 0 2px rgba(202,138,4,0.5)); }
 
 /* --- the filter bar --------------------------------------------------------
    A long flex row collapses badly below ~900px: controls of unequal width wrap
@@ -1270,16 +1270,16 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 /* Group verdicts on the map. Agreement glows, disagreement flashes, and a
    listing waiting on your opinion has a violet ring. */
 :host ::ng-deep .dot-agreed { filter: drop-shadow(0 0 5px rgba(21,128,61,0.75)); }
-:host ::ng-deep .dot-conflict { filter: drop-shadow(0 0 4px rgba(194,65,12,0.8));
+:host ::ng-deep .dot-conflict { filter: drop-shadow(0 0 4px rgba(219,39,119,0.8));
                                 animation: conflictpulse 2s ease-in-out infinite; }
 :host ::ng-deep .dot-awaiting { filter: drop-shadow(0 0 4px rgba(124,58,237,0.6)); }
-@keyframes conflictpulse { 50% { filter: drop-shadow(0 0 9px rgba(194,65,12,0.95)); } }
+@keyframes conflictpulse { 50% { filter: drop-shadow(0 0 9px rgba(219,39,119,0.95)); } }
 @media (prefers-reduced-motion: reduce) {
   :host ::ng-deep .dot-conflict { animation: none; }
 }
 .grouplegend .lgdot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
 .grouplegend .lgdot.dot-agreed { border: 2px solid #15803d; }
-.grouplegend .lgdot.dot-conflict { border: 2px solid #c2410c; }
+.grouplegend .lgdot.dot-conflict { border: 2px solid #db2777; }
 .grouplegend .lgdot.dot-awaiting { border: 2px solid #7c3aed; }
 .lightstage.zoomed { cursor: move; touch-action: none; }
 .lightstage .galtrack img { transition: transform 0.15s ease-out; }
@@ -1291,3 +1291,7 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .duppill, .inheritpill { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 10px; }
 .duppill { background: #eef2f7; color: #475569; border: 1px solid #dbe3ec; }
 .inheritpill { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
+.legendnote { font-size: 0.72rem; margin: 0.3rem 0 0.1rem; flex-basis: 100%; }
+.grouplegend .lgdot { background: #94a3b8; }      /* a stand-in for "any type" */
+.grouplegend .lgdot.dot-goodring { border: 2px solid #15803d; }
+.grouplegend .lgdot.dot-fade { opacity: 0.35; border: 2px solid #d7dce2; }

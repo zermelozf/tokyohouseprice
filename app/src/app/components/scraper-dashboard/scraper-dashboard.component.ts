@@ -2349,13 +2349,31 @@ ${folders}
   }
 
   /** Dot colour under the active `colorBy` mode. Grey = unknown era. */
+  /** The fill says what a listing *is* — nothing else.
+   *
+   * It used to be overloaded: a verdict replaced the category colour, and the
+   * group states filled gold, which is the colour of 土地 — so a 賃貸 you
+   * disagreed about was drawn as a plot. One channel, one meaning:
+   *
+   *     fill    what it is        category, or 耐震基準 when colouring by era
+   *     ring    what you think    your verdict, or the group's
+   *     size    how much it wants your attention
+   */
   pointColor(p: MapPoint): string {
-    // A verdict outranks the other dimensions: once you have judged a place,
-    // that is what you need to see at a glance.
-    if (p.verdict) return VERDICT_META[p.verdict].color;
     if (this.colorBy === 'era') return p.era ? ERA_META[p.era].color : '#9ca3af';
     return this.catColor(p.category);
   }
+
+  /** Ring colours. The same three verdict colours the chips and pills use, so
+   * green means good everywhere, plus two states only a group can be in. */
+  private readonly RING = {
+    good: VERDICT_META.good.color,
+    maybe: VERDICT_META.maybe.color,
+    bad: '#d7dce2',
+    agreed: VERDICT_META.good.color,
+    conflict: '#db2777',      // in neither the category nor the verdict palette
+    awaiting: '#7c3aed',
+  };
 
   // --- compare -------------------------------------------------------------
 
@@ -2938,7 +2956,7 @@ ${folders}
                   `${r.name}: ${m.label}${r.note ? ' — ' + r.note : ''}`);
     }
     const mark = this.groupMark(p);
-    if (mark === 'conflict') out += pill('#c2410c', '⚡ you disagree', 'one yes, one no');
+    if (mark === 'conflict') out += pill('#db2777', '⚡ you disagree', 'one yes, one no');
     if (mark === 'agreed') out += pill('#15803d', '✓ agreed', 'you both like this one');
     if (mark === 'awaiting') out += pill('#7c3aed', '👥 your turn', 'they judged it, you have not');
     return out;

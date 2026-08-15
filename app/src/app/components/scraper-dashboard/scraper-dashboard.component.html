@@ -636,10 +636,14 @@
           <div class="legend" *ngIf="colorBy === 'category'">
             <span class="lg" *ngFor="let c of catColors"><i [style.background]="c.color"></i>{{ c.label }}</span>
           </div>
+          <p class="muted legendnote">Colour is what it is; the ring is what you
+            think of it.</p>
           <div class="legend grouplegend">
-            <span class="lg"><i class="lgdot dot-agreed" style="background:#d4a017"></i>you agree</span>
-            <span class="lg"><i class="lgdot dot-conflict" style="background:#d4a017"></i>you disagree</span>
-            <span class="lg"><i class="lgdot dot-awaiting" style="background:#d4a017"></i>waiting on you</span>
+            <span class="lg"><i class="lgdot dot-agreed"></i>you agree</span>
+            <span class="lg"><i class="lgdot dot-conflict"></i>you disagree</span>
+            <span class="lg"><i class="lgdot dot-awaiting"></i>waiting on you</span>
+            <span class="lg"><i class="lgdot dot-goodring"></i>your ♥︎</span>
+            <span class="lg"><i class="lgdot dot-fade"></i>rejected</span>
           </div>
           <div class="legend" *ngIf="colorBy === 'era'">
             <span class="lg" *ngFor="let e of eraList"><i [style.background]="e.color"></i>{{ e.label }}</span>
