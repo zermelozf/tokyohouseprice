@@ -559,7 +559,14 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.reviewNote = '';
     this.reviewTagInput = '';
     this.reviewOpen = true;
+    this.pushOverlay();
     this.loadPhotos();
+  }
+
+  closeReview(): void {
+    if (!this.reviewOpen) return;
+    this.reviewOpen = false;
+    this.popOverlay();
   }
 
   get reviewCard(): any | null {
@@ -645,8 +652,47 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   openLightbox(): void {
     if (!this.reviewPhotos.length || this.swipedFar) return;   // a swipe is not a click
     this.lightbox = true;
+    this.pushOverlay();
   }
-  closeLightbox(): void { this.lightbox = false; }
+  closeLightbox(): void {
+    if (!this.lightbox) return;
+    this.lightbox = false;
+    this.popOverlay();
+  }
+
+  // --- overlays and the back gesture -----------------------------------------
+  // Each overlay pushes a history entry, so a back swipe closes the thing on
+  // top instead of leaving the app. Without this, swiping back out of the
+  // full-screen photo took you off the page entirely — past the viewer, past
+  // the listing you were reading, and out of the dashboard.
+  private overlayDepth = 0;
+  private ignoreNextPop = false;
+
+  private pushOverlay(): void {
+    this.overlayDepth++;
+    history.pushState({ overlay: this.overlayDepth }, '');
+  }
+
+  /** Closed from the UI: consume our history entry without closing another. */
+  private popOverlay(): void {
+    if (this.overlayDepth <= 0) return;
+    this.ignoreNextPop = true;
+    history.back();
+  }
+
+  @HostListener('window:popstate')
+  onPopState(): void {
+    if (this.overlayDepth > 0) this.overlayDepth--;
+    if (this.ignoreNextPop) { this.ignoreNextPop = false; return; }
+    // Topmost first, matching what a back gesture should feel like: the photo
+    // closes back to the listing, the listing back to the results.
+    this.zone.run(() => {
+      if (this.lightbox) this.lightbox = false;
+      else if (this.reviewOpen) this.reviewOpen = false;
+      else if (this.compareOpen) this.compareOpen = false;
+      else if (this.detailModal) this.detailModal = null;
+    });
+  }
 
   photoAt(offset: number): string | null {
     const n = this.reviewPhotos.length;
@@ -748,7 +794,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   nextCard(step = 1): void {
     const next = this.reviewIndex + step;
     if (next < 0) { this.reviewIndex = 0; return; }
-    if (next >= this.reviewQueue.length) { this.reviewOpen = false; return; }
+    if (next >= this.reviewQueue.length) { this.closeReview(); return; }
     this.reviewIndex = next;
     // Show what was already said about this listing, rather than a blank slate.
     const c = this.reviewQueue[next];
@@ -1345,7 +1391,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   onEscape(): void {
     if (this.lightbox) { this.closeLightbox(); return; }
     // The review overlay sits above the sheet, so it closes first.
-    if (this.reviewOpen) return;
+    if (this.reviewOpen) { this.closeReview(); return; }
     if (this.detailModal) this.closeDetails();
   }
 
@@ -1364,7 +1410,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       'Backspace': () => { if (this.reviewOpen) this.nextCard(-1); },
       'Escape': () => {
         if (this.lightbox) this.closeLightbox();
-        else if (this.reviewOpen) this.reviewOpen = false;
+        else if (this.reviewOpen) this.closeReview();
         else this.closeDetails();
       },
     };
@@ -2138,6 +2184,7 @@ ${folders}
         this.reviewNote = p.review_note || '';
         this.reviewTagInput = (p.review_tags || []).join(', ');
         this.reviewOpen = true;
+        this.pushOverlay();          // so back closes it, like every other overlay
         this.map?.closePopup();
         this.loadPhotos();
       });
@@ -2938,6 +2985,7 @@ ${folders}
   /** The one detail view, opened from a map dot or a table row — the table
    * used to expand a second, thinner version of the same thing inline. */
   openDetails(p: MapPoint | Listing): void {
+    if (!this.detailModal) this.pushOverlay();
     this.detailModal = { point: p };
     this.loadCard();
   }
@@ -2950,7 +2998,11 @@ ${folders}
     this.reviewPhotoIndex = 0;
   }
 
-  closeDetails(): void { this.detailModal = null; }
+  closeDetails(): void {
+    if (!this.detailModal) return;
+    this.detailModal = null;
+    this.popOverlay();
+  }
 
   // --- sheet grip: drag to resize, drag down to dismiss, click to close -----
   // A bar that only responded to clicks reads as broken, because a grip is the

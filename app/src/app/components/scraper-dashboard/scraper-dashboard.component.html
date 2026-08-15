@@ -911,7 +911,7 @@
     <div class="modal sheet" (click)="$event.stopPropagation()" [style.height.dvh]="sheetHeight">
       <div class="sheet-grip" (pointerdown)="gripDown($event)"
            title="drag to resize · drag down or click to close"></div>
-      <button class="modal-close" (click)="queue ? (reviewOpen = false) : closeDetails()"
+      <button class="modal-close" (click)="queue ? closeReview() : closeDetails()"
               title="close (Esc)">✕</button>
 
       <div class="sheet-head">
@@ -963,7 +963,7 @@
             <span *ngIf="reviewPhotosLoading">· loading…</span>
           </span>
           <button class="galfull" *ngIf="reviewPhotos.length"
-                  (click)="$event.stopPropagation(); lightbox = true"
+                  (click)="$event.stopPropagation(); openLightbox()"
                   title="full screen — swipe or ← → to browse, Esc to close">⛶</button>
         </div>
 
@@ -1483,7 +1483,7 @@
 </div>
 
 <!-- ============ manual review: one card at a time ============ -->
-<div class="modal-backdrop sheet-backdrop" *ngIf="reviewOpen" (click)="reviewOpen = false">
+<div class="modal-backdrop sheet-backdrop" *ngIf="reviewOpen" (click)="closeReview()">
   <ng-container *ngIf="reviewCard as c"
                 [ngTemplateOutlet]="listingSheetTpl"
                 [ngTemplateOutletContext]="{ card: c, queue: true }"></ng-container>
