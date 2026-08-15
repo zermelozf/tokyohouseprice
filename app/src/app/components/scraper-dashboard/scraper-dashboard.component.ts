@@ -2056,10 +2056,56 @@ ${folders}
   /** How a graded pin looks. Red read as an alert rather than a judgement, so
    * a rejected listing now fades out instead of shouting, and the two you care
    * about are marked by a ring rather than by hue alone. */
+  /** What a group has decided about a listing, as one word.
+   *
+   *   agreed    two or more of you looked and nobody said no — the shortlist
+   *   conflict  one said yes, another said no. The one case that must not be
+   *             greyed out: hiding it would resolve the disagreement by
+   *             default, in favour of whoever happened to say no
+   *   awaiting  someone judged it, you have not — your call settles it
+   *   agreed-no everyone who looked said no; twice as dead, so twice as faint
+   */
+  groupMark(p: any): 'agreed' | 'conflict' | 'awaiting' | 'agreed-no' | null {
+    const revs = (p?.reviews || []).filter((r: any) => r.verdict);
+    if (revs.length < 2 && !revs.some((r: any) => !r.mine)) return null;
+    const good = revs.filter((r: any) => r.verdict === 'good').length;
+    const bad = revs.filter((r: any) => r.verdict === 'bad').length;
+    if (good && bad) return 'conflict';
+    if (revs.length >= 2 && !bad) return 'agreed';
+    if (revs.length >= 2 && !good && bad === revs.length) return 'agreed-no';
+    if (!p.verdict && revs.some((r: any) => !r.mine)) return 'awaiting';
+    return null;
+  }
+
   private markerStyle(p: MapPoint, radius: number): any {
     const base = { pane: 'listings', radius, opacity: 1, fillOpacity: 1,
                    weight: 2.5, color: '#ffffff', className: 'listing-dot',
                    fillColor: this.pointColor(p) };
+
+    // The group's view comes first, because it says more than yours alone.
+    const mark = this.groupMark(p);
+    if (mark === 'conflict') {
+      // Deliberately loud. One of you wants this house and the other does not,
+      // which is a conversation to have, not a dot to lose.
+      return { ...base, radius: radius + 2, fillColor: '#d4a017',
+               color: '#c2410c', weight: 4, className: 'listing-dot dot-conflict' };
+    }
+    if (mark === 'agreed') {
+      return { ...base, radius: radius + 3, fillColor: '#d4a017',
+               color: '#15803d', weight: 4, className: 'listing-dot dot-agreed' };
+    }
+    if (mark === 'awaiting') {
+      const theirs = (p as any).reviews.find((r: any) => !r.mine)?.verdict;
+      return { ...base, radius: radius + 1,
+               fillColor: theirs === 'bad' ? '#b6bdc6' : '#d4a017',
+               color: '#7c3aed', weight: 3, className: 'listing-dot dot-awaiting' };
+    }
+    if (mark === 'agreed-no') {
+      return { ...base, radius: Math.max(3, radius - 3), fillColor: '#c9ced5',
+               fillOpacity: 0.3, color: '#e3e7ec', weight: 1,
+               className: 'listing-dot dot-bad' };
+    }
+
     if (p.verdict === 'bad') {
       // Greyed out and shrunk: still there so you know it was judged, but it
       // stops competing for attention.
@@ -2752,12 +2798,30 @@ ${folders}
 
   /** Your own verdict, so a listing you already rejected says so on sight. */
   private verdictBadge(p: MapPoint): string {
-    if (!p.verdict) return '';
-    const m = VERDICT_META[p.verdict];
-    const tags = (p.review_tags || []).join(', ');
-    return `<span title="${this.esc(tags || m.label)}" style="background:${m.color};`
-         + `color:#fff;padding:1px 6px;border-radius:2px;font-size:11px;font-weight:700">`
-         + `${m.icon} ${this.esc(m.label)}</span> `;
+    const pill = (bg: string, text: string, title: string) =>
+      `<span title="${this.esc(title)}" style="background:${bg};color:#fff;`
+      + `padding:1px 6px;border-radius:2px;font-size:11px;font-weight:700">`
+      + `${this.esc(text)}</span> `;
+
+    let out = '';
+    if (p.verdict) {
+      const m = VERDICT_META[p.verdict];
+      out += pill(m.color, `${m.icon} ${m.label}`,
+                  (p.review_tags || []).join(', ') || `you: ${m.label}`);
+    }
+    // Who else said what, by name. The disagreement is the point — a dot you
+    // and your partner rate differently is the one worth talking about.
+    const others = ((p as any).reviews || []).filter((r: any) => !r.mine && r.verdict);
+    for (const r of others) {
+      const m = VERDICT_META[r.verdict as Verdict];
+      out += pill(m.color, `${m.icon} ${r.name}`,
+                  `${r.name}: ${m.label}${r.note ? ' — ' + r.note : ''}`);
+    }
+    const mark = this.groupMark(p);
+    if (mark === 'conflict') out += pill('#c2410c', '⚡ you disagree', 'one yes, one no');
+    if (mark === 'agreed') out += pill('#15803d', '✓ agreed', 'you both like this one');
+    if (mark === 'awaiting') out += pill('#7c3aed', '👥 your turn', 'they judged it, you have not');
+    return out;
   }
 
   /** Coloured 耐震基準 chip, with a caveat when the tier isn't certain. */
