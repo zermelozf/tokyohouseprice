@@ -104,9 +104,7 @@
             title="saves every filter on both tabs, sliders included">💾 save view</button>
     <button class="ghost tiny" (click)="copyShareLink()"
             title="a link that restores this exact view">🔗 copy link</button>
-    <button class="ghost tiny" (click)="openPeople()"
-            title="who can use this, and who shares reviews and saved views with you">
-      👥 people</button>
+
     <span class="note" *ngIf="shareMsg">{{ shareMsg }}</span>
   </div>
 </ng-template>
@@ -138,6 +136,10 @@
     <button [class.sel]="activeTab === 'search'" (click)="activeTab = 'search'">Search</button>
     <button [class.sel]="activeTab === 'report'" (click)="openDiffReport()">Report</button>
     <button [class.sel]="activeTab === 'map'" (click)="openMap()">Map</button>
+    <!-- Admin only: managing who may sign in is not a thing to leave lying
+         around for people who cannot act on it. -->
+    <button *ngIf="accessInfo?.is_admin" [class.sel]="activeTab === 'groups'"
+            (click)="openGroups()">Groups</button>
   </nav>
 
   <!-- ============ CRAWLERS TAB (default) ============ -->
@@ -254,6 +256,74 @@
     </p>
   </section>
 
+  <!-- ============ GROUPS TAB (admin only) ============ -->
+  <section class="card" *ngIf="activeTab === 'groups'">
+    <h2>People &amp; groups</h2>
+    <p class="muted top0">
+      A group is a household: everyone in it sees each other's reviews and saved
+      views, and each keeps their own verdict on a listing — two people
+      disagreeing about a house is the useful part.
+    </p>
+    <div class="err" *ngIf="accessError">⚠ {{ accessError }}</div>
+
+    <ng-container *ngIf="accessInfo as a">
+      <h3 class="diffh">Groups</h3>
+      <div class="grouprow" *ngFor="let g of a.groups">
+        <div class="grouphead">
+          <b>{{ g.name }}</b>
+          <span class="muted" *ngIf="g.mine">— you are in this one</span>
+        </div>
+        <div class="members">
+          <span class="member" *ngFor="let m of g.members">
+            {{ m.name || m.email }}
+            <button class="linkbtn" (click)="removeMember(g.id, m.email)"
+                    title="remove from this group">✕</button>
+          </span>
+          <span class="muted" *ngIf="!g.members.length">nobody yet</span>
+        </div>
+        <div class="addrow">
+          <input [(ngModel)]="newMemberEmail[g.id]" placeholder="email to add"
+                 (keyup.enter)="addMember(g.id)">
+          <button class="ghost tiny" (click)="addMember(g.id)">add to group</button>
+        </div>
+      </div>
+      <div class="addrow">
+        <input [(ngModel)]="newGroupName" placeholder="new group name, e.g. our household"
+               (keyup.enter)="createGroup()">
+        <button class="ghost tiny" (click)="createGroup()">create group</button>
+      </div>
+
+      <h3 class="diffh">Who can sign in</h3>
+      <p class="muted note">Adding someone to a group lets them in automatically;
+        this list is for access without sharing.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>name</th><th>email</th><th>admin</th><th>last seen</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let u of a.users">
+              <td>{{ u.name || '—' }}</td>
+              <td>{{ u.email }}</td>
+              <td>
+                <input type="checkbox" [checked]="u.is_admin"
+                       (change)="setAdmin(u.email, $any($event.target).checked)"
+                       title="admins manage people and groups">
+              </td>
+              <td class="muted">{{ u.last_seen ? (u.last_seen | slice:0:10) : 'never' }}</td>
+              <td><button class="linkbtn" (click)="removeUser(u.email)">remove</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="addrow">
+        <input [(ngModel)]="newUserEmail" placeholder="email to allow"
+               (keyup.enter)="addUser()">
+        <button class="ghost tiny" (click)="addUser()">allow</button>
+      </div>
+    </ng-container>
+  </section>
+
   <!-- ============ SEARCH TAB (already-crawled data) ============ -->
   <section class="card" *ngIf="activeTab === 'search'">
     <h2>Search <span class="muted normal">{{ searchMeta }}</span></h2>
@@ -268,6 +338,10 @@
       <button (click)="startReview(true, 'search')" [disabled]="!searchRows.length">
         🔍 Review {{ searchRows.length }}
       </button>
+      <span class="waiting" *ngIf="awaitingMe().length"
+            title="someone in your group judged these and you have not — they come first in the queue">
+        👥 {{ awaitingMe().length }} waiting on you
+      </span>
       <span class="muted">unreviewed first · keys 1/2/3</span>
       <span class="muted" *ngIf="reviewedTotal()">
         · {{ reviewedTotal() }} reviewed, <b>{{ reviewedShown('search') }}</b> shown
@@ -847,6 +921,8 @@
                 [title]="showBadges ? 'hide the verdict and 耐震基準 badges'
                                     : 'show the verdict and 耐震基準 badges — hidden so an earlier call does not colour this one'">
           {{ showBadges ? '🏷️ hide' : '🏷️' }}</button>
+        <span class="waitingpill" *ngIf="!p.verdict && othersReviews(p).length"
+              title="your group judged this; your call is what settles it">👥 your turn</span>
         <span class="othersaid" *ngFor="let r of othersReviews(p)"
               [title]="r.name + ' — ' + r.verdict + (r.note ? ': ' + r.note : '')"
               [style.borderColor]="verdictMeta(r.verdict)?.color">
@@ -995,72 +1071,6 @@
     <ng-container *ngIf="detailModal.point as p"
                   [ngTemplateOutlet]="listingSheetTpl"
                   [ngTemplateOutletContext]="{ card: p, queue: false }"></ng-container>
-  </div>
-</div>
-
-<!-- Who may use the tool, and who shares with whom. A group is a household:
-     everyone in it sees each other's reviews and saved views, while each keeps
-     their own verdict on a listing. -->
-<div class="modal-backdrop" *ngIf="peopleOpen" (click)="peopleOpen = false">
-  <div class="modal peoplemodal" (click)="$event.stopPropagation()">
-    <button class="modal-close" (click)="peopleOpen = false" title="close">✕</button>
-    <h3>People &amp; groups</h3>
-    <p class="muted top0" *ngIf="accessInfo">
-      Signed in as <b>{{ accessInfo.me }}</b>.
-      You share reviews and saved views with
-      <b>{{ accessInfo.peers.length - 1 || 'nobody' }}</b>
-      <span *ngIf="accessInfo.peers.length > 1"> other person(s)</span>.
-    </p>
-    <div class="err" *ngIf="accessError">⚠ {{ accessError }}</div>
-
-    <ng-container *ngIf="accessInfo as a">
-      <h4>Groups</h4>
-      <p class="muted note">Everyone in a group sees the group's reviews and saved
-        views. Each person still keeps their own verdict on a listing — the
-        disagreement is the useful part.</p>
-      <div class="grouprow" *ngFor="let g of a.groups">
-        <div class="grouphead">
-          <b>{{ g.name }}</b>
-          <span class="muted" *ngIf="!g.mine">— you are not in this one</span>
-        </div>
-        <div class="members">
-          <span class="member" *ngFor="let m of g.members">
-            {{ m.name || m.email }}
-            <span class="muted" *ngIf="m.role === 'owner'">(owner)</span>
-            <button class="linkbtn" *ngIf="g.mine" (click)="removeMember(g.id, m.email)"
-                    title="remove from this group">✕</button>
-          </span>
-        </div>
-        <div class="addrow" *ngIf="g.mine">
-          <input [(ngModel)]="newMemberEmail[g.id]" placeholder="email to add"
-                 (keyup.enter)="addMember(g.id)">
-          <button class="ghost tiny" (click)="addMember(g.id)">add to group</button>
-        </div>
-      </div>
-      <div class="addrow">
-        <input [(ngModel)]="newGroupName" placeholder="new group name, e.g. our household"
-               (keyup.enter)="createGroup()">
-        <button class="ghost tiny" (click)="createGroup()">create group</button>
-      </div>
-
-      <h4>Who can sign in</h4>
-      <p class="muted note" *ngIf="amOwner()">Adding someone to a group lets them in
-        automatically; this list is for access without sharing.</p>
-      <p class="muted note" *ngIf="!amOwner()">Only <b>{{ a.owner }}</b> can change
-        this list.</p>
-      <div class="userrow" *ngFor="let u of a.users">
-        <span>{{ u.name || u.email }}</span>
-        <span class="muted">{{ u.email }}</span>
-        <span class="muted">{{ u.last_seen ? 'last seen ' + (u.last_seen | slice:0:10) : 'never signed in' }}</span>
-        <button class="linkbtn" *ngIf="amOwner() && u.email !== a.owner"
-                (click)="removeUser(u.email)">remove</button>
-      </div>
-      <div class="addrow" *ngIf="amOwner()">
-        <input [(ngModel)]="newUserEmail" placeholder="email to allow"
-               (keyup.enter)="addUser()">
-        <button class="ghost tiny" (click)="addUser()">allow</button>
-      </div>
-    </ng-container>
   </div>
 </div>
 

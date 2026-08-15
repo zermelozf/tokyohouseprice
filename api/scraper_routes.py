@@ -218,10 +218,9 @@ class MemberBody(BaseModel):
 
 
 def _may_manage(user: User) -> None:
-    """Only the owner changes who may use the tool. Group membership is looser
-    — see the group routes — but the allowlist itself is not."""
-    if user.email != access.OWNER_EMAIL:
-        raise HTTPException(403, "only the owner can change who may use this tool")
+    """People and groups are an admin's job. Everyone else uses the tool."""
+    if not access.is_admin(user.email):
+        raise HTTPException(403, "only an admin can manage people and groups")
 
 
 @router.get("/access")
@@ -246,28 +245,39 @@ def access_remove_user(email: str, user: User = Depends(current_user)):
 
 @router.post("/access/groups")
 def access_create_group(body: GroupBody, user: User = Depends(current_user)):
+    _may_manage(user)
     name = body.name.strip()
     if not name:
         raise HTTPException(400, "a group needs a name")
     return access.create_group(name, user.email)
 
 
+class AdminBody(BaseModel):
+    is_admin: bool
+
+
+@router.post("/access/users/{email}/admin")
+def access_set_admin(email: str, body: AdminBody, user: User = Depends(current_user)):
+    _may_manage(user)
+    try:
+        return access.set_admin(email, body.is_admin)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+
 @router.post("/access/groups/{group_id}/members")
 def access_add_member(group_id: int, body: MemberBody,
                       user: User = Depends(current_user)):
-    """Anyone in a group may add to it: the people sharing a house hunt are
-    peers, not an admin and their staff. Adding also grants access, since a
-    member who cannot sign in is a confusing thing to have in the list."""
-    if not any(g["id"] == group_id for g in access.groups_of(user.email)):
-        raise HTTPException(403, "you are not in that group")
+    """Adding also grants access: a member who cannot sign in is a confusing
+    thing to have in the list."""
+    _may_manage(user)
     return access.add_member(group_id, body.email, body.role)
 
 
 @router.delete("/access/groups/{group_id}/members/{email}")
 def access_remove_member(group_id: int, email: str,
                          user: User = Depends(current_user)):
-    if not any(g["id"] == group_id for g in access.groups_of(user.email)):
-        raise HTTPException(403, "you are not in that group")
+    _may_manage(user)
     return access.remove_member(group_id, email)
 
 

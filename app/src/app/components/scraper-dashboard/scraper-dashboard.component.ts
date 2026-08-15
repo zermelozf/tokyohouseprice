@@ -127,7 +127,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   showJobForm = false;
 
   // Which tab is visible. Crawlers (running/scheduled + status) is the default.
-  activeTab: 'crawlers' | 'search' | 'report' | 'map' = 'crawlers';
+  activeTab: 'crawlers' | 'search' | 'report' | 'map' | 'groups' = 'crawlers';
 
   // --- Report tab: what changed between two crawls ---------------------------
   crawlDates: CrawlDate[] = [];
@@ -272,16 +272,19 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   }
 
   // --- people and groups ----------------------------------------------------
-  peopleOpen = false;
   accessInfo: AccessOverview | null = null;
   accessError = '';
   newUserEmail = '';
   newGroupName = '';
   newMemberEmail: Record<number, string> = {};
 
-  openPeople(): void {
-    this.peopleOpen = true;
+  openGroups(): void {
+    this.activeTab = 'groups';
     this.loadAccess();
+  }
+
+  setAdmin(email: string, isAdmin: boolean): void {
+    this.after(this.api.setAdmin(email, isAdmin));
   }
 
   loadAccess(): void {
@@ -289,11 +292,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
       next: a => { this.accessInfo = a; this.accessError = ''; },
       error: e => this.accessError = e?.error?.detail || 'could not load the people list',
     });
-  }
-
-  /** Only the owner may change who can use the tool at all. */
-  amOwner(): boolean {
-    return !!this.accessInfo && this.accessInfo.me === this.accessInfo.owner;
   }
 
   private after(obs: any): void {
@@ -531,11 +529,26 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   }
 
   /** Start a review session over what the map is currently showing. */
+  /** Listings someone in your group has judged and you have not.
+   *
+   * These come first in the queue: a second opinion on a place your partner
+   * already looked at is worth more than a first opinion on a place neither of
+   * you has seen — it is the one that settles whether it stays on the list. */
+  awaitingMe(rows: any[] = this.searchRows): any[] {
+    return rows.filter(r => !r.verdict && (r.reviews || []).some((x: any) => !x.mine));
+  }
+
   startReview(onlyUnreviewed = true, source: 'map' | 'search' = 'map'): void {
     const all = source === 'search' ? this.searchRows : this.mapPoints;
     const pool = onlyUnreviewed ? all.filter((p: any) => !p.verdict) : all;
     if (!pool.length) return;
-    this.reviewQueue = [...pool] as any[];
+    // Sort, don't filter: everything stays reviewable, but what your group is
+    // waiting on comes up first.
+    const rank = (p: any) => {
+      if (p.verdict) return 2;                                    // already yours
+      return (p.reviews || []).some((x: any) => !x.mine) ? 0 : 1; // theirs, then new
+    };
+    this.reviewQueue = [...pool].sort((a: any, b: any) => rank(a) - rank(b)) as any[];
     this.reviewIndex = 0;
     this.reviewNote = '';
     this.reviewTagInput = '';
@@ -1307,6 +1320,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // looks as though nothing was ever saved.
     this.loadReviewCounts();
     this.loadSavedFilters();
+    this.loadAccess();   // decides whether the Groups tab exists
     // Default to the most recent crawl, both bounds on the same day: a window
     // spanning several crawls mixes listings that were on the market on
     // different mornings, and the newest one is what you are looking at.

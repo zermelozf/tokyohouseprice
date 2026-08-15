@@ -11,34 +11,83 @@ by membership rather than by a flag on each review, so adding someone shows
 them the whole history at once and removing them stops it, without touching a
 single review row.
 
-The allowlist lives in the database rather than in an environment variable
-because adding the person you are buying a house with should not require
-editing a systemd unit and restarting a service. SCRAPER_OWNER_EMAIL remains as
-the bootstrap: it is always allowed, and is inserted automatically so an empty
-table cannot lock everyone out.
+Everything here is stored, nothing is configured: the allowlist and the admin
+flag are rows, so adding the person you are buying a house with — or handing
+them the keys — is a click rather than an edit to a systemd unit and a restart.
+
+The one hard problem with no configuration is the first user: an empty table has
+no admin, so nobody can add one. This takes the usual way out — whoever signs in
+first to an empty table becomes the admin. It is a single unavoidable moment of
+trust, it happens on a tool that is not yet reachable by anyone else, and it is
+visible afterwards in the list rather than hidden in a unit file.
 """
 from __future__ import annotations
 
-import os
 from datetime import datetime
 
 from .db import connect, init_db
-
-OWNER_EMAIL = os.environ.get("SCRAPER_OWNER_EMAIL", "arnaud@linalgo.com").lower()
 
 
 def _now() -> str:
     return datetime.now().isoformat()
 
 
-def bootstrap() -> None:
-    """Make sure the owner exists, so a fresh database has a way in."""
+def is_empty() -> bool:
+    """No users at all — the one state in which anyone may claim the tool."""
+    conn = connect()
+    try:
+        return conn.execute("SELECT COUNT(*) c FROM app_user").fetchone()["c"] == 0
+    finally:
+        conn.close()
+
+
+def claim(email: str, name: str | None = None) -> dict:
+    """First sign-in on an empty install: that person becomes the admin."""
     conn = init_db()
     try:
         conn.execute(
-            "INSERT OR IGNORE INTO app_user (email, name, added_by, added_at) "
-            "VALUES (?,?,?,?)", (OWNER_EMAIL, "owner", "bootstrap", _now()))
+            "INSERT OR REPLACE INTO app_user "
+            "(email, name, is_admin, added_by, added_at) VALUES (?,?,1,?,?)",
+            ((email or "").lower(), name, "first sign-in", _now()))
         conn.commit()
+        return {"email": (email or "").lower(), "is_admin": True}
+    finally:
+        conn.close()
+
+
+def admins() -> list[str]:
+    conn = connect()
+    try:
+        return [r["email"] for r in
+                conn.execute("SELECT email FROM app_user WHERE is_admin = 1")]
+    finally:
+        conn.close()
+
+
+def is_admin(email: str) -> bool:
+    """Admins manage people and groups."""
+    email = (email or "").lower()
+    conn = connect()
+    try:
+        r = conn.execute("SELECT is_admin FROM app_user WHERE email = ?",
+                         (email,)).fetchone()
+        return bool(r and r["is_admin"])
+    finally:
+        conn.close()
+
+
+def set_admin(email: str, admin: bool) -> dict:
+    """Refuses to remove the last admin: a tool nobody can administer is a tool
+    that needs a database client to fix."""
+    email = (email or "").lower()
+    if not admin and admins() == [email]:
+        raise ValueError("that is the only admin — make someone else one first")
+    conn = init_db()
+    try:
+        conn.execute("UPDATE app_user SET is_admin = ? WHERE email = ?",
+                     (1 if admin else 0, email))
+        conn.commit()
+        return {"email": email, "is_admin": admin}
     finally:
         conn.close()
 
@@ -47,8 +96,6 @@ def is_allowed(email: str) -> bool:
     email = (email or "").lower()
     if not email:
         return False
-    if email == OWNER_EMAIL:
-        return True                      # the bootstrap can never be locked out
     conn = connect()
     try:
         return conn.execute("SELECT 1 FROM app_user WHERE email = ?",
@@ -118,8 +165,8 @@ def remove_user(email: str) -> dict:
     """Remove access. Reviews stay: they are a record of what was decided, and
     deleting them would quietly change the shortlist for everyone else."""
     email = (email or "").lower()
-    if email == OWNER_EMAIL:
-        raise ValueError("the owner cannot be removed")
+    if admins() == [email]:
+        raise ValueError("that is the only admin — make someone else one first")
     conn = init_db()
     try:
         conn.execute("DELETE FROM group_member WHERE email = ?", (email,))
@@ -180,7 +227,8 @@ def overview(email: str) -> dict:
     conn = connect()
     try:
         users = [dict(r) for r in conn.execute(
-            "SELECT email, name, added_at, last_seen FROM app_user ORDER BY email")]
+            "SELECT email, name, is_admin, added_at, last_seen FROM app_user "
+            "ORDER BY email")]
         groups = []
         for g in conn.execute("SELECT id, name, created_by FROM user_group ORDER BY name"):
             members = [dict(r) for r in conn.execute(
@@ -190,7 +238,8 @@ def overview(email: str) -> dict:
             groups.append({**dict(g), "members": members,
                            "mine": any(m["email"] == (email or "").lower() for m in members)})
         return {"users": users, "groups": groups,
-                "me": (email or "").lower(), "owner": OWNER_EMAIL,
+                "me": (email or "").lower(),
+                "is_admin": is_admin(email),
                 "peers": sorted(peers(email))}
     finally:
         conn.close()

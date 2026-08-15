@@ -1212,3 +1212,6 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .addrow input { flex: 1 1 12rem; padding: 0.3rem 0.4rem; font-size: 0.8rem;
                 border: 1px solid #ddd; border-radius: 3px; }
 @media (max-width: 600px) { .userrow { grid-template-columns: 1fr auto; } }
+.waiting { font-size: 0.78rem; color: #b45309; font-weight: 600; }
+.waitingpill { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 10px;
+               background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }

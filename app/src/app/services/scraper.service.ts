@@ -223,7 +223,8 @@ export interface PlotCapacity {
 }
 
 export interface AccessUser {
-  email: string; name?: string | null; added_at?: string; last_seen?: string | null;
+  email: string; name?: string | null; is_admin?: number | boolean;
+  added_at?: string; last_seen?: string | null;
 }
 
 export interface AccessGroup {
@@ -236,7 +237,7 @@ export interface AccessOverview {
   users: AccessUser[];
   groups: AccessGroup[];
   me: string;
-  owner: string;
+  is_admin: boolean;
   peers: string[];
 }
 
@@ -674,6 +675,10 @@ export class ScraperService {
   }
   addGroupMember(groupId: number, email: string) {
     return this.http.post<any>(`${this.base}/access/groups/${groupId}/members`, { email });
+  }
+  setAdmin(email: string, isAdmin: boolean) {
+    return this.http.post<any>(
+      `${this.base}/access/users/${encodeURIComponent(email)}/admin`, { is_admin: isAdmin });
   }
   removeGroupMember(groupId: number, email: string) {
     return this.http.delete<any>(

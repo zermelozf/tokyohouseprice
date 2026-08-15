@@ -1,7 +1,6 @@
 """SQLite connection + schema for the manifest (bronze meta) and silver tables."""
 from __future__ import annotations
 
-import os
 import sqlite3
 
 from .config import DB_PATH, DATA_DIR
@@ -123,12 +122,13 @@ CREATE TABLE IF NOT EXISTS geocode_cache (
 --
 -- The allowlist lives here rather than in an environment variable because
 -- adding the person you are buying a house with should not mean editing a
--- systemd unit and restarting a service. SCRAPER_OWNER_EMAIL still works, as
--- the bootstrap that can add the first row to an empty table.
+-- systemd unit and restarting a service. Nothing here is configured: on a
+-- completely empty install the first person to sign in becomes the admin.
 CREATE TABLE IF NOT EXISTS app_user (
     email     TEXT PRIMARY KEY,   -- lowercase; matches the Google account
     name      TEXT,
-    uid       TEXT,               -- Firebase uid, recorded on first sign-in
+    uid       TEXT,
+    is_admin  INTEGER DEFAULT 0,  -- may manage people and groups
     added_by  TEXT,
     added_at  TEXT,
     last_seen TEXT
@@ -217,6 +217,13 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("DROP TABLE property_detail")
         conn.commit()
 
+    # Admin became a stored property rather than an environment variable, so
+    # it can be granted without a restart.
+    au = [r[1] for r in conn.execute("PRAGMA table_info(app_user)").fetchall()]
+    if au and "is_admin" not in au:
+        conn.execute("ALTER TABLE app_user ADD COLUMN is_admin INTEGER DEFAULT 0")
+        conn.commit()
+
     # Saved views gained an owner, so a group can see each other's.
     sf = [r[1] for r in conn.execute("PRAGMA table_info(saved_filter)").fetchall()]
     if sf and "owner_email" not in sf:
@@ -224,11 +231,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.commit()
 
     # Reviews gained an owner. The rows that predate sign-in were all made by
-    # whoever was running the tool locally, so they are attributed to the owner
-    # rather than dropped or left ownerless — SCRAPER_OWNER_EMAIL names them.
+    # whoever was running the tool locally; they are attributed to the first
+    # admin, which on an install being migrated is that same person, rather than
+    # dropped or left ownerless.
     rev = [r[1] for r in conn.execute("PRAGMA table_info(listing_review)").fetchall()]
     if rev and "user_email" not in rev:
-        owner = os.environ.get("SCRAPER_OWNER_EMAIL", "arnaud@linalgo.com").lower()
+        row = conn.execute("SELECT email FROM app_user WHERE is_admin = 1 "
+                           "ORDER BY added_at LIMIT 1").fetchone()
+        owner = (row[0] if row else "unattributed@local")
         conn.executescript(f'''
             ALTER TABLE listing_review RENAME TO listing_review_old;
             CREATE TABLE listing_review (

@@ -44,14 +44,10 @@ CERT_URL = os.environ.get(
     "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
 ISSUER = f"https://securetoken.google.com/{PROJECT_ID}"
 
-# Who may use the scraper now lives in the database (scraper.access), so adding
-# the person you are buying a house with is a click rather than an edit to a
-# systemd unit and a restart. The owner is the bootstrap that can never be
-# locked out; SCRAPER_ALLOWED_EMAILS is still honoured and seeded into the
-# table on startup, so an existing deployment keeps working.
-OWNER_EMAIL = os.environ.get("SCRAPER_OWNER_EMAIL", "arnaud@linalgo.com")
-_ENV_ALLOWED = {e.strip().lower() for e in
-                os.environ.get("SCRAPER_ALLOWED_EMAILS", "").split(",") if e.strip()}
+# Who may use the scraper, and who administers it, live in the database
+# (scraper.access) — nothing here is configured. On a completely empty install
+# the first person to sign in becomes the admin; after that the list is managed
+# in the app.
 
 # Set AUTH_DISABLED=1 to run the API with no login at all. Only sane on a
 # machine nobody else can reach, and it is off by default so that "it works on
@@ -117,24 +113,18 @@ def current_user(authorization: str = Header(default="")) -> User:
     offline, and says so in the identity rather than pretending to be someone.
     """
     if AUTH_DISABLED:
-        return User(uid="local", email=OWNER_EMAIL.lower(), name="local (auth disabled)")
+        return User(uid="local", email="local@localhost", name="local (auth disabled)")
     if not authorization.lower().startswith("bearer "):
         raise HTTPException(401, "sign in to use the scraper")
     user = verify(authorization.split(" ", 1)[1].strip())
-    if not access.is_allowed(user.email):
+    # An install with no users at all belongs to whoever arrives first. There is
+    # no other way to bootstrap without configuration, and it is visible in the
+    # people list afterwards rather than buried in a unit file.
+    if access.is_empty():
+        access.claim(user.email, user.name)
+    elif not access.is_allowed(user.email):
         raise HTTPException(403, f"{user.email} is not on the allowlist for this tool")
     # Records the name Google gave us, so a row added as a bare address gains a
     # human name the first time its owner signs in.
     access.seen(user.email, user.name, user.uid)
     return user
-
-
-def _seed() -> None:
-    """Carry SCRAPER_ALLOWED_EMAILS into the table once, then forget it: the
-    list is managed in the app from here on."""
-    access.bootstrap()
-    for email in _ENV_ALLOWED:
-        access.add_user(email, None, "env:SCRAPER_ALLOWED_EMAILS")
-
-
-_seed()
