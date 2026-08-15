@@ -280,8 +280,11 @@
           <th>🎓 LFIT</th><th>liked by</th><th>address</th>
         </tr></thead>
         <tbody>
+          <!-- The row opens the listing, as it does everywhere else; the tick
+               box is what chooses what to chart. Making the whole row toggle a
+               selection meant looking at a house changed the comparison. -->
           <tr *ngFor="let r of shortlist()" class="rowlink"
-              [class.picked]="isCompared(r.property_id)" (click)="toggleCompare(r)">
+              [class.picked]="isCompared(r.property_id)" (click)="openDetails(r)">
             <td class="pickcol">
               <input type="checkbox" [checked]="isCompared(r.property_id)"
                      (click)="$event.stopPropagation(); toggleCompare(r)">

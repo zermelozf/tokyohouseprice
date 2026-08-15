@@ -2481,7 +2481,10 @@ ${folders}
       };
       this.compareSel = [...this.compareSel, slot].slice(-this.COMPARE_MAX);
     }
-    this.compareResult = null;
+    // Deliberately does NOT clear compareResult. Ticking a row is how you
+    // choose what to chart, and on the Compare tab the rows are the priced
+    // shortlist — throwing the prices away because you ticked one of them made
+    // the table vanish the moment you touched it.
     this.compareError = '';
     this.landSizeConfirmed = false;
     if (this.map) this.renderMarkers();   // refresh the ✓ state in open popups
