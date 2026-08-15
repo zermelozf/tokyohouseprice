@@ -262,11 +262,12 @@
 
   <!-- ============ COMPARE TAB (the shortlist, priced) ============ -->
   <section class="card" *ngIf="activeTab === 'compare'">
-    <h2>Compare the shortlist</h2>
+    <h2>Comparison <span class="muted normal" *ngIf="compareResult">·
+      {{ shortlistRows().length }} houses, cheapest first</span></h2>
     <p class="muted top0">
-      Everything anyone in your group said yes to, priced against each other with
-      the same rent-vs-buy model. A house liked once appears once, however many
-      agents posted it.
+      Everything anyone in your group said ♥︎ to, priced against each other with
+      one rent-vs-buy model. A house liked once appears once, however many agents
+      posted it.
     </p>
 
     <p class="muted" *ngIf="!shortlist().length">
@@ -290,32 +291,16 @@
       </span>
     </div>
 
-    <div class="actions searchbar resultbar" *ngIf="shortlist().length">
-      <button (click)="runShortlist()" [disabled]="compareLoading">
-        💴 Price all {{ shortlist().length > 24 ? 24 : shortlist().length }}
-      </button>
-      <span class="muted" *ngIf="shortlist().length > 24">the model takes 24 at a time</span>
-      <span class="spacer"></span>
-      <span class="muted">{{ compareSel.length }} ticked</span>
-      <button class="ghost tiny" (click)="runCompare()"
-              [disabled]="compareSel.length < 2 || hasLandPick() && !landSizeConfirmed"
-              title="the charts, for a handful of them">📈 chart the ticked</button>
-      <button class="ghost tiny" (click)="clearCompare()" *ngIf="compareSel.length">clear</button>
-    </div>
-
     <p class="muted" *ngIf="compareLoading">Running the model…</p>
     <div class="err" *ngIf="compareError">⚠ {{ compareError }}</div>
 
-    <!-- The financial answer, one row per house, in the model's own ranking. -->
-    <!-- One table: the shortlist with its prices in it. Two tables meant
-         finding the same house twice to read what it costs. -->
+    <!-- The comparison, and nothing beside it: one row per house, in the
+         model's own ranking, with the figures you decide on. -->
     <div class="tablewrap" *ngIf="shortlistRows().length">
       <table class="cmptable">
         <thead><tr>
           <th title="cheapest first, by present value over the horizon">#</th>
-          <th title="tick to chart it against the others">📈</th>
           <th>listing</th>
-          <th>liked by</th>
           <th title="what it costs a month once one-off costs are spread over the horizon">
             monthly equivalent</th>
           <th title="total cost in today's money over the horizon, net of what you could sell it for">
@@ -332,18 +317,13 @@
               [class.best]="x.rank === 1" [class.picked]="isCompared(x.r.property_id)"
               (click)="openDetails(x.r)">
             <td>{{ x.rank || '—' }}</td>
-            <td class="pickcol" (click)="$event.stopPropagation()">
-              <input type="checkbox" [checked]="isCompared(x.r.property_id)"
-                     (click)="toggleCompare(x.r)">
-            </td>
             <td class="cmpname">
               <b>{{ x.r.price_raw || fmtYen(x.r.price_yen) }}</b>
               <span class="muted">{{ x.r['property_label'] || catLabel(x.r.category) }}
                 · {{ x.r.building_m2 || x.r.land_m2 }} m²
                 <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>
-                · {{ x.r.address }}</span>
+                · {{ likedBy(x.r) }} · {{ x.r.address }}</span>
             </td>
-            <td class="muted">{{ likedBy(x.r) }}</td>
             <td>{{ x.o ? fmtYen(-x.o.monthly_equivalent) : '—' }}</td>
             <td>{{ x.o ? fmtYen(-x.o.pv_cost) : '—' }}</td>
             <td [class.worse]="x.vsBest > 0">{{ x.vsBest ? '+' + fmtYen(x.vsBest) : (x.rank === 1 ? 'best' : '—') }}</td>
