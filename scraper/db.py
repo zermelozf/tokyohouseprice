@@ -119,10 +119,46 @@ CREATE TABLE IF NOT EXISTS geocode_cache (
     fetched_at TEXT
 );
 
+-- Who may use the tool, and who they share with.
+--
+-- The allowlist lives here rather than in an environment variable because
+-- adding the person you are buying a house with should not mean editing a
+-- systemd unit and restarting a service. SCRAPER_OWNER_EMAIL still works, as
+-- the bootstrap that can add the first row to an empty table.
+CREATE TABLE IF NOT EXISTS app_user (
+    email     TEXT PRIMARY KEY,   -- lowercase; matches the Google account
+    name      TEXT,
+    uid       TEXT,               -- Firebase uid, recorded on first sign-in
+    added_by  TEXT,
+    added_at  TEXT,
+    last_seen TEXT
+);
+
+-- A group is the unit of sharing: a family looking for one house. Reviews and
+-- saved views made by any member are visible to the others, while each member
+-- keeps their own verdict on a listing — the disagreement is the useful part.
+CREATE TABLE IF NOT EXISTS user_group (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    created_by TEXT,
+    created_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS group_member (
+    group_id INTEGER NOT NULL,
+    email    TEXT NOT NULL,
+    role     TEXT DEFAULT 'member',   -- 'owner' may add and remove members
+    added_at TEXT,
+    PRIMARY KEY (group_id, email)
+);
+
+-- Saved views carry an owner so a group can see each other's, and so removing
+-- someone does not orphan the view they set up.
 CREATE TABLE IF NOT EXISTS saved_filter (
     name        TEXT PRIMARY KEY,
     filters     TEXT,          -- JSON blob, opaque to the server
-    created     TEXT
+    created     TEXT,
+    owner_email TEXT
 );
 
 -- Manual verdicts. Keyed on property_id alone, not (property_id, date): a
@@ -179,6 +215,12 @@ def _migrate(conn: sqlite3.Connection) -> None:
     cols = [r[1] for r in conn.execute("PRAGMA table_info(property_detail)").fetchall()]
     if cols and "scrape_date" not in cols:
         conn.execute("DROP TABLE property_detail")
+        conn.commit()
+
+    # Saved views gained an owner, so a group can see each other's.
+    sf = [r[1] for r in conn.execute("PRAGMA table_info(saved_filter)").fetchall()]
+    if sf and "owner_email" not in sf:
+        conn.execute("ALTER TABLE saved_filter ADD COLUMN owner_email TEXT")
         conn.commit()
 
     # Reviews gained an owner. The rows that predate sign-in were all made by

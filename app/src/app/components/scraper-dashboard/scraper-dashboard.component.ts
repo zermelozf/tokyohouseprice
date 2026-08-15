@@ -8,7 +8,7 @@ import {
   ScraperService, Listing, Stats, Summary, Filters,
   ScheduledJob, JobInput, SchedulerState, ScraperConfig, CrawlStatus, PropertyDetail, MapPoint,
   CrawlDate, CrawlDiff, DiffListing, FieldChange, SeismicEra, ERA_META,
-  CompareAssumptions, CompareResult, CompareOption, Verdict, VERDICT_META,
+  CompareAssumptions, CompareResult, CompareOption, Verdict, VERDICT_META, AccessOverview,
 } from '../../services/scraper.service';
 
 
@@ -269,6 +269,71 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     }
     this.pendingRanges = null;
     this.applyRanges();
+  }
+
+  // --- people and groups ----------------------------------------------------
+  peopleOpen = false;
+  accessInfo: AccessOverview | null = null;
+  accessError = '';
+  newUserEmail = '';
+  newGroupName = '';
+  newMemberEmail: Record<number, string> = {};
+
+  openPeople(): void {
+    this.peopleOpen = true;
+    this.loadAccess();
+  }
+
+  loadAccess(): void {
+    this.api.access().subscribe({
+      next: a => { this.accessInfo = a; this.accessError = ''; },
+      error: e => this.accessError = e?.error?.detail || 'could not load the people list',
+    });
+  }
+
+  /** Only the owner may change who can use the tool at all. */
+  amOwner(): boolean {
+    return !!this.accessInfo && this.accessInfo.me === this.accessInfo.owner;
+  }
+
+  private after(obs: any): void {
+    obs.subscribe({
+      next: () => { this.loadAccess(); this.loadSavedFilters(); this.load(); },
+      error: (e: any) => this.accessError = e?.error?.detail || 'that did not work',
+    });
+  }
+
+  addUser(): void {
+    const email = this.newUserEmail.trim();
+    if (!email) return;
+    this.newUserEmail = '';
+    this.after(this.api.addAccessUser(email));
+  }
+
+  removeUser(email: string): void {
+    if (!confirm(`Remove ${email}? Their reviews stay — they are a record of `
+               + `what was decided, and deleting them would change the shortlist.`)) return;
+    this.after(this.api.removeAccessUser(email));
+  }
+
+  createGroup(): void {
+    const name = this.newGroupName.trim();
+    if (!name) return;
+    this.newGroupName = '';
+    this.after(this.api.createGroup(name));
+  }
+
+  addMember(groupId: number): void {
+    const email = (this.newMemberEmail[groupId] || '').trim();
+    if (!email) return;
+    this.newMemberEmail[groupId] = '';
+    this.after(this.api.addGroupMember(groupId, email));
+  }
+
+  removeMember(groupId: number, email: string): void {
+    if (!confirm(`Remove ${email} from this group? They stop seeing the `
+               + `group's reviews and saved views, and it stops seeing theirs.`)) return;
+    this.after(this.api.removeGroupMember(groupId, email));
   }
 
   loadSavedFilters(): void {

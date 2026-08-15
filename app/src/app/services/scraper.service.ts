@@ -222,6 +222,24 @@ export interface PlotCapacity {
   deducted_m2: number | null;
 }
 
+export interface AccessUser {
+  email: string; name?: string | null; added_at?: string; last_seen?: string | null;
+}
+
+export interface AccessGroup {
+  id: number; name: string; created_by?: string;
+  members: { email: string; role: string; name?: string | null }[];
+  mine: boolean;
+}
+
+export interface AccessOverview {
+  users: AccessUser[];
+  groups: AccessGroup[];
+  me: string;
+  owner: string;
+  peers: string[];
+}
+
 export interface ListingReview {
   email: string;
   name: string;
@@ -638,5 +656,27 @@ export class ScraperService {
   diff(dateFrom: string, dateTo: string): Observable<CrawlDiff> {
     return this.http.get<CrawlDiff>(
       `${this.base}/scraper/diff?date_from=${dateFrom}&date_to=${dateTo}`);
+  }
+
+  // --- people and groups ----------------------------------------------------
+  // Who may use the tool, and who shares reviews and saved views with whom.
+  access() {
+    return this.http.get<AccessOverview>(`${this.base}/access`);
+  }
+  addAccessUser(email: string, name?: string) {
+    return this.http.post<any>(`${this.base}/access/users`, { email, name });
+  }
+  removeAccessUser(email: string) {
+    return this.http.delete<any>(`${this.base}/access/users/${encodeURIComponent(email)}`);
+  }
+  createGroup(name: string) {
+    return this.http.post<any>(`${this.base}/access/groups`, { name });
+  }
+  addGroupMember(groupId: number, email: string) {
+    return this.http.post<any>(`${this.base}/access/groups/${groupId}/members`, { email });
+  }
+  removeGroupMember(groupId: number, email: string) {
+    return this.http.delete<any>(
+      `${this.base}/access/groups/${groupId}/members/${encodeURIComponent(email)}`);
   }
 }

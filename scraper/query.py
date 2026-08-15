@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from . import commute, geocode, hazard, zoning
+from . import access, commute, geocode, hazard, zoning
 from .db import connect, init_db as init_db_conn
 
 # Filters is a plain dict with any of these optional keys:
@@ -164,17 +164,21 @@ def save_review(property_id: str, verdict: str | None,
 
 
 def annotate_reviews(rows: list[dict], user_email: str | None = None) -> list[dict]:
-    """Attach this caller's own verdict, plus everyone's for attribution.
+    """Attach this caller's own verdict, plus their group's for attribution.
 
-    `verdict` stays the caller's own, because that is what the filters, the
-    map colours and the review queue mean by it. `reviews` carries the whole
-    set so the UI can show that someone else already looked — seeing a
-    housemate's ♥ is useful; having it silently become yours is not.
+    `verdict` stays the caller's own, because that is what the filters, the map
+    colours and the review queue mean by it. `reviews` carries what the people
+    they share a group with said, so the UI can show that someone else already
+    looked — seeing a partner's ♥ is useful; having it silently become yours is
+    not. Verdicts from outside the group are not shown: sharing is what a group
+    is for, and its absence is what makes it mean something.
     """
     seen = reviews()
     me = (user_email or "").lower()
+    visible = access.peers(me) if me else set()
     for r in rows:
-        all_rev = seen.get(r.get("property_id"), [])
+        all_rev = [x for x in seen.get(r.get("property_id"), [])
+                   if (x.get("user_email") or "") in visible]
         mine = next((x for x in all_rev if (x.get("user_email") or "") == me), None)
         r["verdict"] = mine["verdict"] if mine else None
         r["review_tags"] = [t for t in (mine["tags"] or "").split(",") if t] if mine else []

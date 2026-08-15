@@ -14,7 +14,7 @@ from pathlib import Path
 from statistics import median
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from auth import User, current_user
@@ -24,7 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scraper import detail, gold, preview, query  # noqa: E402
+from scraper import access, detail, gold, preview, query  # noqa: E402
 from scraper.config import (  # noqa: E402
     ALL_CATEGORIES, CATEGORIES, DATA_DIR, DB_PATH, WARDS,
 )
@@ -181,7 +181,9 @@ def save_review(body: ReviewBody, user: User = Depends(current_user)):
 def list_reviews(user: User = Depends(current_user)):
     """Counts are the caller's own — they drive their filter chips — with
     everyone's totals alongside, so you can see the pile is shared."""
-    everyone = [r for rs in query.reviews().values() for r in rs]
+    visible = access.peers(user.email)
+    everyone = [r for rs in query.reviews().values() for r in rs
+                if (r.get("user_email") or "") in visible]
     mine = [r for r in everyone if (r.get("user_email") or "") == user.email]
     counts: dict[str, int] = {}
     for r in mine:
@@ -199,26 +201,103 @@ def list_reviews(user: User = Depends(current_user)):
             "by_user": by_user, "me": {"email": user.email, "name": user.name}}
 
 
+# --- people and groups ------------------------------------------------------
+
+class UserBody(BaseModel):
+    email: str
+    name: Optional[str] = None
+
+
+class GroupBody(BaseModel):
+    name: str
+
+
+class MemberBody(BaseModel):
+    email: str
+    role: str = "member"
+
+
+def _may_manage(user: User) -> None:
+    """Only the owner changes who may use the tool. Group membership is looser
+    — see the group routes — but the allowlist itself is not."""
+    if user.email != access.OWNER_EMAIL:
+        raise HTTPException(403, "only the owner can change who may use this tool")
+
+
+@router.get("/access")
+def access_overview(user: User = Depends(current_user)):
+    return access.overview(user.email)
+
+
+@router.post("/access/users")
+def access_add_user(body: UserBody, user: User = Depends(current_user)):
+    _may_manage(user)
+    return access.add_user(body.email, body.name, user.email)
+
+
+@router.delete("/access/users/{email}")
+def access_remove_user(email: str, user: User = Depends(current_user)):
+    _may_manage(user)
+    try:
+        return access.remove_user(email)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@router.post("/access/groups")
+def access_create_group(body: GroupBody, user: User = Depends(current_user)):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, "a group needs a name")
+    return access.create_group(name, user.email)
+
+
+@router.post("/access/groups/{group_id}/members")
+def access_add_member(group_id: int, body: MemberBody,
+                      user: User = Depends(current_user)):
+    """Anyone in a group may add to it: the people sharing a house hunt are
+    peers, not an admin and their staff. Adding also grants access, since a
+    member who cannot sign in is a confusing thing to have in the list."""
+    if not any(g["id"] == group_id for g in access.groups_of(user.email)):
+        raise HTTPException(403, "you are not in that group")
+    return access.add_member(group_id, body.email, body.role)
+
+
+@router.delete("/access/groups/{group_id}/members/{email}")
+def access_remove_member(group_id: int, email: str,
+                         user: User = Depends(current_user)):
+    if not any(g["id"] == group_id for g in access.groups_of(user.email)):
+        raise HTTPException(403, "you are not in that group")
+    return access.remove_member(group_id, email)
+
+
 class SavedFilterBody(BaseModel):
     name: str
     filters: dict
 
 
 @router.get("/filters")
-def list_filters():
+def list_filters(user: User = Depends(current_user)):
+    """Your saved views and your group's. A view is a way of looking at the
+    same listings, so hiding a partner's is pointless friction."""
     conn = init_db()
     try:
         import json as _json
+        visible = access.peers(user.email)
         return {"filters": [
             {"name": r["name"], "filters": _json.loads(r["filters"] or "{}"),
-             "created": r["created"]}
-            for r in conn.execute("SELECT * FROM saved_filter ORDER BY created DESC")]}
+             "created": r["created"], "owner": r["owner_email"],
+             "mine": (r["owner_email"] or "") == user.email}
+            for r in conn.execute("SELECT * FROM saved_filter ORDER BY created DESC")
+            # Views saved before owners existed have none: they were the only
+            # user's, so everyone keeps seeing them rather than losing them.
+            if not r["owner_email"] or r["owner_email"] in visible]}
     finally:
         conn.close()
 
 
 @router.post("/filters")
-def save_filter(body: SavedFilterBody):
+def save_filter(body: SavedFilterBody, user: User = Depends(current_user)):
     """Store a named preset. The blob is opaque here — the dashboard owns its
     own shape, so adding a control never needs a migration."""
     import json as _json
@@ -228,10 +307,10 @@ def save_filter(body: SavedFilterBody):
         return {"error": "name required"}
     conn = init_db()
     try:
-        conn.execute("INSERT OR REPLACE INTO saved_filter (name, filters, created) "
-                     "VALUES (?,?,?)",
+        conn.execute("INSERT OR REPLACE INTO saved_filter "
+                     "(name, filters, created, owner_email) VALUES (?,?,?,?)",
                      (name, _json.dumps(body.filters, ensure_ascii=False),
-                      _dt.now().isoformat()))
+                      _dt.now().isoformat(), user.email))
         conn.commit()
     finally:
         conn.close()

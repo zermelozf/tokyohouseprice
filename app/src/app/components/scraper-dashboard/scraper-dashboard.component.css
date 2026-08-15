@@ -1194,3 +1194,21 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
              width: 15px; height: 15px; border-radius: 50%; color: #fff;
              font-size: 0.6rem; font-weight: 700; margin-right: 2px;
              vertical-align: middle; }
+
+/* People & groups */
+.peoplemodal { max-width: 640px; }
+.peoplemodal h4 { margin: 1rem 0 0.2rem; font-size: 0.9rem; }
+.peoplemodal .note { font-size: 0.76rem; margin: 0 0 0.5rem; }
+.grouprow { border: 1px solid #eef0f3; border-radius: 5px; padding: 0.5rem 0.6rem;
+            margin-bottom: 0.5rem; background: #fafbfc; }
+.grouphead { display: flex; gap: 0.4rem; align-items: baseline; }
+.members { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.35rem 0; }
+.member { background: #fff; border: 1px solid #e2e6ec; border-radius: 12px;
+          padding: 0.15rem 0.5rem; font-size: 0.78rem; }
+.userrow { display: grid; grid-template-columns: 1fr 1.4fr auto auto; gap: 0.5rem;
+           align-items: center; font-size: 0.8rem; padding: 0.25rem 0;
+           border-bottom: 1px solid #f2f4f7; }
+.addrow { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+.addrow input { flex: 1 1 12rem; padding: 0.3rem 0.4rem; font-size: 0.8rem;
+                border: 1px solid #ddd; border-radius: 3px; }
+@media (max-width: 600px) { .userrow { grid-template-columns: 1fr auto; } }

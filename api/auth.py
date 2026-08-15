@@ -27,6 +27,15 @@ import jwt
 from fastapi import Header, HTTPException
 from jwt import PyJWKClient, PyJWKClientError
 
+# The scraper package lives at the repo root; make it importable from api/.
+import sys
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scraper import access  # noqa: E402
+
 PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "tokyohouseprice")
 # Overridable so the verification path itself can be tested against a signer
 # we control, rather than being taken on trust because it is hard to exercise.
@@ -35,12 +44,14 @@ CERT_URL = os.environ.get(
     "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
 ISSUER = f"https://securetoken.google.com/{PROJECT_ID}"
 
-# Who may use the scraper. Comma-separated in SCRAPER_ALLOWED_EMAILS; the owner
-# is included so a fresh checkout works without configuration.
+# Who may use the scraper now lives in the database (scraper.access), so adding
+# the person you are buying a house with is a click rather than an edit to a
+# systemd unit and a restart. The owner is the bootstrap that can never be
+# locked out; SCRAPER_ALLOWED_EMAILS is still honoured and seeded into the
+# table on startup, so an existing deployment keeps working.
 OWNER_EMAIL = os.environ.get("SCRAPER_OWNER_EMAIL", "arnaud@linalgo.com")
-_ALLOWED = {e.strip().lower() for e in
-            os.environ.get("SCRAPER_ALLOWED_EMAILS", "").split(",") if e.strip()}
-ALLOWED_EMAILS = _ALLOWED | {OWNER_EMAIL.lower()}
+_ENV_ALLOWED = {e.strip().lower() for e in
+                os.environ.get("SCRAPER_ALLOWED_EMAILS", "").split(",") if e.strip()}
 
 # Set AUTH_DISABLED=1 to run the API with no login at all. Only sane on a
 # machine nobody else can reach, and it is off by default so that "it works on
@@ -110,6 +121,20 @@ def current_user(authorization: str = Header(default="")) -> User:
     if not authorization.lower().startswith("bearer "):
         raise HTTPException(401, "sign in to use the scraper")
     user = verify(authorization.split(" ", 1)[1].strip())
-    if ALLOWED_EMAILS and user.email not in ALLOWED_EMAILS:
+    if not access.is_allowed(user.email):
         raise HTTPException(403, f"{user.email} is not on the allowlist for this tool")
+    # Records the name Google gave us, so a row added as a bare address gains a
+    # human name the first time its owner signs in.
+    access.seen(user.email, user.name, user.uid)
     return user
+
+
+def _seed() -> None:
+    """Carry SCRAPER_ALLOWED_EMAILS into the table once, then forget it: the
+    list is managed in the app from here on."""
+    access.bootstrap()
+    for email in _ENV_ALLOWED:
+        access.add_user(email, None, "env:SCRAPER_ALLOWED_EMAILS")
+
+
+_seed()
