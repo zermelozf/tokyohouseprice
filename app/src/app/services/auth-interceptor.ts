@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
-import { Auth, idToken } from '@angular/fire/auth';
+import { Auth, authState } from '@angular/fire/auth';
 import { from, of, switchMap, take } from 'rxjs';
 
 import { environment } from '../../environments/environment';
@@ -8,25 +8,27 @@ import { environment } from '../../environments/environment';
 /**
  * Attach the Firebase ID token to scraper API calls.
  *
- * The token is fetched per request rather than cached, because Firebase
- * refreshes it roughly hourly and `getIdToken()` hands back the current one —
- * a copy kept at sign-in would start returning 401s an hour into a session.
+ * Waits for the first auth state rather than reading `currentUser`. On a page
+ * reload Firebase restores the session asynchronously, so `currentUser` is null
+ * for a moment — long enough for the dashboard's opening requests to go out
+ * bare and come back 401, which reads on screen as "the API is offline".
+ *
+ * The token is fetched per request rather than cached: Firebase refreshes it
+ * roughly hourly and `getIdToken()` returns the current one, so a copy kept at
+ * sign-in would start failing an hour into a session.
  *
  * Only scraper requests get it. The public endpoints (price model, articles)
- * need no identity, and sending one to a third-party host would leak it.
+ * need no identity, and sending a token to a third-party host would leak it.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const forScraper = req.url.startsWith(environment.scraperApiUrl);
-  if (!forScraper) return next(req);
+  if (!req.url.startsWith(environment.scraperApiUrl)) return next(req);
 
   const auth = inject(Auth);
-  const user = auth.currentUser;
-  if (!user) return next(req);          // unauthenticated: the API answers 401
-
-  return from(user.getIdToken()).pipe(
+  return authState(auth).pipe(
     take(1),
-    switchMap(token => next(req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` },
-    }))),
+    switchMap(user => user ? from(user.getIdToken()) : of(null)),
+    switchMap(token => next(token
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req)),                            // signed out: the API answers 401
   );
 };

@@ -1222,9 +1222,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   ngOnInit(): void {
     this.api.summary().subscribe({
       next: s => { this.summary = s; this.apiError = ''; this.startPolling(); },
-      error: () => this.apiError =
-        `Scraper API offline at ${environment.scraperApiUrl} — start it:  ` +
-        `cd api && ENABLE_SCRAPER=1 uvicorn api:app --reload --port 8000`,
+      // "Offline" was the message for every failure, so a signed-out session
+      // read as a dead server and sent you to restart something that was
+      // running perfectly well. The status says which it is.
+      error: (e: any) => this.apiError =
+        e?.status === 401
+          ? 'Not signed in — use Sign in at the top right. The scraper API '
+            + 'checks the token on every call.'
+          : e?.status === 403
+          ? `${e?.error?.detail || 'This account is not on the allowlist'} — `
+            + 'ask to be added, or set SCRAPER_ALLOWED_EMAILS on the API.'
+          : `Scraper API offline at ${environment.scraperApiUrl} — start it:  `
+            + `cd api && ENABLE_SCRAPER=1 uvicorn api:app --reload --port 8000`,
     });
     this.api.config().subscribe({ next: c => this.config = c, error: () => {} });
     this.loadJobs();
