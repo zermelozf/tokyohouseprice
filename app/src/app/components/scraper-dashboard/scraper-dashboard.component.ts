@@ -2542,6 +2542,59 @@ ${folders}
     if (this.map) this.renderMarkers();
   }
 
+  /** Price the whole shortlist at once.
+   *
+   * The tray compares a handful because its charts stop being readable past
+   * that; a table does not care, and "of everything we said yes to, which is
+   * the best deal" is the question the shortlist exists to ask. Opens nothing —
+   * the answer belongs on the tab you are already looking at. */
+  runShortlist(): void {
+    const ids = this.shortlist().map(r => r.property_id).slice(0, 24);
+    if (ids.length < 2) return;
+    if (this.shortlist().some(r => r.category === 'land') && !this.landSizeConfirmed) return;
+    this.compareLoading = true;
+    this.compareError = '';
+    this.api.compare(ids, this.compareAssumptions,
+                     this.shared.dateTo || null, this.compareAnchor).subscribe({
+      next: res => {
+        this.compareLoading = false;
+        if (res.error) { this.compareError = res.error; this.compareResult = null; }
+        else this.compareResult = res;
+      },
+      error: err => {
+        this.compareLoading = false;
+        this.compareError = `Comparison failed: ${err.message || err.status || 'unknown error'}`;
+      },
+    });
+  }
+
+  /** Options in the model's own ranking, cheapest first, with the numbers a
+   * table can show side by side. */
+  rankedOptions(): { o: CompareOption; rank: number; vsBest: number;
+                     irr: number | null; sellYear: number | null }[] {
+    const res = this.compareResult;
+    if (!res) return [];
+    const order = res.verdict?.ranking?.length
+      ? res.verdict.ranking
+      : res.options.map((_, i) => i).sort((a, b) => res.options[a].pv_cost - res.options[b].pv_cost);
+    const best = res.options[order[0]]?.pv_cost ?? 0;
+    return order.map((idx, n) => {
+      const bvr = res.verdict?.buy_vs_rent_by_option?.[idx];
+      return {
+        o: res.options[idx],
+        rank: n + 1,
+        // pv_cost is a cost, so it is negative and *less* negative is cheaper —
+        // subtracting the other way round put a minus in front of every option
+        // that is worse. Quoted against the cheapest, so the column reads
+        // "what this one costs you extra" rather than a present value nobody
+        // can size on its own.
+        vsBest: best - res.options[idx].pv_cost,
+        irr: bvr?.irr_at_horizon ?? null,
+        sellYear: bvr?.peak_irr_year ?? null,
+      };
+    });
+  }
+
   runCompare(): void {
     if (this.compareSel.length < 2) return;
     if (this.hasLandPick() && !this.landSizeConfirmed) return;

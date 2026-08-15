@@ -1297,3 +1297,8 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .grouplegend .lgdot.dot-fade { opacity: 0.35; border: 2px solid #d7dce2; }
 .tabcount { background: #FF69B4; color: #fff; border-radius: 9px; padding: 0 0.35rem;
             font-size: 0.7rem; font-weight: 700; }
+.cmptable td, .cmptable th { white-space: nowrap; }
+.cmptable tr.best td { background: #f0fdf4; font-weight: 600; }
+.cmptable .cmpname { white-space: normal; min-width: 12rem; }
+.cmptable .cmpname .muted { display: block; font-size: 0.72rem; font-weight: 400; }
+.cmptable td.worse { color: #b45309; }

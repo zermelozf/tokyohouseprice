@@ -299,14 +299,66 @@
     </div>
 
     <div class="actions searchbar resultbar" *ngIf="shortlist().length">
-      <span class="muted">{{ compareSel.length }} of {{ COMPARE_MAX }} picked</span>
-      <button (click)="runCompare()"
-              [disabled]="compareSel.length < 2 || hasLandPick() && !landSizeConfirmed">
-        Run the model
+      <button (click)="runShortlist()" [disabled]="compareLoading">
+        💴 Price all {{ shortlist().length > 24 ? 24 : shortlist().length }}
       </button>
+      <span class="muted" *ngIf="shortlist().length > 24">the model takes 24 at a time</span>
+      <span class="spacer"></span>
+      <span class="muted">{{ compareSel.length }} ticked</span>
+      <button class="ghost tiny" (click)="runCompare()"
+              [disabled]="compareSel.length < 2 || hasLandPick() && !landSizeConfirmed"
+              title="the charts, for a handful of them">📈 chart the ticked</button>
       <button class="ghost tiny" (click)="clearCompare()" *ngIf="compareSel.length">clear</button>
-      <span class="muted" *ngIf="compareSel.length < 2">pick at least two</span>
     </div>
+
+    <p class="muted" *ngIf="compareLoading">Running the model…</p>
+    <div class="err" *ngIf="compareError">⚠ {{ compareError }}</div>
+
+    <!-- The financial answer, one row per house, in the model's own ranking. -->
+    <div class="tablewrap" *ngIf="compareResult && rankedOptions().length">
+      <table class="cmptable">
+        <thead><tr>
+          <th title="cheapest first, by present value over the horizon">#</th>
+          <th>listing</th>
+          <th title="what it costs a month once one-off costs are spread over the horizon">
+            monthly equivalent</th>
+          <th title="total cost in today's money over the horizon, net of what you could sell it for">
+            PV cost</th>
+          <th title="how much more than the cheapest option on this list">vs best</th>
+          <th title="present value per m² of building, or of land for a plot">¥/m²</th>
+          <th title="deposit, taxes and fees on day one">upfront</th>
+          <th title="what the equity is worth in today's money at the horizon">exit value</th>
+          <th title="return against the rent baseline, at the horizon">IRR</th>
+          <th title="the year that return peaks">best sell</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngFor="let r of rankedOptions()" [class.best]="r.rank === 1">
+            <td>{{ r.rank }}</td>
+            <td class="cmpname">
+              <a [href]="r.o.url" target="_blank" rel="noopener">{{ r.o.price_raw }}</a>
+              <span class="muted">{{ r.o.category === 'rent' ? '賃貸' : catLabel(r.o.category) }}
+                · {{ r.o.building_m2 || r.o.land_m2 }} m²
+                <span *ngIf="r.o.commute_min != null">· 🎓 {{ r.o.commute_min }}′</span></span>
+            </td>
+            <td>{{ fmtYen(-r.o.monthly_equivalent) }}</td>
+            <td>{{ fmtYen(-r.o.pv_cost) }}</td>
+            <td [class.worse]="r.vsBest > 0">{{ r.vsBest ? '+' + fmtYen(r.vsBest) : '—' }}</td>
+            <td>{{ r.o.pv_cost_per_m2 ? fmtYen(-r.o.pv_cost_per_m2) : '—' }}</td>
+            <td>{{ fmtYen(r.o.upfront_cash) }}</td>
+            <td>{{ r.o.exit_value_pv ? fmtYen(r.o.exit_value_pv) : '—' }}</td>
+            <td>{{ r.irr != null ? (r.irr * 100 | number:'1.1-1') + '%' : '—' }}</td>
+            <td>{{ r.sellYear != null ? 'year ' + r.sellYear : '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted note" *ngIf="compareResult">
+      Present values over {{ compareResult.assumptions.simulation_years }} years at
+      {{ (compareResult.assumptions.opportunity_cost || compareResult.assumptions.opportunity_cost_real) * 100 | number:'1.1-1' }}%, against a
+      {{ fmtYen(compareResult.verdict.baseline_monthly_rent) }}/month rent baseline.
+      A dash means the figure does not apply — a rental has no equity to exit, and
+      IRR needs a rent to measure against.
+    </p>
 
     <!-- A plot is not a home: the model needs to know what would be built. -->
     <div class="landask" *ngIf="hasLandPick() && compareSel.length >= 2">
@@ -323,7 +375,8 @@
       <button (click)="confirmLandSize()">Confirm &amp; run</button>
     </div>
 
-    <ng-container *ngTemplateOutlet="compareBodyTpl"></ng-container>
+    <ng-container *ngIf="compareResult && compareResult.options.length <= 4"
+                  [ngTemplateOutlet]="compareBodyTpl"></ng-container>
   </section>
 
   <!-- ============ GROUPS TAB (admin only) ============ -->
