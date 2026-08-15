@@ -1546,7 +1546,11 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     setTimeout(async () => {
       await this.ensureMap();
       this.map?.invalidateSize();
-      if (!this.mapLoaded) this.loadMap();
+      // Draw whatever is currently in scope. Loading and drawing are separate
+      // things: the rows arrive at startup, so a check of "is it loaded?" was
+      // always true by the time the map existed and the markers were never
+      // put on it. Every filter change since then redrew an empty map.
+      if (!this.mapLoaded) this.load(); else this.renderMarkers();
     }, 0);
   }
 
@@ -1894,7 +1898,6 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   }
 
   // Both tabs' refresh buttons, and every filter change, land in the same place.
-  loadMap(): void { this.load(); }
   runSearch(): void { this.load(); }
 
   // --- export search results for Google My Maps -----------------------------
