@@ -2881,8 +2881,15 @@ ${folders}
       return shortlist.map(r => ({ r, rank: null, o: null,
                                    vsBest: null, irr: null, sellYear: null }));
     }
-    const byId = new Map(shortlist.map(r => [r.property_id, r]));
-    const rows: any[] = ranked.map(x => ({ ...x, r: byId.get(x.o.property_id) || x.o }));
+    // Look the listing up in everything loaded, not just the filtered
+    // shortlist. A CompareOption carries prices and nothing else — no reviews,
+    // no notes, no photos, no hazard — so falling back to it hands the detail
+    // sheet a stripped object and the sheet quietly renders half of itself.
+    // The lookup missed whenever the shortlist moved on from what was priced:
+    // a verdict changed, "agreed only" toggled, a filter narrowed.
+    const byId = new Map<string, any>(this.searchAll.map(r => [r.property_id, r]));
+    for (const r of shortlist) byId.set(r.property_id, r);
+    const rows: any[] = ranked.map(x => ({ ...x, r: byId.get(x.o.property_id) ?? x.o }));
     // Anything the model could not price — beyond the 24 it takes at a time —
     // still belongs on the list, at the end, rather than disappearing because
     // it could not be ranked.
