@@ -1108,6 +1108,7 @@
        widget: the queue only adds its progress and its next/back. -->
   <ng-template #listingSheetTpl let-p="card" let-queue="queue">
     <div class="modal sheet" tabindex="-1" (click)="$event.stopPropagation()"
+         (keydown)="onReviewKey($event)"
          [style.height.dvh]="sheetHeight">
       <div class="sheet-grip" (pointerdown)="gripDown($event)"
            title="drag to resize · drag down or click to close"></div>
@@ -1306,7 +1307,8 @@
 
 <!-- Full-screen photo. Above every other overlay, since it is opened from
      inside one, and dismissed the same three ways. -->
-<div class="lightbox" *ngIf="lightbox" tabindex="-1" (click)="closeLightbox()">
+<div class="lightbox" *ngIf="lightbox" tabindex="-1" (click)="closeLightbox()"
+     (keydown)="onReviewKey($event)">
   <!-- Swipe on the image and a thumbnail strip below it: the same photo set as
        the sheet, at the size the screen can actually show. -->
   <div class="lightstage" [class.zoomed]="zoom > 1" (click)="$event.stopPropagation()"

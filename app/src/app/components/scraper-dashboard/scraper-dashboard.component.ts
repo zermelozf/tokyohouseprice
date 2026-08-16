@@ -1737,8 +1737,16 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     if (this.detailModal) this.closeDetails();
   }
 
+  // Bound both on the document and on the panels themselves. The document
+  // listener is the one that has always been here; it depends on the event
+  // reaching the document, which it did not on desktop — the panels now listen
+  // directly, and whichever fires first does the work. The guard below makes a
+  // double delivery harmless: the same key does the same thing twice only if
+  // both listeners see the same event, which the stamp prevents.
   @HostListener('document:keydown', ['$event'])
   onReviewKey(e: KeyboardEvent): void {
+    if ((e as any).__handled) return;
+    (e as any).__handled = true;
     if (!this.reviewOpen && !this.detailModal) return;
     const el = e.target as HTMLElement;
     // Only text entry swallows the keys. A range slider or a checkbox is an
