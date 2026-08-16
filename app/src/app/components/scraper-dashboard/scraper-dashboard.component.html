@@ -1107,7 +1107,8 @@
        Looking at a listing and judging it is the same act, so it is one
        widget: the queue only adds its progress and its next/back. -->
   <ng-template #listingSheetTpl let-p="card" let-queue="queue">
-    <div class="modal sheet" (click)="$event.stopPropagation()" [style.height.dvh]="sheetHeight">
+    <div class="modal sheet" tabindex="-1" (click)="$event.stopPropagation()"
+         [style.height.dvh]="sheetHeight">
       <div class="sheet-grip" (pointerdown)="gripDown($event)"
            title="drag to resize · drag down or click to close"></div>
       <button class="modal-close" (click)="queue ? closeReview() : closeDetails()"
@@ -1151,7 +1152,7 @@
              (pointerleave)="swipeEnd()" (pointercancel)="swipeEnd()">
           <div class="galtrack" *ngIf="reviewPhotos.length" [class.gliding]="gliding"
                [style.transform]="'translate3d(calc(-100% + ' + dragX + 'px), 0, 0)'"
-               (click)="openLightbox()" title="click to enlarge">
+               (click)="galleryClick()" title="click to enlarge">
             <img [src]="photoUrl(photoAt(-1), galleryWidth())" alt="" loading="lazy">
             <img [src]="photoUrl(photoAt(0), galleryWidth())" alt="" loading="lazy">
             <img [src]="photoUrl(photoAt(1), galleryWidth())" alt="" loading="lazy">
@@ -1305,7 +1306,7 @@
 
 <!-- Full-screen photo. Above every other overlay, since it is opened from
      inside one, and dismissed the same three ways. -->
-<div class="lightbox" *ngIf="lightbox" (click)="closeLightbox()">
+<div class="lightbox" *ngIf="lightbox" tabindex="-1" (click)="closeLightbox()">
   <!-- Swipe on the image and a thumbnail strip below it: the same photo set as
        the sheet, at the size the screen can actually show. -->
   <div class="lightstage" [class.zoomed]="zoom > 1" (click)="$event.stopPropagation()"

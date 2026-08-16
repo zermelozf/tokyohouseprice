@@ -847,6 +847,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     this.reviewOpen = true;
     this.pushOverlay();
     this.loadPhotos();
+    this.focusSheet();
   }
 
   closeReview(): void {
@@ -937,10 +938,19 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   // --- lightbox --------------------------------------------------------------
   lightbox = false;
 
+  /** The gallery was clicked. A drag ends in a click too, so a swipe must not
+   * also open the viewer — the ⛶ button calls openLightbox directly and is not
+   * subject to this. */
+  galleryClick(): void {
+    if (this.swipedFar) return;
+    this.openLightbox();
+  }
+
   openLightbox(): void {
-    if (!this.reviewPhotos.length || this.swipedFar) return;   // a swipe is not a click
+    if (!this.reviewPhotos.length) return;
     this.lightbox = true;
     this.pushOverlay();
+    setTimeout(() => (document.querySelector('.lightbox') as HTMLElement | null)?.focus?.(), 0);
   }
   closeLightbox(): void {
     if (!this.lightbox) return;
@@ -1731,13 +1741,21 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   onReviewKey(e: KeyboardEvent): void {
     if (!this.reviewOpen && !this.detailModal) return;
     const el = e.target as HTMLElement;
-    if (el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) return;   // typing a note
+    // Only text entry swallows the keys. A range slider or a checkbox is an
+    // INPUT too, and blanket-skipping those meant the arrows stopped working
+    // for the rest of the session once you had touched the horizon slider.
+    const typing = el && (el.tagName === 'TEXTAREA'
+      || (el.tagName === 'INPUT'
+          && !['range', 'checkbox', 'radio', 'button'].includes((el as HTMLInputElement).type)));
+    if (typing) return;
     const map: Record<string, () => void> = {
       '1': () => this.grade('bad'),
       '2': () => this.grade('maybe'),
       '3': () => this.grade('good'),
       'ArrowRight': () => this.photoStep(1),
       'ArrowLeft': () => this.photoStep(-1),
+      'Right': () => this.photoStep(1),      // older key names, still emitted
+      'Left': () => this.photoStep(-1),
       ' ': () => { if (this.reviewOpen) this.nextCard(); },
       'Backspace': () => { if (this.reviewOpen) this.nextCard(-1); },
       'Escape': () => {
@@ -3529,6 +3547,22 @@ ${folders}
     if (!this.detailModal) this.pushOverlay();
     this.detailModal = { point: p };
     this.loadCard();
+    this.focusSheet();
+  }
+
+  /** Give the sheet the keyboard.
+   *
+   * The key handler listens on the document, so in principle it hears
+   * everything — but only if focus is somewhere that lets the event through.
+   * Opening the sheet from a button leaves focus on that button, and a browser
+   * may act on the arrows itself before the document sees them. Focusing the
+   * panel makes the keys unambiguous, and lets a screen reader follow the
+   * change of context. */
+  private focusSheet(): void {
+    setTimeout(() => {
+      const el = document.querySelector('.modal.sheet') as HTMLElement | null;
+      el?.focus?.();
+    }, 0);
   }
 
   /** The file a photo URL points at, ignoring how it was requested.

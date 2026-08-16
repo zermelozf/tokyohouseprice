@@ -1358,3 +1358,5 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .notemark { font-size: 0.72rem; margin-right: 2px; }
 .dupcount { font-size: 0.65rem; background: #eef2f7; color: #475569; border-radius: 8px;
             padding: 0 0.3rem; margin-left: 0.2rem; }
+/* Focused for the keyboard, not for decoration. */
+.modal.sheet:focus, .lightbox:focus { outline: none; }
