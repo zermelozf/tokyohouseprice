@@ -516,10 +516,13 @@
       <button (click)="startReview(true, 'search')" [disabled]="!searchRows.length">
         🔍 Review {{ distinctCount() }}
       </button>
-      <span class="muted" *ngIf="distinctCount() < searchRows.length"
-            title="agents post the same house several times; the queue asks once">
-        {{ searchRows.length - distinctCount() }} of these are re-posts
-      </span>
+      <button class="ghost tiny" [class.sel]="collapseDups" (click)="collapseDups = !collapseDups"
+              *ngIf="distinctCount() < searchRows.length"
+              [title]="'Agents post the same house several times. '
+                     + (collapseDups ? 'Showing one row per house.' : 'Showing every advert.')">
+        🧹 {{ collapseDups ? 'showing ' + distinctCount() + ' houses'
+                           : 'showing all ' + searchRows.length + ' adverts' }}
+      </button>
       <span class="waiting" *ngIf="awaitingMe().length"
             title="someone in your group judged these and you have not — they come first in the queue">
         👥 {{ awaitingMe().length }} waiting on you
@@ -544,7 +547,7 @@
       <span class="exportnote" *ngIf="exportMsg">{{ exportMsg }}</span>
     </div>
 
-    <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: searchRows, stats: shownStats(searchRows) }"></ng-container>
+    <ng-container *ngTemplateOutlet="resultsTpl; context: { rows: collapsedRows(searchRows), stats: shownStats(collapsedRows(searchRows)) }"></ng-container>
     <p class="muted" *ngIf="searched && !searchRows.length">No listings match — crawl some data first (Crawlers tab) or widen the filters.</p>
   </section>
 
@@ -1067,6 +1070,8 @@
                 <img *ngIf="r['image_url']" [src]="r['image_url']" alt="" loading="lazy"
                      class="rowthumb" [title]="r.title || ''">
                 <span class="cattag">{{ catLabel(r.category) }}</span>
+                <span class="dupcount" *ngIf="collapseDups && (r['dup_count'] || 1) > 1"
+                      [title]="r['dup_count'] + ' agents list this same house'">×{{ r['dup_count'] }}</span>
               </td>
               <td>{{ fmtYen(r.price_yen) }}</td>
               <td class="c-ppm2">{{ ppm2(r) }}</td>

@@ -27,22 +27,30 @@ from __future__ import annotations
 import hashlib
 
 
-def key(row: dict) -> str | None:
-    """A stable id for the property behind a listing, or None when it cannot be
-    told — an un-enriched row with no coordinates is not grouped with anything,
-    since guessing from an address alone merges neighbours."""
+def _coord_key(row: dict) -> str | None:
+    """Category, position and size. Four decimals is about 11 m."""
     lat, lng = row.get("lat"), row.get("lng")
     if lat is None or lng is None:
         return None
-    # 4 decimals, about 11 m. Six was too strict: the same building posted by
-    # two agents comes back with pins a fraction of a metre apart — 35.7338516
-    # against 35.7338544 — and matched on nothing. Combined with price, area and
-    # category, 11 m cannot merge two different properties: they would have to
-    # be the same size, at the same price, next door to each other.
-    parts = (row.get("category") or "", f"{lat:.4f}", f"{lng:.4f}",
-             str(row.get("price_yen") or ""), str(row.get("building_m2") or ""),
-             str(row.get("land_m2") or ""))
-    return hashlib.sha1("|".join(parts).encode()).hexdigest()[:12]
+    return "|".join(("c", row.get("category") or "", f"{lat:.4f}", f"{lng:.4f}",
+                     str(row.get("price_yen") or ""), str(row.get("building_m2") or ""),
+                     str(row.get("land_m2") or "")))
+
+
+def _addr_key(row: dict) -> str | None:
+    """Category, address and size. The address is the one thing two agents
+    copy verbatim from the same source; coordinates are not."""
+    addr = (row.get("address") or "").strip()
+    if not addr:
+        return None
+    return "|".join(("a", row.get("category") or "", addr,
+                     str(row.get("price_yen") or ""), str(row.get("building_m2") or ""),
+                     str(row.get("land_m2") or "")))
+
+
+def key(row: dict) -> str | None:
+    """Kept for callers that want a single signature; grouping uses both."""
+    return _coord_key(row) or _addr_key(row)
 
 
 def annotate(rows: list[dict]) -> list[dict]:
@@ -52,12 +60,45 @@ def annotate(rows: list[dict]) -> list[dict]:
     that has been on the market longest and so the least likely to vanish — so
     a caller wanting one row per house can filter on it without deciding which.
     """
+    # Two signals, and either one is enough.
+    #
+    # Coordinates alone missed a listing whose twin had been geocoded to the
+    # 丁目 centre — 60 m from the exact pin — and split pairs a metre apart that
+    # happened to round either side of a boundary. Addresses alone would miss a
+    # pair whose agents wrote the address differently. Listings are joined when
+    # they share either signature, which is a union: A with B by address, B with
+    # C by position, all three the same house.
+    parent: dict[int, int] = {}
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def union(i: int, j: int) -> None:
+        ri, rj = find(i), find(j)
+        if ri != rj:
+            parent[max(ri, rj)] = min(ri, rj)
+
+    for i in range(len(rows)):
+        parent[i] = i
+    seen: dict[str, int] = {}
+    for i, r in enumerate(rows):
+        for k in (_coord_key(r), _addr_key(r)):
+            if not k:
+                continue
+            if k in seen:
+                union(seen[k], i)
+            else:
+                seen[k] = i
+
     groups: dict[str, list[dict]] = {}
-    for r in rows:
-        k = key(r)
+    for i, r in enumerate(rows):
+        root = find(i)
+        k = hashlib.sha1(str(rows[root].get("property_id") or root).encode()).hexdigest()[:12]
         r["dup_key"] = k
-        if k:
-            groups.setdefault(k, []).append(r)
+        groups.setdefault(k, []).append(r)
     for k, members in groups.items():
         # Oldest first by property id: SUUMO ids increase over time, so the
         # smallest is the earliest posting.

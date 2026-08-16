@@ -780,6 +780,29 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     });
   }
 
+  /** Collapse re-posts in the results table.
+   *
+   * On by default: eight adverts for one house is the agents' problem, not
+   * something to read past. The row says how many there are and the sheet
+   * lists their ids, so nothing is hidden — it is folded. */
+  collapseDups = true;
+
+  /** One row per house, keeping the oldest listing as the one shown. */
+  collapsedRows(rows: any[]): any[] {
+    if (!this.collapseDups) return rows;
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const r of rows) {
+      const k = r['dup_key'];
+      if (k) {
+        if (seen.has(k)) continue;
+        seen.add(k);
+      }
+      out.push(r);
+    }
+    return out;
+  }
+
   /** How many listings the current results collapse to. */
   distinctCount(rows: any[] = this.searchRows): number {
     const keys = new Set<string>();
