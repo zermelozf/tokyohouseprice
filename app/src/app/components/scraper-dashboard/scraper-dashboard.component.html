@@ -390,6 +390,14 @@
             </td>
             <td class="cmpname">
               <b>{{ x.r.price_raw || fmtYen(x.r.price_yen) }}</b>
+              <!-- Someone in the group wrote something about this one. The
+                   note itself stays folded in the sheet; here it is just a
+                   sign that there is one to read. -->
+              <span class="notemark" *ngIf="groupNotes(x.r).length"
+                    [title]="noteSummary(x.r)">💬</span>
+              <span class="othermark" *ngFor="let o of othersReviews(x.r)"
+                    [title]="o.name + ' — ' + o.verdict"
+                    [style.background]="verdictMeta(o.verdict)?.color">{{ o.name.charAt(0) }}</span>
               <span class="muted">{{ x.r['property_label'] || catLabel(x.r.category) }}
                 · {{ x.r.building_m2 || x.r.land_m2 }} m²
                 <span *ngIf="x.r['commute_min'] != null">· 🎓 {{ x.r['commute_min'] }}′</span>

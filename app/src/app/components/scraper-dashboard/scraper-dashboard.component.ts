@@ -754,6 +754,14 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return (p?.reviews || []).filter((r: any) => (r.note || '').trim());
   }
 
+  /** Who wrote what, for the table's hover text — the whole note, since a
+   * tooltip is free and opening the sheet is not. */
+  noteSummary(p: any): string {
+    return this.groupNotes(p)
+      .map((n: any) => `${n.mine ? 'you' : n.name}: ${n.note}`)
+      .join('\n');
+  }
+
   toggleNotes(p: any): void {
     const k = p?.property_id;
     if (k) this.notesOpen[k] = !this.notesOpen[k];
