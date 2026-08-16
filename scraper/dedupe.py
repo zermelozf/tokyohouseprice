@@ -27,30 +27,52 @@ from __future__ import annotations
 import hashlib
 
 
-def _coord_key(row: dict) -> str | None:
-    """Category, position and size. Four decimals is about 11 m."""
-    lat, lng = row.get("lat"), row.get("lng")
-    if lat is None or lng is None:
-        return None
-    return "|".join(("c", row.get("category") or "", f"{lat:.4f}", f"{lng:.4f}",
-                     str(row.get("price_yen") or ""), str(row.get("building_m2") or ""),
-                     str(row.get("land_m2") or "")))
+# How far two adverts for one property may differ on floor area. Agents
+# transcribe from the same sheet and disagree in the decimals — 102.08 against
+# 102.8 for one flat in ジョイナス — while genuinely different units in a
+# building differ by several square metres. A tolerance, not a rounding: buckets
+# split neighbours that happen to straddle a boundary, which is the mistake the
+# coordinate key already made once.
+AREA_TOL_M2 = 1.5
 
 
-def _addr_key(row: dict) -> str | None:
-    """Category, address and size. The address is the one thing two agents
-    copy verbatim from the same source; coordinates are not."""
+def _place_keys(row: dict) -> list[tuple]:
+    """Coarse buckets a property might share with its re-posts.
+
+    Two of them, because either can fail alone: an address is what two agents
+    copy verbatim from the same source, but they write it differently often
+    enough; a pin is precise until one listing is geocoded to the 丁目 centre,
+    60 m from its twin. Membership of either bucket only makes two listings
+    *candidates* — the areas still have to agree.
+    """
+    out = []
     addr = (row.get("address") or "").strip()
-    if not addr:
-        return None
-    return "|".join(("a", row.get("category") or "", addr,
-                     str(row.get("price_yen") or ""), str(row.get("building_m2") or ""),
-                     str(row.get("land_m2") or "")))
+    price = row.get("price_yen")
+    cat = row.get("category") or ""
+    if addr and price:
+        out.append(("a", cat, addr, price))
+    lat, lng = row.get("lat"), row.get("lng")
+    if lat is not None and lng is not None and price:
+        out.append(("c", cat, f"{lat:.4f}", f"{lng:.4f}", price))
+    return out
+
+
+def _same_size(a: dict, b: dict) -> bool:
+    for field in ("building_m2", "land_m2"):
+        x, y = a.get(field), b.get(field)
+        if x is None and y is None:
+            continue
+        if x is None or y is None:
+            return False
+        if abs(float(x) - float(y)) > AREA_TOL_M2:
+            return False
+    return True
 
 
 def key(row: dict) -> str | None:
-    """Kept for callers that want a single signature; grouping uses both."""
-    return _coord_key(row) or _addr_key(row)
+    """A single signature, for callers that want one. Grouping uses more."""
+    ks = _place_keys(row)
+    return "|".join(str(x) for x in ks[0]) if ks else None
 
 
 def annotate(rows: list[dict]) -> list[dict]:
@@ -60,14 +82,7 @@ def annotate(rows: list[dict]) -> list[dict]:
     that has been on the market longest and so the least likely to vanish — so
     a caller wanting one row per house can filter on it without deciding which.
     """
-    # Two signals, and either one is enough.
-    #
-    # Coordinates alone missed a listing whose twin had been geocoded to the
-    # 丁目 centre — 60 m from the exact pin — and split pairs a metre apart that
-    # happened to round either side of a boundary. Addresses alone would miss a
-    # pair whose agents wrote the address differently. Listings are joined when
-    # they share either signature, which is a union: A with B by address, B with
-    # C by position, all three the same house.
+    # Same place, same price, and sizes that agree within a tolerance.
     parent: dict[int, int] = {}
 
     def find(i: int) -> int:
@@ -83,22 +98,30 @@ def annotate(rows: list[dict]) -> list[dict]:
 
     for i in range(len(rows)):
         parent[i] = i
-    seen: dict[str, int] = {}
+    buckets: dict[tuple, list[int]] = {}
     for i, r in enumerate(rows):
-        for k in (_coord_key(r), _addr_key(r)):
-            if not k:
-                continue
-            if k in seen:
-                union(seen[k], i)
-            else:
-                seen[k] = i
+        for k in _place_keys(r):
+            buckets.setdefault(k, []).append(i)
+    for members in buckets.values():
+        for a in range(len(members)):
+            for b in range(a + 1, len(members)):
+                if _same_size(rows[members[a]], rows[members[b]]):
+                    union(members[a], members[b])
 
+    # Name each group after the earliest listing in it, not after whichever row
+    # the union happened to settle on: the id then depends only on the members,
+    # so the same house keeps the same key between one query and the next.
+    members_by_root: dict[int, list[int]] = {}
+    for i in range(len(rows)):
+        members_by_root.setdefault(find(i), []).append(i)
     groups: dict[str, list[dict]] = {}
-    for i, r in enumerate(rows):
-        root = find(i)
-        k = hashlib.sha1(str(rows[root].get("property_id") or root).encode()).hexdigest()[:12]
-        r["dup_key"] = k
-        groups.setdefault(k, []).append(r)
+    for root, members in members_by_root.items():
+        oldest = min((rows[i].get("property_id") or "") for i in members)
+        k = hashlib.sha1(oldest.encode()).hexdigest()[:12]
+        for i in members:
+            rows[i]["dup_key"] = k
+        groups[k] = [rows[i] for i in members]
+
     for k, members in groups.items():
         # Oldest first by property id: SUUMO ids increase over time, so the
         # smallest is the earliest posting.
