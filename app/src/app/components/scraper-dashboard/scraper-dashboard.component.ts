@@ -1029,6 +1029,12 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   }
 
   swipeStart(e: PointerEvent): void {
+    // Never start a drag on a control. The gallery captures the pointer so a
+    // swipe survives leaving the image — but a captured pointer delivers its
+    // pointerup to the capturing element, so the click is computed against the
+    // gallery and the button under the cursor never sees it. That is why ‹ ›
+    // and ⛶ did nothing with a mouse while swiping worked on a phone.
+    if ((e.target as HTMLElement)?.closest('button')) return;
     if (this.reviewPhotos.length < 2) return;
     this.swiping = true;
     this.locked = null;
