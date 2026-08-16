@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from . import access, commute, dedupe, geocode, hazard, zoning
+from . import access, commute, dedupe, geocode, hazard, plot, zoning
 from .db import connect, init_db as init_db_conn
 
 # Filters is a plain dict with any of these optional keys:
@@ -230,6 +230,27 @@ def annotate_images(rows: list[dict]) -> list[dict]:
     return rows
 
 
+def annotate_plot(rows: list[dict]) -> list[dict]:
+    """Aspect, frontage and the defects the listing states in prose."""
+    import json as _json
+    ids = [r["property_id"] for r in rows if r.get("property_id")]
+    if not ids:
+        return rows
+    conn = connect()
+    try:
+        specs = {}
+        for i in range(0, len(ids), 500):
+            chunk = ids[i:i + 500]
+            for row in conn.execute(
+                    "SELECT property_id, specs_json FROM property_detail "
+                    f"WHERE property_id IN ({','.join('?' * len(chunk))}) "
+                    "ORDER BY scrape_date", chunk):
+                specs[row["property_id"]] = _json.loads(row["specs_json"] or "{}")
+    finally:
+        conn.close()
+    return plot.annotate(rows, specs)
+
+
 def annotate_capacity(rows: list[dict]) -> list[dict]:
     """Attach how big a house each plot can carry. Only land needs it — for a
     house you are buying the building that is already there."""
@@ -251,7 +272,15 @@ def annotate_capacity(rows: list[dict]) -> list[dict]:
     finally:
         conn.close()
     for r in rows:
-        r["capacity"] = (zoning.capacity(r.get("land_m2"), specs.get(r["property_id"]))
+        sp = specs.get(r["property_id"])
+        # The corner comes from the frontages, which is independent of whether
+        # the listing uses the word.
+        corner = bool(sp) and "corner" in plot.flags(sp)
+        if not corner and sp:
+            dirs = {f["dir"] for f in plot.frontages(sp.get("私道負担・道路")
+                                                    or sp.get("私道負担･道路"))}
+            corner = len(dirs) > 1
+        r["capacity"] = (zoning.capacity(r.get("land_m2"), sp, corner=corner)
                          if r.get("category") == "land" else None)
     return rows
 
@@ -389,7 +418,7 @@ def search_db(f: dict) -> list[dict]:
     # have to be derived from 築N年, so keeping one implementation beats
     # restating the fallback as a CASE expression here and in map_points.
     rows = hazard.annotate(geocode.annotate(annotate_images(
-        annotate_reviews(annotate_capacity(commute.annotate(annotate_era(rows))),
+        annotate_reviews(annotate_plot(annotate_capacity(commute.annotate(annotate_era(rows)))),
                          f.get("user_email")))))
     # After reviews, so a verdict on one posting can stand for the house, and
     # after geocoding, since the key needs coordinates.

@@ -74,6 +74,26 @@
       </button>
     </span>
 
+    <span class="era-filter plotfilter">
+      <span class="vlabel" title="Which way the plot's road frontage faces. A road cannot be built on, so it is the open side — south is the one everyone wants.">向き</span>
+      <button type="button" class="chip" *ngFor="let a of ['S','SE','SW','E','W','N']"
+              [class.sel]="aspects.includes(a)" (click)="toggleAspect(a)">{{ a }}</button>
+    </span>
+
+    <span class="era-filter plotfilter">
+      <span class="vlabel" title="Stated in the listing's own text. Click once to require, twice to exclude.">plot</span>
+      <button type="button" class="chip" *ngFor="let f of PLOT_FLAGS"
+              [class.sel]="requireFlags.includes(f.key)"
+              [class.no]="excludeFlags.includes(f.key)"
+              [disabled]="!flagCount(f.key)"
+              (click)="toggleFlag(f.key, requireFlags.includes(f.key))"
+              [title]="(requireFlags.includes(f.key) ? 'showing only these — click to exclude them'
+                       : excludeFlags.includes(f.key) ? 'hiding these — click to clear'
+                       : 'click to show only these') + ' (' + flagCount(f.key) + ')'">
+        {{ f.label }} <span class="cnt">{{ flagCount(f.key) }}</span>
+      </button>
+    </span>
+
     <span class="era-filter">
       <span class="vlabel" title="建築基準法 revisions: 新耐震 1981-06, 2000年基準 2000-06.">耐震基準</span>
       <button type="button" class="chip" *ngFor="let e of eraList"
@@ -1198,10 +1218,34 @@
                   title="No pin published for this listing — placed from its address, so it is accurate to the 丁目, not the building.">· ≈ approx location</span>
           </div>
 
+          <!-- What the listing says about the plot itself. The aspect is the
+               closest thing to a light reading available without modelling
+               every neighbouring roof: a road cannot be built on, so the
+               direction you face it is open sky. -->
+          <div class="revline plotline" *ngIf="p.plot as pl">
+            <span *ngIf="pl.aspect_ja" [title]="'frontage faces ' + pl.aspect_ja
+                  + (pl.road_width_m ? ' onto a ' + pl.road_width_m + ' m road' : '')
+                  + '. A road cannot be built on, so this is the open side.'">
+              🧭 {{ pl.aspect_ja }}向き<span *ngIf="pl.road_width_m"> · {{ pl.road_width_m }} m road</span>
+            </span>
+            <span *ngIf="pl.frontage_m" title="間口 — how wide the plot is at the road">
+              · 間口 {{ pl.frontage_m }} m</span>
+            <span class="lightbar" *ngIf="pl.light_score != null"
+                  [title]="'Aspect score ' + (pl.light_score * 100 | number:'1.0-0')
+                        + '% — which way it faces and how much room is in front. Not sun hours.'">
+              <i [style.width.%]="pl.light_score * 100"
+                 [style.background]="pl.light_score > 0.7 ? '#15803d'
+                                   : pl.light_score > 0.45 ? '#ca8a04' : '#c2410c'"></i>
+            </span>
+            <span class="plotflag" *ngFor="let f of pl.flags"
+                  [class.good]="f === 'corner'" [title]="flagNote(pl, f)">{{ flagLabel(f) }}</span>
+          </div>
+
           <div class="revline" *ngIf="p.capacity as cap">
             🏗️ fits <b>{{ cap.max_floor_m2 }} m²</b> on a {{ cap.max_footprint_m2 }} m² footprint
             <span class="muted">· {{ cap.coverage_pct }}% / {{ cap.far_effective_pct }}%<span
                   *ngIf="cap.limited_by === 'road width'"> (road-limited)</span></span>
+            <span class="muted" *ngIf="cap.coverage_note"> · {{ cap.coverage_note }}</span>
             <span class="setbacknote" *ngIf="setbackNote(cap)"
                   title="建築基準法42条2項: a plot on a road under 4 m cedes land until the road measures 4 m. The ceded strip is not 敷地面積, so it reduces both the footprint and the floor area.">
               · {{ setbackNote(cap) }}</span>

@@ -40,6 +40,7 @@ export interface Listing {
   reviews?: ListingReview[];
   // The same house is posted by several agents. dup_key groups them, dup_first
   // marks one per group, and verdict_via says a copy inherited its judgement.
+  plot?: PlotFacts | null;
   dup_key?: string | null;
   dup_count?: number;
   dup_first?: boolean;
@@ -221,6 +222,8 @@ export interface PlotCapacity {
   land_m2_max: number | null;          // 分譲地: the largest 区画 on the listing
   max_floor_m2_largest: number | null;
   restrictions: string[];              // named by SUUMO, not quantified anywhere
+  coverage_base_pct?: number;          // before any 角地緩和
+  coverage_note?: string | null;
   // 建築基準法42条2項 setback and any 私道負担: land inside the boundary that is
   // not 敷地面積, so the ratios above apply to buildable_land_m2, not land_m2.
   buildable_land_m2: number | null;    // null when nothing comes off
@@ -247,6 +250,19 @@ export interface AccessOverview {
   me: string;
   is_admin: boolean;
   peers: string[];
+}
+
+/** What the listing's own prose says about the plot: which way it faces, how
+ *  wide the road is, and the defects stated in その他制限事項. */
+export interface PlotFacts {
+  frontages: { dir: string; dir_ja: string; width_m: number }[];
+  aspect: string | null;
+  aspect_ja: string | null;
+  road_width_m: number | null;
+  frontage_m: number | null;
+  light_score: number | null;   // open sky in front, 0-1 — an aspect, not sun hours
+  flags: string[];
+  notes: string[];
 }
 
 export interface ListingReview {

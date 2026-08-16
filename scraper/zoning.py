@@ -114,6 +114,40 @@ def parse_restrictions(raw: str | None) -> list[str]:
     return [note for key, note in RESTRICTION_FLAGS.items() if key in raw]
 
 
+# 建ぺい率の緩和: a corner plot is allowed a higher footprint, and listings state
+# the raised figure in parentheses — "建ぺい率：60%(一部角地緩和適用70%)". The base
+# figure is the right default, since most bonuses need a condition the listing
+# does not confirm; this one names its condition, and the condition is being a
+# corner, which the frontages tell us independently.
+def corner_relief_pct(raw: str | None, base: float = 0.0) -> float | None:
+    """The 建ぺい率 a corner plot is allowed, when the listing states it.
+
+    The figure sits either side of the word — "角地緩和適用70%" and
+    "(70%※角地緩和により)" both occur — so it is found by proximity rather than by
+    order. Matching by order picked up the base rate a few characters earlier
+    and reported a relief that lowered the number.
+    """
+    if not raw:
+        return None
+    text = _zen2han(raw)
+    corner = text.find("角地")
+    if corner < 0:
+        return None
+    # Nearest figure to the word that is also an increase. Proximity alone
+    # picks the base rate when it is written first — "建ぺい率：60%(一部角地緩和
+    # 適用70%)" puts 60 four characters from the word and 70 eight — and a
+    # "relief" that lowers the number is the base rate, not a relief.
+    best, best_dist = None, 10**9
+    for m in re.finditer(r"(\d{2,3})\s*%", text):
+        val = float(m.group(1))
+        if val <= base:
+            continue
+        dist = abs(m.start() - corner)
+        if dist < best_dist:
+            best, best_dist = val, dist
+    return best
+
+
 def _norm_key(k: str) -> str:
     """A spec label, in whichever form it was stored.
 
@@ -196,14 +230,28 @@ def buildable_land(land_m2: float, s: dict) -> tuple[float, dict]:
     }
 
 
-def capacity(land_m2: float | None, specs: dict | None) -> dict | None:
+def capacity(land_m2: float | None, specs: dict | None,
+             corner: bool = False) -> dict | None:
     """What can be built on this plot. None when the zoning is unknown."""
     if not land_m2 or not specs:
         return None
     s = {_norm_key(k): v for k, v in specs.items()}
-    coverage, far = parse_ratios(s.get("建ぺい率・容積率"))
+    ratio_raw = s.get("建ぺい率・容積率")
+    coverage, far = parse_ratios(ratio_raw)
     if coverage is None or far is None:
         return None
+    # Only when the plot really is a corner, and only the figure the listing
+    # itself gives. Where it says nothing, the base rate stands and the upside
+    # is reported as a note rather than built into the number.
+    base_coverage = coverage
+    relief = corner_relief_pct(ratio_raw, base_coverage) if corner else None
+    coverage_note = None
+    if relief and relief > coverage:
+        coverage = relief
+        coverage_note = f"角地緩和: 建ぺい率 {base_coverage:.0f}% → {relief:.0f}%"
+    elif corner:
+        coverage_note = "corner plot — 建ぺい率 may be raised, but this listing does not say by how much"
+
     zone = (s.get("用途地域") or "").strip() or None
     road = parse_road_width(s.get("私道負担・道路"))
 
@@ -232,6 +280,8 @@ def capacity(land_m2: float | None, specs: dict | None) -> dict | None:
                                  if land_max else None),
         "restrictions": parse_restrictions(s.get("その他制限事項")),
         "coverage_pct": coverage,
+        "coverage_base_pct": base_coverage,
+        "coverage_note": coverage_note,
         "far_pct": far,
         "far_effective_pct": far_eff,
         "road_width_m": road,

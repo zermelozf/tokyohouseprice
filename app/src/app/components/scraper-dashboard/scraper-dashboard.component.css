@@ -1360,3 +1360,15 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
             padding: 0 0.3rem; margin-left: 0.2rem; }
 /* Focused for the keyboard, not for decoration. */
 .modal.sheet:focus, .lightbox:focus { outline: none; }
+
+/* Plot facts on the card, and their filter chips. */
+.plotline { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+.lightbar { display: inline-block; width: 46px; height: 6px; border-radius: 3px;
+            background: #e6e9ee; overflow: hidden; }
+.lightbar i { display: block; height: 100%; }
+.plotflag { font-size: 0.7rem; padding: 0.05rem 0.4rem; border-radius: 9px;
+            background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.plotflag.good { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+.plotfilter .chip.no { background: #fee2e2; border-color: #fecaca; color: #991b1b;
+                       text-decoration: line-through; }
+.plotfilter .chip:disabled { opacity: 0.3; cursor: default; }

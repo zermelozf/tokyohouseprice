@@ -767,6 +767,63 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     if (k) this.notesOpen[k] = !this.notesOpen[k];
   }
 
+  // --- plot facts ------------------------------------------------------------
+  readonly PLOT_FLAGS: { key: string; label: string; good: boolean }[] = [
+    { key: 'corner',       label: '角地',        good: true },
+    { key: 'flag_lot',     label: '旗竿地',      good: false },
+    { key: 'no_rebuild',   label: '再建築不可',   good: false },
+    { key: 'slope',        label: '高低差・擁壁', good: false },
+    { key: 'encroachment', label: '越境',        good: false },
+    { key: 'build_tied',   label: '建築条件付',   good: false },
+    { key: 'power_line',   label: '高圧線',      good: false },
+    { key: 'cemetery',     label: '墓地隣接',     good: false },
+  ];
+
+  /** Aspect filter: which way the plot faces. Empty = any. */
+  aspects: string[] = [];
+  /** Flags to require (corner) or exclude (the rest). */
+  requireFlags: string[] = [];
+  excludeFlags: string[] = [];
+
+  toggleAspect(a: string): void {
+    this.aspects = this.aspects.includes(a)
+      ? this.aspects.filter(x => x !== a) : [...this.aspects, a];
+    this.applyRanges();
+  }
+
+  toggleFlag(key: string, exclude: boolean): void {
+    const list = exclude ? 'excludeFlags' : 'requireFlags';
+    const other = exclude ? 'requireFlags' : 'excludeFlags';
+    this[list] = this[list].includes(key)
+      ? this[list].filter(x => x !== key) : [...this[list], key];
+    this[other] = this[other].filter(x => x !== key);   // one or the other
+    this.applyRanges();
+  }
+
+  /** Filtered in the browser like the sliders: the facts are already on the row. */
+  private passesPlot(p: any): boolean {
+    const f = p?.plot;
+    if (this.aspects.length && !(f?.aspect && this.aspects.includes(f.aspect))) return false;
+    for (const k of this.requireFlags) if (!f?.flags?.includes(k)) return false;
+    for (const k of this.excludeFlags) if (f?.flags?.includes(k)) return false;
+    return true;
+  }
+
+  /** The explanation the scraper wrote for a flag, for the card's tooltip. */
+  flagNote(pl: any, key: string): string {
+    const i = (pl?.flags || []).indexOf(key);
+    return (i >= 0 && pl?.notes?.[i]) ? pl.notes[i] : this.flagLabel(key);
+  }
+
+  flagLabel(key: string): string {
+    return this.PLOT_FLAGS.find(f => f.key === key)?.label || key;
+  }
+
+  /** How many listings currently carry a flag, so a chip is not a dead end. */
+  flagCount(key: string): number {
+    return this.searchAll.filter((r: any) => r.plot?.flags?.includes(key)).length;
+  }
+
   verdictMeta(v: Verdict | null | undefined) {
     return v ? VERDICT_META[v] : null;
   }
@@ -1332,7 +1389,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   /** Re-filter both tabs, without touching the server. */
   applyRanges(): void {
-    const keep = (r: any) => this.passesType(r) && this.inRanges(r as Filterable);
+    const keep = (r: any) => this.passesType(r) && this.passesPlot(r)
+                          && this.inRanges(r as Filterable);
     this.mapPoints = this.mapAll.filter(keep);
     this.searchRows = this.searchAll.filter(keep);
     this.renderMarkers();
