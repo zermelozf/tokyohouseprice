@@ -99,7 +99,11 @@ button.warn:hover { background: #43a047; box-shadow: 0 4px 8px rgba(76, 175, 80,
 .stat .n { font-size: 1.4rem; font-weight: 700; color: #333; }
 .stat .l { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.03em; }
 
-.tablewrap { max-height: 520px; overflow: auto; border: 1px solid #eee; border-radius: 8px; }
+/* A scroll box, because the header sticks to its nearest scrolling ancestor and
+   a wide table needs overflow-x anyway — but sized to the screen rather than to
+   a number, so a tall monitor shows the rows it has room for. */
+.tablewrap { max-height: calc(100dvh - 11rem); min-height: 20rem;
+             overflow: auto; border: 1px solid #eee; border-radius: 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 th, td { text-align: left; padding: 0.55rem 0.6rem; white-space: nowrap; }
 th { color: #666; font-weight: 600; position: sticky; top: 0; background: #f8f9fa; border-bottom: 1px solid #eee; }
@@ -636,7 +640,7 @@ tr.detailrow > td { background: #fbfcfd; padding: 0.9rem 1rem; white-space: norm
   .frow.inline .small { width: calc(50% - 0.5rem); }
 
   /* wide tables scroll horizontally rather than break the page */
-  .tablewrap { max-height: 60vh; }
+  .tablewrap { max-height: calc(100dvh - 8rem); }
   table.jobs .jcfg a { width: 150px; }
 
   /* shorter map on phones (fullscreen still overrides — higher specificity) */
