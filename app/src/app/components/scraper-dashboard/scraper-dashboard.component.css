@@ -1367,9 +1367,10 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 
 /* Plot facts on the card, and their filter chips. */
 .plotline { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-.lightbar { display: inline-block; width: 46px; height: 6px; border-radius: 3px;
-            background: #e6e9ee; overflow: hidden; }
-.lightbar i { display: block; height: 100%; }
+.bulbs { display: inline-flex; gap: 1px; font-size: 0.72rem; line-height: 1;
+         vertical-align: middle; }
+.bulbs span { filter: grayscale(1); opacity: 0.25; }
+.bulbs span.lit { filter: none; opacity: 1; }
 .plotflag { font-size: 0.7rem; padding: 0.05rem 0.4rem; border-radius: 9px;
             background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .plotflag.good { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }

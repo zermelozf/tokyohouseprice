@@ -821,6 +821,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return something ? pl : null;
   }
 
+  /** Luminosity as four bulbs rather than a bar.
+   *
+   *  The score is inferred from which way the plot faces, not measured, and a
+   *  bar filled to 87% claims a precision it hasn't got. Four steps is about
+   *  what the underlying fact supports, and they fall straight out of the
+   *  compass: south-ish four, east or west three, north-ish two, due north one.
+   *  A corner, a wide road or a high floor can lift a plot into the next one. */
+  readonly BULBS = [1, 2, 3, 4];
+  lightBulbs(score: number): number {
+    return score >= 0.85 ? 4 : score >= 0.6 ? 3 : score >= 0.4 ? 2 : 1;
+  }
+
   /** The explanation the scraper wrote for a flag, for the card's tooltip. */
   flagNote(pl: any, key: string): string {
     const i = (pl?.flags || []).indexOf(key);

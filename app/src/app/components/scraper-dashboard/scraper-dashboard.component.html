@@ -1234,12 +1234,10 @@
               <span *ngIf="pl.aspect_ja"> · </span>{{ pl.floor }}階</span>
             <span *ngIf="pl.frontage_m" title="間口 — how wide the plot is at the road">
               · 間口 {{ pl.frontage_m }} m</span>
-            <span class="lightbar" *ngIf="pl.light_score != null"
-                  [title]="'Aspect score ' + (pl.light_score * 100 | number:'1.0-0')
-                        + '% — which way it faces and how much room is in front. Not sun hours.'">
-              <i [style.width.%]="pl.light_score * 100"
-                 [style.background]="pl.light_score > 0.7 ? '#15803d'
-                                   : pl.light_score > 0.45 ? '#ca8a04' : '#c2410c'"></i>
+            <span class="bulbs" *ngIf="pl.light_score != null"
+                  [title]="'Light ' + lightBulbs(pl.light_score) + '/4 — which way it faces'
+                        + ' and how much room is in front. Not sun hours.'">
+              <span *ngFor="let b of BULBS" [class.lit]="b <= lightBulbs(pl.light_score)">💡</span>
             </span>
             <span class="plotflag" *ngFor="let f of pl.flags"
                   [class.good]="f === 'corner'" [title]="flagNote(pl, f)">{{ flagLabel(f) }}</span>
