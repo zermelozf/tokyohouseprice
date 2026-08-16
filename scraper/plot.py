@@ -78,13 +78,18 @@ def annotate(rows: list[dict], specs_by_id: dict[str, dict]) -> list[dict]:
         s = {re.sub(r"\s*ヒント\s*$", "", k.rstrip(":").strip()).replace("･", "・"): v
              for k, v in specs.items()}
         roads = frontages(s.get("私道負担・道路"))
+        # A flat has no frontage; it has a direction its windows face, which is
+        # the same question asked of a different thing. Chintai pages state it
+        # outright, so rent listings had a plot section with nothing in it.
+        flat_dir, flat_dir_ja = _flat_aspect(s.get("向き"))
+        floor = _floor(s.get("階"))
         fl = flags(s)
         # A plot touching two roads facing different ways is a corner even when
         # the listing does not use the word.
         if len({f["dir"] for f in roads}) > 1 and "corner" not in fl:
             fl.append("corner")
         best = max(roads, key=lambda f: ASPECT_LIGHT.get(f["dir"], 0), default=None)
-        aspect = best["dir"] if best else None
+        aspect = best["dir"] if best else flat_dir
         # Open sky in front, widened a little by a wide road and by a second
         # frontage. Deliberately not called sunlight: it says which way the plot
         # faces and how much room is in front of it, which is all the listing
@@ -92,14 +97,21 @@ def annotate(rows: list[dict], specs_by_id: dict[str, dict]) -> list[dict]:
         light = None
         if aspect:
             light = ASPECT_LIGHT[aspect]
-            light += 0.05 * min(best["width_m"], 8) / 8      # a wide road helps
-            if "corner" in fl:
-                light += 0.1
+            if best:
+                light += 0.05 * min(best["width_m"], 8) / 8  # a wide road helps
+                if "corner" in fl:
+                    light += 0.1
+            elif floor:
+                # Height is a flat's version of open space: above the third
+                # floor the building opposite stops being the view.
+                light += min(0.15, 0.03 * max(0, floor - 1))
             light = round(min(1.0, light), 2)
         r["plot"] = {
+            "kind": "plot" if roads else ("flat" if flat_dir or floor else None),
+            "floor": floor,
             "frontages": roads,
             "aspect": aspect,
-            "aspect_ja": best["dir_ja"] if best else None,
+            "aspect_ja": best["dir_ja"] if best else flat_dir_ja,
             "road_width_m": best["width_m"] if best else None,
             "frontage_m": _frontage_width(s),
             "light_score": light,
@@ -119,3 +131,24 @@ def _frontage_width(s: dict) -> float | None:
             if 0 < w < 100:
                 return w
     return None
+
+
+def _flat_aspect(raw: str | None) -> tuple[str | None, str | None]:
+    """The direction a flat's windows face, from the 向き field ('南', '南西')."""
+    text = (raw or "").strip()
+    if not text or text == "-":
+        return None, None
+    for jp, code in DIRECTIONS:
+        if text.startswith(jp):
+            return code, jp
+    return None, None
+
+
+def _floor(raw: str | None) -> int | None:
+    """Which floor the flat is on. '1-3階' is a house over several floors, and
+    the lowest is the one that decides how much light reaches it."""
+    m = re.search(r"(\d+)", _zen2han(str(raw or "")))
+    if not m:
+        return None
+    n = int(m.group(1))
+    return n if 0 < n < 80 else None

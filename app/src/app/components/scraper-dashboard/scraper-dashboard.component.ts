@@ -809,6 +809,18 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return true;
   }
 
+  /** The plot facts only when there is something to print.
+   *
+   *  Chintai pages carry none of the land prose, so without this every rent
+   *  listing showed an empty line where the plot section should be. */
+  plotFacts(p: any): any | null {
+    const pl = p?.plot;
+    if (!pl) return null;
+    const something = pl.aspect_ja || pl.frontage_m || pl.floor
+                   || pl.light_score != null || (pl.flags || []).length;
+    return something ? pl : null;
+  }
+
   /** The explanation the scraper wrote for a flag, for the card's tooltip. */
   flagNote(pl: any, key: string): string {
     const i = (pl?.flags || []).indexOf(key);

@@ -255,6 +255,8 @@ export interface AccessOverview {
 /** What the listing's own prose says about the plot: which way it faces, how
  *  wide the road is, and the defects stated in その他制限事項. */
 export interface PlotFacts {
+  kind: 'plot' | 'flat' | null;   // a plot faces a road; a flat faces a direction
+  floor: number | null;
   frontages: { dir: string; dir_ja: string; width_m: number }[];
   aspect: string | null;
   aspect_ja: string | null;

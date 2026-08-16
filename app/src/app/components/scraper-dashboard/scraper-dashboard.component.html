@@ -1222,12 +1222,16 @@
                closest thing to a light reading available without modelling
                every neighbouring roof: a road cannot be built on, so the
                direction you face it is open sky. -->
-          <div class="revline plotline" *ngIf="p.plot as pl">
-            <span *ngIf="pl.aspect_ja" [title]="'frontage faces ' + pl.aspect_ja
-                  + (pl.road_width_m ? ' onto a ' + pl.road_width_m + ' m road' : '')
-                  + '. A road cannot be built on, so this is the open side.'">
+          <div class="revline plotline" *ngIf="plotFacts(p) as pl">
+            <span *ngIf="pl.aspect_ja" [title]="(pl.kind === 'flat'
+                    ? 'the rooms face ' + pl.aspect_ja
+                    : 'frontage faces ' + pl.aspect_ja
+                      + (pl.road_width_m ? ' onto a ' + pl.road_width_m + ' m road' : '')
+                      + '. A road cannot be built on, so this is the open side.')">
               🧭 {{ pl.aspect_ja }}向き<span *ngIf="pl.road_width_m"> · {{ pl.road_width_m }} m road</span>
             </span>
+            <span *ngIf="pl.floor" title="階 — which floor the flat is on">
+              <span *ngIf="pl.aspect_ja"> · </span>{{ pl.floor }}階</span>
             <span *ngIf="pl.frontage_m" title="間口 — how wide the plot is at the road">
               · 間口 {{ pl.frontage_m }} m</span>
             <span class="lightbar" *ngIf="pl.light_score != null"
