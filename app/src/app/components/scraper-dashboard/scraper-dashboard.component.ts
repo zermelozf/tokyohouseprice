@@ -742,6 +742,23 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return (p?.reviews || []).filter((r: any) => !r.mine && r.verdict);
   }
 
+  /** Notes your group left on a listing, yours included.
+   *
+   * Hidden until asked for, the same reason the verdict badges are: reading
+   * "too dark, north facing" before looking at the photos decides the question
+   * for you. Once you have formed a view, or when you cannot see why they said
+   * no, it is exactly what you want. */
+  notesOpen: Record<string, boolean> = {};
+
+  groupNotes(p: any): any[] {
+    return (p?.reviews || []).filter((r: any) => (r.note || '').trim());
+  }
+
+  toggleNotes(p: any): void {
+    const k = p?.property_id;
+    if (k) this.notesOpen[k] = !this.notesOpen[k];
+  }
+
   verdictMeta(v: Verdict | null | undefined) {
     return v ? VERDICT_META[v] : null;
   }

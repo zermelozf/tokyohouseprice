@@ -1051,6 +1051,8 @@
                        (click)="$event.stopPropagation(); toggleCompare(r)">
               </td>
               <td class="verdictcell" (click)="$event.stopPropagation()">
+                <span class="notemark" *ngIf="groupNotes(r).length"
+                      [title]="groupNotes(r).length + ' note(s) — open the listing to read them'">💬</span>
                 <span class="othermark" *ngFor="let o of othersReviews(r)"
                       [title]="o.name + ' — ' + o.verdict"
                       [style.background]="verdictMeta(o.verdict)?.color">{{ o.name.charAt(0) }}</span>
@@ -1211,6 +1213,27 @@
           </div>
 
           <div class="revline muted">{{ sheetData?.address || p.address }}</div>
+
+          <!-- What the group wrote. Folded away by default: someone else's
+               "too dark, north facing" answers the question before you have
+               looked, and the point of two people reviewing is two looks. -->
+          <div class="groupnotes" *ngIf="groupNotes(p).length">
+            <button class="ghost xtiny" (click)="toggleNotes(p)">
+              💬 {{ notesOpen[p.property_id] ? 'hide' : 'show' }}
+              {{ groupNotes(p).length }} note{{ groupNotes(p).length > 1 ? 's' : '' }}
+              <span class="muted">from {{ groupNotes(p)[0].mine ? 'you' : groupNotes(p)[0].name }}<span
+                    *ngIf="groupNotes(p).length > 1"> and others</span></span>
+            </button>
+            <div class="notelist" *ngIf="notesOpen[p.property_id]">
+              <div class="noteitem" *ngFor="let n of groupNotes(p)">
+                <span class="notewho" [style.borderColor]="verdictMeta(n.verdict)?.color">
+                  {{ verdictMeta(n.verdict)?.icon }} {{ n.mine ? 'you' : n.name }}
+                </span>
+                <span class="notetext">{{ n.note }}</span>
+                <span class="muted notewhen" *ngIf="n.at">{{ n.at | slice:0:10 }}</span>
+              </div>
+            </div>
+          </div>
 
           <div *ngIf="reviewPhotosLoading && !sheetData" class="muted">loading the spec sheet…</div>
           <div *ngIf="sheetError" class="err">⚠ {{ sheetError }}</div>

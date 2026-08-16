@@ -1344,3 +1344,15 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
    the one that moves the answer most. */
 .assumptions .horizon { display: block; margin: 0.6rem 0 0.2rem; }
 .assumptions .horizon input[type="range"] { width: 100%; max-width: 26rem; display: block; }
+
+/* Group notes, folded away until asked for. */
+.groupnotes { margin: 0.4rem 0; }
+.notelist { margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.noteitem { display: flex; gap: 0.45rem; align-items: baseline; font-size: 0.82rem;
+            background: #fafbfc; border: 1px solid #eef0f3; border-radius: 4px;
+            padding: 0.3rem 0.5rem; }
+.notewho { font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+           border-left: 3px solid; padding-left: 0.35rem; }
+.notetext { flex: 1 1 auto; }
+.notewhen { font-size: 0.7rem; white-space: nowrap; }
+.notemark { font-size: 0.72rem; margin-right: 2px; }
