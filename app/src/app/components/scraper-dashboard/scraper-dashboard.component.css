@@ -1377,3 +1377,15 @@ tr.picked > td { background: #fff7fb; box-shadow: inset 2px 0 0 #FF69B4; }
 .plotfilter .chip.no { background: #fee2e2; border-color: #fecaca; color: #991b1b;
                        text-decoration: line-through; }
 .plotfilter .chip:disabled { opacity: 0.3; cursor: default; }
+
+/* A window pinned to a day nothing was crawled on returns nothing, which
+   looks like a broken page rather than an empty question. */
+.fld.chk { flex-direction: row; align-items: center; gap: 0.3rem; }
+.fld.chk input { margin: 0; }
+
+.datewarn {
+  align-self: center;
+  color: #b45309;
+  font-weight: 600;
+  font-size: 0.85em;
+}

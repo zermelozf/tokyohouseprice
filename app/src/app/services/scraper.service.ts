@@ -38,13 +38,21 @@ export interface Listing {
   // Everyone's verdicts on this listing, yours included. Two people hunting
   // together disagree, and which of them liked it is the point of recording it.
   reviews?: ListingReview[];
-  // The same house is posted by several agents. dup_key groups them, dup_first
-  // marks one per group, and verdict_via says a copy inherited its judgement.
+  // The same house is posted by several agents. dup_key groups adverts that
+  // agree to the yen — what the table folds — while house_key groups the same
+  // home across a price cut or a different agent's quote, which is what a
+  // verdict travels along and what the review queue counts. dup_first/
+  // house_first mark one row per group, and verdict_via says a copy inherited
+  // its judgement. See scraper/dedupe.py.
   plot?: PlotFacts | null;
   dup_key?: string | null;
   dup_count?: number;
   dup_first?: boolean;
   dup_ids?: string[];
+  house_key?: string | null;
+  house_count?: number;
+  house_first?: boolean;
+  house_ids?: string[];
   verdict_via?: { property_id: string; verdict: Verdict } | null;
   effective_verdict?: Verdict | null;
   market: string;

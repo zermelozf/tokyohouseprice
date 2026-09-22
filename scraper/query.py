@@ -110,11 +110,19 @@ def apply_rent_kinds(rows: list[dict], f: dict) -> list[dict]:
 
 def apply_verdicts(rows: list[dict], f: dict) -> list[dict]:
     """`verdicts` may include the sentinel 'none' for not-yet-reviewed, which is
-    what the review queue asks for."""
+    what the review queue asks for.
+
+    It tests the *effective* verdict — yours, or the one this listing inherited
+    from another advert for the same home — because 'unseen' means "I have not
+    judged this house", not "I have not judged this URL". Reading the raw
+    verdict put every re-post of a house you had already decided about back in
+    front of you, which made the filter useless on rentals, where the same flat
+    is re-listed weekly at a slightly different rent."""
     want = f.get("verdicts")
     if not want:
         return rows
-    return [r for r in rows if (r.get("verdict") or "none") in want]
+    return [r for r in rows
+            if ((r.get("effective_verdict") or r.get("verdict")) or "none") in want]
 
 
 def reviews() -> dict[str, list[dict]]:

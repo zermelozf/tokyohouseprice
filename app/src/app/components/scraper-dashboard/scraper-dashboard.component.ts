@@ -2,6 +2,7 @@ import { DoCheck, HostListener, Component, OnDestroy, OnInit, NgZone } from '@an
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -163,6 +164,22 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // Crawled-time window. Empty means the latest snapshot of every property,
     // which is what the map always showed; the Search tab used to default to
     // yesterday→today, so the two tabs answered different questions.
+    //
+    // `dateMode` says whether those two dates mean anything. On 'latest' they
+    // are cleared, which is the query's own "most recent snapshot of every
+    // property" — every listing at the last time it was seen. On 'fixed' they
+    // are what was typed, for looking back at a particular morning.
+    //
+    // Two things made pinning to a single day the wrong default. A saved view
+    // stored its dates and so froze on the day it was saved: a view saved on
+    // the 11th was still asking for the 11th a week later, and everything
+    // crawled since was missing. And a crawl in progress covers only some
+    // categories and wards — the morning of the 19th had 344 rows against the
+    // 18th's 672, no land at all — so a view pinned to it lost most of its
+    // listings, and the sliders, whose bounds are read off the data, collapsed
+    // with them. Following the latest snapshot per property has neither
+    // problem: a listing stays until a crawl that covers it stops seeing it.
+    dateMode: 'latest' as 'latest' | 'fixed',
     dateFrom: '' as string,
     dateTo: '' as string,
   };
@@ -258,7 +275,14 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // Presets written before the two tabs shared a date window.
     if (st.mapForm?.date && !st.shared?.dateTo) {
       this.shared.dateFrom = this.shared.dateTo = st.mapForm.date;
+      this.shared.dateMode = 'fixed';
     }
+    // A view saved before there was a mode stored only the dates, which were
+    // whatever the newest crawl was that day. Following the latest crawl is
+    // what those views meant, and it is the only reading that does not rot.
+    if (!st.shared?.dateMode) this.shared.dateMode = 'latest';
+    // Whatever the mode says, the dates have to be usable: 'latest' re-pins
+    // to the newest crawl, and 'fixed' is left alone but checked below.
     if (st.searchForm) this.searchForm = { ...this.searchForm, ...st.searchForm };
     // `mapEras` is what presets saved before the filter became shared.
     this.eras = st.eras ?? st.mapEras ?? this.eras;
@@ -268,8 +292,14 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // Ranges are applied after the reload, since their bounds depend on the
     // data that comes back.
     this.pendingRanges = st.ranges || null;
-    // Both tabs read one response, so a restored preset cannot half-apply.
-    if (reload) this.load(); else this.applyPendingRanges();
+    // Pinning needs the crawl list, which on a cold page has not arrived yet —
+    // so ask for it rather than assume, or a view opened from a link keeps the
+    // stale dates it was saved with.
+    this.ensureCrawlDates(() => {
+      if (this.shared.dateMode === 'latest') this.followLatest();
+      // Both tabs read one response, so a restored preset cannot half-apply.
+      if (reload) this.load(); else this.applyPendingRanges();
+    });
   }
 
   private pendingRanges: any = null;
@@ -316,7 +346,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
         || (r['reviews'] || []).some((x: any) => x.verdict === 'good');
       if (!yes) return false;
       if (this.agreedOnly && this.groupMark(r) !== 'agreed') return false;
-      const k = r['dup_key'];
+      const k = this.houseId(r);
       if (k && seen.has(k)) return false;
       if (k) seen.add(k);
       return true;
@@ -443,7 +473,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     const seen = new Set<string>();
     return this.searchAll.filter(r => {
       if (this.groupMark(r) !== 'agreed') return false;
-      const k = r['dup_key'];
+      const k = this.houseId(r);
       if (k && seen.has(k)) return false;
       if (k) seen.add(k);
       return true;
@@ -566,11 +596,57 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
   /** The crawl the view is pinned to, for the map's status line. */
   latestCrawl(): string { return this.crawlDates[0]?.date || ''; }
 
-  /** Back to the newest crawl, both bounds on it. */
+  /** Back to following the latest snapshot of every property. */
   useLatestCrawl(): void {
-    if (!this.crawlDates.length) return;
-    this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
+    this.shared.dateMode = 'latest';
+    this.followLatest();
     this.load();
+  }
+
+  /**
+   * Follow the latest snapshot of every property.
+   *
+   * Clearing the window is what asks for that — the query takes the newest
+   * scrape per property within the window, so no window means the newest
+   * scrape of each, full stop.
+   */
+  private followLatest(): void {
+    this.shared.dateFrom = this.shared.dateTo = '';
+  }
+
+  /** The 'follow latest' tick. Turning it on re-pins straight away. */
+  setFollowLatest(on: boolean): void {
+    this.shared.dateMode = on ? 'latest' : 'fixed';
+    if (on) this.followLatest();
+    // Turning it off with nothing in the boxes would ask for everything ever
+    // crawled, so seed them with the newest crawl to pick around.
+    else if (!this.shared.dateTo && this.crawlDates.length) {
+      this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
+    }
+    this.refreshBoth();
+  }
+
+  /** Typing a date is what switches the window off 'latest'. */
+  onDateEdited(): void {
+    this.shared.dateMode = 'fixed';
+    this.refreshBoth();
+  }
+
+  /**
+   * Set when the window is pinned to a day nothing was crawled on.
+   *
+   * Worth saying out loud: the view comes back empty and looks broken, when
+   * in fact it is asking about a morning that never happened.
+   */
+  get staleDateWarning(): string {
+    if (this.shared.dateMode !== 'fixed' || !this.crawlDates.length) return '';
+    const { dateFrom, dateTo } = this.shared;
+    if (!dateFrom && !dateTo) return '';
+    const have = this.crawlDates.map(d => d.date);
+    const lo = dateFrom || have[have.length - 1];
+    const hi = dateTo || have[0];
+    if (have.some(d => d >= lo && d <= hi)) return '';
+    return `Nothing was crawled between ${lo} and ${hi}.`;
   }
 
   /** Stats for the rows actually on screen.
@@ -863,10 +939,24 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return rows.filter(r => {
       if (r.verdict || r.verdict_via) return false;
       if (!(r.reviews || []).some((x: any) => !x.mine)) return false;
-      if (r.dup_key && seen.has(r.dup_key)) return false;   // count a house once
-      if (r.dup_key) seen.add(r.dup_key);
+      const k = this.houseId(r);
+      if (k && seen.has(k)) return false;                   // count a house once
+      if (k) seen.add(k);
       return true;
     });
+  }
+
+  /** The id of the *home* a row is about, for anything that must not ask or
+   * count twice: the review queue, the shortlist, the counters beside them.
+   *
+   * `dup_key` is the same advert down to the yen, which is what the table
+   * folds; `house_key` is the same rooms whatever they are priced at today.
+   * Reviewing is about homes — a flat re-listed ¥20,000 cheaper is not a new
+   * one to judge. Falls back to the advert, then to the listing itself, so a
+   * row the server did not group is still counted once rather than dropped.
+   * See scraper/dedupe.py. */
+  houseId(r: any): string {
+    return r?.house_key || r?.dup_key || r?.property_id || '';
   }
 
   /** Collapse re-posts in the results table.
@@ -892,23 +982,37 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     return out;
   }
 
-  /** How many listings the current results collapse to. */
+  /** How many rows the table shows once re-posts of the same advert are
+   * folded. Not the same as the number of homes: one home advertised at two
+   * prices is two adverts, and the table keeps both because the price is the
+   * fact on the row. */
+  advertCount(rows: any[] = this.searchRows): number {
+    const keys = new Set<string>();
+    let loose = 0;
+    for (const r of rows) r['dup_key'] ? keys.add(r['dup_key']) : loose++;
+    return keys.size + loose;
+  }
+
+  /** How many homes the current results come to — what the Review button
+   * offers, so the number and the queue agree. */
   distinctCount(rows: any[] = this.searchRows): number {
     const keys = new Set<string>();
     let loose = 0;
-    for (const r of rows) r.dup_key ? keys.add(r.dup_key) : loose++;
+    for (const r of rows) { const k = this.houseId(r); k ? keys.add(k) : loose++; }
     return keys.size + loose;
   }
 
   startReview(onlyUnreviewed = true, source: 'map' | 'search' = 'map'): void {
     const all = source === 'search' ? this.searchRows : this.mapPoints;
-    // One posting per house. Agents list the same property up to eight times,
-    // and judging a house is judging the house, not the advert.
+    // One posting per home. Agents list the same property up to eight times,
+    // and judging a house is judging the house, not the advert — nor its price
+    // this week, so this collapses on the home rather than the advert.
     const seen = new Set<string>();
     const distinct = all.filter((p: any) => {
-      if (!p.dup_key) return true;
-      if (seen.has(p.dup_key)) return false;
-      seen.add(p.dup_key);
+      const k = this.houseId(p);
+      if (!k) return true;
+      if (seen.has(k)) return false;
+      seen.add(k);
       return true;
     });
     const pool = onlyUnreviewed
@@ -1198,16 +1302,8 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     const note = this.reviewNote.trim();
     this.api.saveReview(card.property_id, v, tags, note).subscribe({
       next: () => {
-        card.verdict = v;
-        card.review_tags = tags;
-        card.review_note = note;
+        this.applyVerdict(card, v, tags, note);
         this.loadReviewCounts();
-        // Keep the other surface in step: the same property may be on screen
-        // in both the table and the map.
-        const twin = this.mapPoints.find(m => m.property_id === card.property_id);
-        if (twin) { twin.verdict = v; twin.review_tags = tags; twin.review_note = note; }
-        const row: any = this.searchRows.find(r => r.property_id === card.property_id);
-        if (row) { row.verdict = v; row.review_tags = tags; row.review_note = note; }
         if (this.map) this.renderMarkers();
       },
       error: () => {},
@@ -1264,17 +1360,50 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   /** Grade straight from the results table, without opening the card. */
   quickGrade(row: any, v: Verdict | null): void {
-    this.api.saveReview(row.property_id, row.verdict === v ? null : v,
+    const next = row.verdict === v ? null : v;
+    this.api.saveReview(row.property_id, next,
                         row.review_tags || [], row.review_note || '').subscribe({
       next: () => {
-        row.verdict = row.verdict === v ? null : v;
+        this.applyVerdict(row, next, row.review_tags || [], row.review_note || '');
         this.loadReviewCounts();
-        const twin = this.mapPoints.find(m => m.property_id === row.property_id);
-        if (twin) twin.verdict = row.verdict;
         if (this.map) this.renderMarkers();
       },
       error: () => {},
     });
+  }
+
+  /** Record a saved verdict on the rows already on screen — the one you graded,
+   * and every other advert for the same home.
+   *
+   * The server spreads a verdict across a home on the next query; doing the
+   * same here is what stops the copy you have not touched yet from being
+   * offered as unseen for the rest of the session. The copy keeps its own
+   * `verdict` empty, exactly as the server leaves it: nothing is written in
+   * your name that you did not write, and `verdict_via` says where the
+   * judgement came from. The table, the map and the queue hold the same row
+   * objects, so one pass reaches all three. */
+  private applyVerdict(card: any, v: Verdict | null, tags: string[], note: string): void {
+    card.verdict = v;
+    card.review_tags = tags;
+    card.review_note = note;
+    card.verdict_via = null;
+    card.effective_verdict = v;
+    const home = this.houseId(card);
+    if (!home) return;
+    const kin = ([...this.searchAll, ...this.previewRows] as any[])
+      .filter(r => this.houseId(r) === home && r.property_id !== card.property_id);
+    // Clearing a verdict does not leave the home unjudged if another advert
+    // for it still carries one — the queue would offer it straight back.
+    const src = v ? card : kin.find(r => r.verdict) ?? null;
+    for (const r of kin) {
+      if (r.verdict) continue;                      // their own judgement stands
+      r.verdict_via = src ? { property_id: src.property_id, verdict: src.verdict } : null;
+      r.effective_verdict = src ? src.verdict : null;
+    }
+    if (!v && src) {
+      card.verdict_via = { property_id: src.property_id, verdict: src.verdict };
+      card.effective_verdict = src.verdict;
+    }
   }
 
 
@@ -1768,7 +1897,7 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
 
   private pollTimer: any = null;
 
-  constructor(private api: ScraperService, private http: HttpClient, private zone: NgZone) {}
+  constructor(private api: ScraperService, private http: HttpClient, private zone: NgZone, private route: ActivatedRoute) {}
 
   // Full-detail modal opened from a map popup's "See all details" button.
   // Just "which listing is open"; its contents live in sheetData, shared with
@@ -1803,11 +1932,38 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     // spanning several crawls mixes listings that were on the market on
     // different mornings, and the newest one is what you are looking at.
     this.ensureCrawlDates(() => {
-      if (this.crawlDates.length) {
-        this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
-      }
+      if (this.shared.dateMode === 'latest') this.followLatest();
       this.load();
     });
+    this.openFromQueryParams();
+  }
+
+  /** A link from outside (finance's "Fill from a reviewed listing") can open one card's detail sheet directly, without
+   * it needing to be in the current search results: ?property_id=... plus whatever of the card's own fields the
+   * linker already has, so the sheet has something to show while `openDetails` fetches the rest by URL. Every field
+   * but `property_id` and `url` is cosmetic filler for the header - safe to leave out. */
+  private openFromQueryParams(): void {
+    const q = this.route.snapshot.queryParamMap;
+    const property_id = q.get('property_id');
+    const url = q.get('url');
+    if (!property_id || !url) return;
+    const num = (k: string) => { const v = q.get(k); return v === null ? null : Number(v); };
+    // The actual loan the linker (finance) is planning, if it sent one: the compare tool otherwise silently
+    // prices a generic 20%-down/35-year loan, which can make a real, more-leveraged purchase look worse than
+    // it is - not because the two tools disagree, but because they'd be pricing two different loans.
+    const downPct = num('down_payment_pct'), loanTerm = num('loan_term');
+    if (downPct !== null) this.compareAssumptions.down_payment_pct = downPct;
+    if (loanTerm !== null) this.compareAssumptions.loan_term = loanTerm;
+    this.openDetails({
+      property_id, url,
+      market: q.get('market') || 'sale', category: q.get('category') || '',
+      ward: q.get('ward') || '', title: q.get('title') || '',
+      address: '', station_raw: '', price_raw: '',
+      image_url: q.get('image_url'),
+      price_yen: num('price_yen'), layout: q.get('layout'),
+      building_m2: num('building_m2'), land_m2: num('land_m2'),
+      building_m2_max: null, land_m2_max: null, nearest_walk_min: null, age_years: null,
+    } as any);
   }
 
   // Local 'YYYY-MM-DD' (not UTC) — scrape_date is stamped in the machine's local time.
@@ -1914,7 +2070,9 @@ export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
     if (this.crawlDates.length) { then?.(); return; }
     this.api.crawlDates().subscribe({
       next: res => { this.crawlDates = res.dates; then?.(); },
-      error: () => this.diffError = 'could not reach the local API',
+      // Still run the continuation. Callers load the listings in it, and
+      // swallowing it here left the page blank whenever this one call failed.
+      error: () => { this.diffError = 'could not reach the local API'; then?.(); },
     });
   }
 
