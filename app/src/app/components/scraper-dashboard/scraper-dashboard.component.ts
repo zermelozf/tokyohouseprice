@@ -1,0 +1,4211 @@
+import { DoCheck, HostListener, Component, OnDestroy, OnInit, NgZone } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import {
+  ScraperService, Listing, Stats, Summary, Filters,
+  ScheduledJob, JobInput, SchedulerState, ScraperConfig, CrawlStatus, PropertyDetail, MapPoint,
+  CrawlDate, CrawlDiff, DiffListing, FieldChange, SeismicEra, ERA_META,
+  CompareAssumptions, CompareResult, CompareOption, Verdict, VERDICT_META, AccessOverview,
+} from '../../services/scraper.service';
+
+
+/**
+ * 2020 census counts for one 町丁. `null` means e-Stat withheld the figure for
+ * disclosure control (13 of the 3,039 blocks).
+ */
+interface BlockStats {
+  pop: number | null; age_0_14: number | null; age_15_64: number | null;
+  age_65: number | null; age_75: number | null;
+  age_20_24: number | null; age_25_29: number | null;
+  age_30_34: number | null; age_35_39: number | null;
+  hh_general: number | null; hh_1person: number | null;
+  hh_couple_kids: number | null; hh_under6: number | null; hh_under18: number | null;
+  hh_housed: number | null; hh_owned: number | null; hh_priv_rent: number | null;
+  hh_main: number | null; hh_detached: number | null;
+  hh_apt_6_10: number | null; hh_apt_11plus: number | null;
+  workers: number | null; work_managers: number | null; work_professional: number | null;
+}
+
+interface CensusLayer {
+  key: string;
+  group: string;
+  label: string;
+  title: string;
+  legendTitle: string;
+  /** `fixed` keeps hard-coded breaks; `quantile` derives six equal-count buckets. */
+  mode: 'fixed' | 'quantile';
+  breaks: number[];
+  unit: 'yen' | 'int' | 'pct';
+  value: (props: any) => number | null;
+  palette?: string[];
+  /** Filled in once the data is loaded, so the legend can drop empty classes. */
+  bucketCounts?: number[];
+  noDataCount?: number;
+}
+
+interface SuumoLink { label: string; sub: string; url: string; }
+interface FreqPreset { label: string; minutes: number; }
+
+// Scheduled jobs are URL-based only, to stay consistent with the rest of the
+// dashboard (paste a SUUMO URL → preview → confirm → act). No separate
+// category/ward pickers here.
+function blankJob(): JobInput {
+  return {
+    name: '', mode: 'url', categories: [], wards: [], url: '',
+    max_pages: 5, min_delay: 2, max_delay: 4, interval_minutes: 1440, enabled: true,
+  };
+}
+
+/** The fields the range sliders read. A map point and a search row are
+ * different types but both satisfy this, which is what lets one set of
+ * sliders filter both tabs. */
+type Filterable = {
+  market: string; category: string;
+  price_yen: number | null; land_m2: number | null; building_m2: number | null;
+  property_label?: string | null; commute_min?: number | null;
+  capacity?: { max_floor_m2: number | null; max_footprint_m2: number | null } | null;
+};
+
+@Component({
+  selector: 'app-scraper-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './scraper-dashboard.component.html',
+  styleUrls: ['./scraper-dashboard.component.css'],
+})
+export class ScraperDashboardComponent implements OnInit, OnDestroy, DoCheck {
+  // Tokyo-wide SUUMO result pages to start from when creating a crawler — open
+  // one, refine filters on SUUMO, then paste the URL into the crawler form.
+  suumoLinks: SuumoLink[] = [
+    { label: '中古一戸建て', sub: 'used houses',  url: 'https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar=030&bs=021&ta=13' },
+    { label: '新築一戸建て', sub: 'new houses',   url: 'https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar=030&bs=020&ta=13' },
+    { label: '中古マンション', sub: 'used condos', url: 'https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar=030&bs=011&ta=13' },
+    { label: '土地', sub: 'land',                 url: 'https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar=030&bs=030&ta=13' },
+    { label: '賃貸', sub: 'rentals',              url: 'https://suumo.jp/jj/chintai/ichiran/FR301FC001/?ar=030&bs=040&ta=13' },
+  ];
+
+  summary: Summary | null = null;
+  apiError = '';
+
+  // Live preview inside the crawler-create form (confirm a URL before saving it).
+  urlPending = '';
+  urlPreviewing = false;
+  previewRows: Listing[] = [];
+  previewStats: Stats | null = null;
+  previewMeta = '';
+
+  // Search over already-crawled data (the Search tab). Crawled-time window
+  // defaults to yesterday→today (set in ngOnInit).
+  // The Search tab's own controls. Everything that also applies to the map
+  // lives in `shared`; price bounds are the sliders' job.
+  searchForm = { limit: 300 };
+  // Total budget, shared by Search and Map. SUUMO's own price ceiling stops at
+  // 1億2千万, so this cannot live in the crawl URL — without it the dashboard
+  // shows listings the crawler already refuses to fetch details for.
+  // Not a filter: the size of house assumed when pricing a plot all-in, and
+  // when reporting what a plot can carry. The price slider is the filter.
+  budgetBuildM2 = 130;
+  searchRows: Listing[] = [];
+  searchMeta = '';
+  searched = false;
+
+  // On-demand detail enrichment per listing, keyed by property_id (a key that
+  // hasn't been fetched yet is genuinely undefined).
+
+  // --- config + scheduled jobs ---
+  config: ScraperConfig | null = null;
+
+  sched: SchedulerState | null = null;
+  liveStatus: CrawlStatus | null = null;
+
+  form: JobInput = blankJob();
+  editingId: string | null = null;
+  jobMsg = '';
+  showJobForm = false;
+
+  // Which tab is visible. Crawlers (running/scheduled + status) is the default.
+  activeTab: 'crawlers' | 'search' | 'report' | 'map' | 'groups' | 'compare' = 'crawlers';
+
+  // --- Report tab: what changed between two crawls ---------------------------
+  crawlDates: CrawlDate[] = [];
+  diffFrom = '';
+  diffTo = '';
+  diff: CrawlDiff | null = null;
+  diffLoading = false;
+  diffError = '';
+  /** property_id → whether its change list is expanded. */
+  diffOpen: Record<string, boolean> = {};
+  showCoverage = false;
+
+  // Report tab: Leaflet map of crawled listings that have an exact location.
+  // `date` empty means "latest snapshot of every property"; a specific crawl
+  // date pins the map to what that day's crawl actually saw.
+  // Criteria shared by the Map and the Search tab. They were duplicated, so
+  // narrowing the map left the table showing something else — and a saved
+  // preset could only ever restore half of it.
+  /** Type is a multi-select: 賃貸 is one SUUMO category but three products,
+   * and "a rental house or a plot" is a normal thing to want. Rent kinds are
+   * held apart from categories because they filter on a different field. */
+  readonly RENT_KINDS = [
+    { key: 'mansion', label: '賃貸マンション' },
+    { key: 'apart',   label: '賃貸アパート' },
+    { key: 'house',   label: '賃貸一戸建て' },
+  ];
+
+  shared = {
+    categories: [] as string[],
+    rentKinds: [] as string[],
+    ward: '' as string,
+    verdicts: [] as string[],
+    // Crawled-time window. Empty means the latest snapshot of every property,
+    // which is what the map always showed; the Search tab used to default to
+    // yesterday→today, so the two tabs answered different questions.
+    //
+    // `dateMode` says whether those two dates mean anything. On 'latest' they
+    // are cleared, which is the query's own "most recent snapshot of every
+    // property" — every listing at the last time it was seen. On 'fixed' they
+    // are what was typed, for looking back at a particular morning.
+    //
+    // Two things made pinning to a single day the wrong default. A saved view
+    // stored its dates and so froze on the day it was saved: a view saved on
+    // the 11th was still asking for the 11th a week later, and everything
+    // crawled since was missing. And a crawl in progress covers only some
+    // categories and wards — the morning of the 19th had 344 rows against the
+    // 18th's 672, no land at all — so a view pinned to it lost most of its
+    // listings, and the sliders, whose bounds are read off the data, collapsed
+    // with them. Following the latest snapshot per property has neither
+    // problem: a listing stays until a crawl that covers it stops seeing it.
+    dateMode: 'latest' as 'latest' | 'fixed',
+    dateFrom: '' as string,
+    dateTo: '' as string,
+  };
+  // 耐震基準 tiers to show; empty = all (including listings with no known year).
+  // Shared: the table used to ignore this, so filtering to 旧耐震 on the map
+  // left the search results silently unfiltered.
+  eras: SeismicEra[] = [];
+  // What the dots encode. Era colouring answers "how much of this street is
+  // 旧耐震" at a glance, which category colouring cannot.
+  colorBy: 'category' | 'era' = 'category';
+  eraList = Object.entries(ERA_META).map(([key, m]) => ({ key: key as SeismicEra, ...m }));
+  mapPoints: MapPoint[] = [];
+  private map: any = null;
+  private L: any = null;
+  private markerLayer: any = null;
+  private mapLoaded = false;
+  // category → marker colour (also drives the legend)
+  catColors: { key: string; label: string; color: string }[] = [
+    { key: 'used_mansion', label: '中古マンション', color: '#2563eb' },
+    { key: 'new_house',    label: '新築一戸建て',   color: '#16a34a' },
+    { key: 'used_house',   label: '中古一戸建て',   color: '#0d9488' },
+    { key: 'land',         label: '土地',           color: '#f59e0b' },
+    { key: 'rent',         label: '賃貸',           color: '#9333ea' },
+  ];
+  // --- compare tray: two listings, one financial verdict -------------------
+  // Picked from either the map popups or the Search table, so the slots hold
+  // just enough to render the tray; the model reads the rest server-side.
+  // Up to 4: past that the crossover chart stops being readable and the cards
+  // stop fitting side by side. Server enforces the same cap.
+  readonly COMPARE_MAX = 4;
+  readonly COMPARE_COLORS = ['#2563eb', '#ea580c', '#7c3aed', '#0d9488'];
+  compareSel: { property_id: string; label: string; market: string;
+                category: string; price_raw: string | null }[] = [];
+  compareOpen = false;
+  compareLoading = false;
+  compareError = '';
+  compareResult: CompareResult | null = null;
+  compareAssumptionsOpen = false;
+  // Which option every IRR is measured against. null -> server picks the
+  // least-capital option, which is the only anchor that keeps every stream
+  // investing-shaped and therefore rankable on one rule.
+  // The baseline, held as a listing rather than a position.
+  //
+  // It used to be an index into the options array — but that array is rebuilt
+  // from the shortlist on every run, so toggling a filter or grading a listing
+  // shifted every index and the anchor silently became a different house. An
+  // id survives the list changing; it is resolved to an index per request, and
+  // dropped if that listing is no longer being compared.
+  compareAnchorId: string | null = null;
+
+  /** Position of the chosen baseline in the ids being sent, or null. */
+  private anchorIndexIn(ids: string[]): number | null {
+    if (!this.compareAnchorId) return null;
+    const i = ids.indexOf(this.compareAnchorId);
+    return i >= 0 ? i : null;
+  }
+
+  // --- saved filters -------------------------------------------------------
+  // The map carries eight ranges plus a dozen scalars, so re-tuning a search
+  // you already had is the main friction in coming back to it. Presets are
+  // stored server-side; the same state also round-trips through the URL, which
+  // is what makes a search shareable.
+  savedFilters: { name: string; filters: any; created: string }[] = [];
+  filterName = '';
+  /** Which saved preset is showing, so it can be re-selected or deleted. */
+  activeFilter = '';
+  shareMsg = '';
+
+  /** Everything that decides what the map shows. */
+  filterState(): any {
+    return {
+      shared: { ...this.shared, verdicts: [...this.shared.verdicts] },
+
+      searchForm: { ...this.searchForm },
+      ranges: JSON.parse(JSON.stringify(this.ranges)),
+      eras: [...this.eras],
+      budgetBuildM2: this.budgetBuildM2,
+      colorBy: this.colorBy,
+    };
+  }
+
+  applyFilterState(st: any, reload = true): void {
+    if (!st) return;
+    if (st.shared) {
+      this.shared = { ...this.shared, ...st.shared,
+                      verdicts: st.shared.verdicts ?? this.shared.verdicts,
+                      categories: st.shared.categories
+                        // Presets written when type was a single select.
+                        ?? (st.shared.category ? [st.shared.category] : []),
+                      rentKinds: st.shared.rentKinds ?? [] };
+      delete (this.shared as any).category;
+    }
+    // Presets written before the two tabs shared a date window.
+    if (st.mapForm?.date && !st.shared?.dateTo) {
+      this.shared.dateFrom = this.shared.dateTo = st.mapForm.date;
+      this.shared.dateMode = 'fixed';
+    }
+    // A view saved before there was a mode stored only the dates, which were
+    // whatever the newest crawl was that day. Following the latest crawl is
+    // what those views meant, and it is the only reading that does not rot.
+    if (!st.shared?.dateMode) this.shared.dateMode = 'latest';
+    // Whatever the mode says, the dates have to be usable: 'latest' re-pins
+    // to the newest crawl, and 'fixed' is left alone but checked below.
+    if (st.searchForm) this.searchForm = { ...this.searchForm, ...st.searchForm };
+    // `mapEras` is what presets saved before the filter became shared.
+    this.eras = st.eras ?? st.mapEras ?? this.eras;
+    for (const k of ['budgetBuildM2', 'colorBy'] as const) {
+      if (st[k] !== undefined) (this as any)[k] = st[k];
+    }
+    // Ranges are applied after the reload, since their bounds depend on the
+    // data that comes back.
+    this.pendingRanges = st.ranges || null;
+    // Pinning needs the crawl list, which on a cold page has not arrived yet —
+    // so ask for it rather than assume, or a view opened from a link keeps the
+    // stale dates it was saved with.
+    this.ensureCrawlDates(() => {
+      if (this.shared.dateMode === 'latest') this.followLatest();
+      // Both tabs read one response, so a restored preset cannot half-apply.
+      if (reload) this.load(); else this.applyPendingRanges();
+    });
+  }
+
+  private pendingRanges: any = null;
+  private applyPendingRanges(): void {
+    if (!this.pendingRanges) return;
+    for (const [k, v] of Object.entries(this.pendingRanges as Record<string, any>)) {
+      const b = this.rangeBounds[k];
+      if (!b || !v) continue;
+      this.ranges[k] = { lo: Math.max(b.min, Math.min(v.lo, b.max)),
+                            hi: Math.min(b.max, Math.max(v.hi, b.min)) };
+    }
+    this.pendingRanges = null;
+    this.applyRanges();
+  }
+
+  // --- people and groups ----------------------------------------------------
+  accessInfo: AccessOverview | null = null;
+  accessError = '';
+  newUserEmail = '';
+  newGroupName = '';
+  newMemberEmail: Record<number, string> = {};
+
+  /** Keep the tab you just picked visible when the bar is scrolled.
+   *
+   * Delegated from the nav rather than wired to each button: a tab added later
+   * gets the behaviour without anyone remembering to ask for it. */
+  centreTab(e: Event): void {
+    const btn = (e.target as HTMLElement)?.closest('button');
+    btn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  }
+
+  // --- the shortlist -------------------------------------------------------
+  /** Everything anyone in the group said yes to, one row per house.
+   *
+   * A re-post inherits the verdict, so a house liked once does not appear four
+   * times here; and a listing you rejected but your partner liked still counts
+   * as a candidate — the point of the tab is to price what is still in play,
+   * not to settle who was right. */
+  shortlist(): any[] {
+    const seen = new Set<string>();
+    return this.searchAll.filter(r => {
+      const yes = r['verdict'] === 'good'
+        || r['verdict_via']?.verdict === 'good'
+        || (r['reviews'] || []).some((x: any) => x.verdict === 'good');
+      if (!yes) return false;
+      if (this.agreedOnly && this.groupMark(r) !== 'agreed') return false;
+      const k = this.houseId(r);
+      if (k && seen.has(k)) return false;
+      if (k) seen.add(k);
+      return true;
+    });
+  }
+
+  /** The assumptions worth arguing about, as editable fields.
+   *
+   * Everything the model takes is adjustable through the API; these are the
+   * ones that change an answer rather than a detail — a rate, a horizon, what
+   * you would pay to rent instead. The rest keep their defaults, which are
+   * documented in api/scraper_compare.py. */
+  readonly COMPARE_FIELDS: { key: keyof CompareAssumptions; label: string;
+                             kind: 'pct' | 'yen' | 'num'; step: number;
+                             hint: string }[] = [
+    { key: 'baseline_monthly_rent', label: 'rent instead', kind: 'yen', step: 10000,
+      hint: 'What you would pay to rent if you bought nothing. It cancels out '
+          + 'between two purchases, but it is what a purchase is measured against.' },
+    { key: 'loan_rate', label: 'loan rate', kind: 'pct', step: 0.1,
+      hint: 'Nominal mortgage rate.' },
+    { key: 'loan_term', label: 'loan years', kind: 'num', step: 1, hint: '' },
+    { key: 'down_payment_pct', label: 'down payment', kind: 'pct', step: 1,
+      hint: 'Share of the price paid in cash on day one.' },
+    { key: 'opportunity_cost_real', label: 'opportunity cost', kind: 'pct', step: 0.5,
+      hint: 'REAL return on the money you would otherwise invest. This is the '
+          + 'hurdle a purchase has to clear, and the rate everything is '
+          + 'discounted at.' },
+    { key: 'rent_inflation', label: 'rent inflation', kind: 'pct', step: 0.25,
+      hint: 'Rents and running costs both rise at this, unless cost inflation '
+          + 'is set separately.' },
+    { key: 'maintenance_rate', label: 'maintenance', kind: 'pct', step: 0.1,
+      hint: 'Yearly, as a share of the building value — not of the price, since '
+          + 'land needs no upkeep.' },
+    { key: 'land_spread_vs_rent', label: 'land growth vs rent', kind: 'pct', step: 0.25,
+      hint: 'How much faster (or slower) land prices rise than rents. Zero '
+          + 'means land tracks rents.' },
+    { key: 'build_cost_per_m2', label: 'build cost ¥/m²', kind: 'yen', step: 10000,
+      hint: 'Used to price a plot as plot plus house, and to split a price into '
+          + 'land and building for depreciation.' },
+    { key: 'land_build_m2', label: 'house on a plot m²', kind: 'num', step: 5,
+      hint: 'The house assumed on a bare plot.' },
+  ];
+
+  /** Percentages are stored as fractions and shown as percents. */
+  fieldValue(f: any): number {
+    const v: any = (this.compareAssumptions as any)[f.key];
+    return f.kind === 'pct' ? Math.round((v ?? 0) * 10000) / 100 : v;
+  }
+
+  setField(f: any, raw: string): void {
+    const n = Number(raw);
+    if (!isFinite(n)) return;
+    (this.compareAssumptions as any)[f.key] = f.kind === 'pct' ? n / 100 : n;
+    clearTimeout(this.horizonTimer);
+    this.horizonTimer = setTimeout(() => this.runShortlist(), 400);
+  }
+
+  resetAssumptions(): void {
+    this.compareAssumptions = { ...this._defaults,
+                                simulation_years: this.horizonYears };
+    this.runShortlist();
+  }
+
+  // The baseline is set by the anchor button on each row. A long press used to
+  // do it, which hid a consequential choice behind an invisible gesture and,
+  // worse, swallowed the click that opens a listing whenever the dialog was
+  // dismissed.
+  /** A green-to-red wash by how a row compares with the baseline.
+   *
+   * Scaled against the spread on the table rather than an absolute yen figure:
+   * the gap between options is what you are reading, and a fixed scale would
+   * paint a tight shortlist uniformly and a wide one entirely red. Kept pale —
+   * it is a background for numbers, not a chart. */
+  rowTint(x: any): string {
+    if (!x?.o) return '';
+    // vsBest is a saving, so cost is its negative — the scale runs from the
+    // biggest saving (green) through the baseline to the dearest (red).
+    const costs = (this.rowsCache?.rows ?? []).filter(r => r.o).map(r => -(r.vsBest ?? 0));
+    const dearest = Math.max(...costs, 0);
+    const cheapest = Math.min(...costs, 0);
+    const v = -(x.vsBest ?? 0);
+    const t = v >= 0
+      ? (dearest > 0 ? 0.5 + 0.5 * (v / dearest) : 0.5)
+      : (cheapest < 0 ? 0.5 - 0.5 * (v / cheapest) : 0.5);
+    return `hsl(${Math.round(130 - 130 * t)}, 62%, ${Math.round(94 - 4 * Math.abs(t - 0.5) * 2)}%)`;
+  }
+
+  /** What everything is measured against, for the column headers.
+   *
+   * The default baseline is the least-capital option, which is not the same as
+   * the cheapest overall — a rental commits nothing on day one but can still
+   * cost more over the horizon. Naming it beats calling it "cheapest" and
+   * being wrong whenever those differ. */
+  baselineLabel(): string {
+    // What the server actually measured against, not what we asked for: if the
+    // chosen listing dropped out of the comparison the model falls back, and
+    // the label has to follow or it names a house nothing was measured from.
+    const i = this.compareResult?.verdict?.anchor_index;
+    const o = (i != null) ? this.compareResult?.options?.[i] : null;
+    return o ? (o.price_raw || this.fmtYen(o.price_yen)) : 'the baseline';
+  }
+
+  /** Which row is currently the baseline, as a property id ('' = the cheapest). */
+  baselineId(): string { return this.compareAnchorId ?? ''; }
+
+  /** Compare everything against this row instead of the cheapest.
+   *
+   * The anchor sets what "extra capital" and "IRR" are measured from. The
+   * default is the cheapest option, which is the only choice that makes every
+   * comparison an investment rather than a loan — but "against the flat we
+   * live in now" is a question worth being able to ask. */
+  setBaseline(propertyId: string | null): void {
+    this.compareAnchorId = propertyId;
+    this.runShortlist();
+  }
+
+  toggleAgreedOnly(): void {
+    this.agreedOnly = !this.agreedOnly;
+    this.runShortlist();
+  }
+
+  /** How many of the shortlist the whole group agreed on. */
+  agreedCount(): number {
+    const seen = new Set<string>();
+    return this.searchAll.filter(r => {
+      if (this.groupMark(r) !== 'agreed') return false;
+      const k = this.houseId(r);
+      if (k && seen.has(k)) return false;
+      if (k) seen.add(k);
+      return true;
+    }).length;
+  }
+
+  openCompare(): void {
+    this.activeTab = 'compare';
+    // Price it on arrival. The tab exists to answer one question, and making
+    // you press a button to ask it — after ticking boxes, as it first did — is
+    // ceremony in front of the answer.
+    if (!this.compareResult && !this.compareLoading) this.runShortlist();
+  }
+
+  /** Only what the whole group said yes to.
+   *
+   * "We both liked it" is a different shortlist from "one of us liked it", and
+   * it is the one you act on. Agreement needs at least two opinions and no no —
+   * a single ♥︎ is not a consensus, however keen. */
+  agreedOnly = false;
+  assumptionsOpen = false;
+
+  /** Horizon in years. A slider rather than a constant because it decides the
+   * answer: buying accrues its advantage late, so the ranking can flip between
+   * a stay you would actually make and one you would not. */
+  horizonYears = 20;
+  private horizonTimer: any = null;
+
+  onHorizon(years: number): void {
+    this.horizonYears = years;
+    this.compareAssumptions.simulation_years = years;
+    // Debounced: a slider fires per pixel and each run prices 24 houses.
+    clearTimeout(this.horizonTimer);
+    this.horizonTimer = setTimeout(() => this.runShortlist(), 350);
+  }
+
+  /** Does the shortlist contain a plot? Then the build assumption is part of
+   * the answer and has to be visible, not buried in a confirm step. */
+  shortlistHasLand(): boolean {
+    return this.shortlist().some(r => r.category === 'land');
+  }
+
+  /** Re-price after changing an assumption, but only if a run already happened
+   * — otherwise editing the field before pressing anything fires a request. */
+  repriceShortlist(): void {
+    if (this.compareResult || this.compareError) this.runShortlist();
+  }
+
+  /** Who liked it, for the shortlist table. */
+  likedBy(r: any): string {
+    const names = (r.reviews || []).filter((x: any) => x.verdict === 'good')
+      .map((x: any) => x.mine ? 'you' : x.name);
+    return names.join(', ') || (r.verdict_via ? 'you (as a re-post)' : 'you');
+  }
+
+  openGroups(): void {
+    this.activeTab = 'groups';
+    this.loadAccess();
+  }
+
+  setAdmin(email: string, isAdmin: boolean): void {
+    this.after(this.api.setAdmin(email, isAdmin));
+  }
+
+  loadAccess(): void {
+    this.api.access().subscribe({
+      next: a => { this.accessInfo = a; this.accessError = ''; },
+      error: e => this.accessError = e?.error?.detail || 'could not load the people list',
+    });
+  }
+
+  private after(obs: any): void {
+    obs.subscribe({
+      next: () => { this.loadAccess(); this.loadSavedFilters(); this.load(); },
+      error: (e: any) => this.accessError = e?.error?.detail || 'that did not work',
+    });
+  }
+
+  addUser(): void {
+    const email = this.newUserEmail.trim();
+    if (!email) return;
+    this.newUserEmail = '';
+    this.after(this.api.addAccessUser(email));
+  }
+
+  removeUser(email: string): void {
+    if (!confirm(`Remove ${email}? Their reviews stay — they are a record of `
+               + `what was decided, and deleting them would change the shortlist.`)) return;
+    this.after(this.api.removeAccessUser(email));
+  }
+
+  createGroup(): void {
+    const name = this.newGroupName.trim();
+    if (!name) return;
+    this.newGroupName = '';
+    this.after(this.api.createGroup(name));
+  }
+
+  addMember(groupId: number): void {
+    const email = (this.newMemberEmail[groupId] || '').trim();
+    if (!email) return;
+    this.newMemberEmail[groupId] = '';
+    this.after(this.api.addGroupMember(groupId, email));
+  }
+
+  removeMember(groupId: number, email: string): void {
+    if (!confirm(`Remove ${email} from this group? They stop seeing the `
+               + `group's reviews and saved views, and it stops seeing theirs.`)) return;
+    this.after(this.api.removeGroupMember(groupId, email));
+  }
+
+  loadSavedFilters(): void {
+    this.api.savedFilters().subscribe({
+      next: r => this.savedFilters = r.filters || [], error: () => {},
+    });
+  }
+
+  /** What the current filters leave showing, offered as the preset's name so
+   * a saved view is recognisable in the list later. */
+  /** The crawl the view is pinned to, for the map's status line. */
+  latestCrawl(): string { return this.crawlDates[0]?.date || ''; }
+
+  /** Back to following the latest snapshot of every property. */
+  useLatestCrawl(): void {
+    this.shared.dateMode = 'latest';
+    this.followLatest();
+    this.load();
+  }
+
+  /**
+   * Follow the latest snapshot of every property.
+   *
+   * Clearing the window is what asks for that — the query takes the newest
+   * scrape per property within the window, so no window means the newest
+   * scrape of each, full stop.
+   */
+  private followLatest(): void {
+    this.shared.dateFrom = this.shared.dateTo = '';
+  }
+
+  /** The 'follow latest' tick. Turning it on re-pins straight away. */
+  setFollowLatest(on: boolean): void {
+    this.shared.dateMode = on ? 'latest' : 'fixed';
+    if (on) this.followLatest();
+    // Turning it off with nothing in the boxes would ask for everything ever
+    // crawled, so seed them with the newest crawl to pick around.
+    else if (!this.shared.dateTo && this.crawlDates.length) {
+      this.shared.dateFrom = this.shared.dateTo = this.crawlDates[0].date;
+    }
+    this.refreshBoth();
+  }
+
+  /** Typing a date is what switches the window off 'latest'. */
+  onDateEdited(): void {
+    this.shared.dateMode = 'fixed';
+    this.refreshBoth();
+  }
+
+  /**
+   * Set when the window is pinned to a day nothing was crawled on.
+   *
+   * Worth saying out loud: the view comes back empty and looks broken, when
+   * in fact it is asking about a morning that never happened.
+   */
+  get staleDateWarning(): string {
+    if (this.shared.dateMode !== 'fixed' || !this.crawlDates.length) return '';
+    const { dateFrom, dateTo } = this.shared;
+    if (!dateFrom && !dateTo) return '';
+    const have = this.crawlDates.map(d => d.date);
+    const lo = dateFrom || have[have.length - 1];
+    const hi = dateTo || have[0];
+    if (have.some(d => d >= lo && d <= hi)) return '';
+    return `Nothing was crawled between ${lo} and ${hi}.`;
+  }
+
+  /** Stats for the rows actually on screen.
+   *
+   * The server computes these over everything it returns, which is the set
+   * *before* the sliders — so the header claimed 535 listings while the table
+   * showed 74, and the median price described listings you had just excluded.
+   * Same formulas as api._stats, applied to what is displayed. */
+  shownStats(rows: Listing[]): Stats {
+    const prices = rows.map(r => r.price_yen).filter((v): v is number => !!v);
+    const ppm2: number[] = [];
+    for (const r of rows) {
+      const area = (r.building_m2 || 0) || r.land_m2;
+      if (r.price_yen && area) ppm2.push(r.price_yen / area);
+    }
+    const median = (xs: number[]): number | null => {
+      if (!xs.length) return null;
+      const a = [...xs].sort((x, y) => x - y), m = a.length >> 1;
+      return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+    };
+    const mp = median(prices), mppm2 = median(ppm2);
+    return {
+      count: rows.length,
+      median_price_yen: mp === null ? null : Math.round(mp),
+      min_price_yen: prices.length ? Math.min(...prices) : null,
+      max_price_yen: prices.length ? Math.max(...prices) : null,
+      median_price_per_m2: mppm2 === null ? null : Math.round(mppm2),
+    };
+  }
+
+  /** Non-rent categories, which are the ones shown as plain type chips. */
+  typeChips(): { key: string; label: string }[] {
+    return (this.config?.categories || []).filter((c: any) => c.key !== 'rent');
+  }
+
+  toggleCategory(key: string): void {
+    const c = this.shared.categories;
+    this.shared.categories = c.includes(key) ? c.filter(k => k !== key) : [...c, key];
+    this.applyRanges();          // no refetch: the rows are already here
+  }
+
+  toggleRentKind(key: string): void {
+    const k = this.shared.rentKinds;
+    this.shared.rentKinds = k.includes(key) ? k.filter(x => x !== key) : [...k, key];
+    this.applyRanges();
+  }
+
+  /** Which 賃貸 product a listing is, from the label it states itself. */
+  private rentKindOf(p: any): string | null {
+    const l = p.property_label || '';
+    if (l.includes('一戸建')) return 'house';
+    if (l.includes('アパート')) return 'apart';
+    if (l.includes('マンション')) return 'mansion';
+    return null;
+  }
+
+  /** Nothing selected means everything; a rent kind implies rent. */
+  private passesType(p: any): boolean {
+    const cats = this.shared.categories, kinds = this.shared.rentKinds;
+    if (!cats.length && !kinds.length) return true;
+    if (p.market === 'rent') {
+      if (kinds.length) return kinds.includes(this.rentKindOf(p) as string);
+      return cats.includes('rent');
+    }
+    return cats.includes(p.category);
+  }
+
+  /** How many listings a chip holds, under every *other* filter in force. */
+  typeCount(key: string, isRentKind = false): number {
+    return this.searchAll.filter((r: any) =>
+      isRentKind ? (r.market === 'rent' && this.rentKindOf(r) === key)
+                 : r.category === key).length;
+  }
+
+  shownSummary(): string {
+    const parts: string[] = [];
+    for (const key of this.shared.categories) {
+      const c = (this.config?.categories || []).find((x: any) => x.key === key);
+      parts.push(c ? c.label : key);
+    }
+    for (const key of this.shared.rentKinds) {
+      parts.push(this.RENT_KINDS.find(k => k.key === key)?.label || key);
+    }
+    if (this.shared.ward) parts.push(this.shared.ward);
+    const lfit = this.ranges['lfit'];
+    if (lfit && this.rangeBounds['lfit'] && lfit.hi < this.rangeBounds['lfit'].max)
+      parts.push(`≤${lfit.hi}min`);
+    const n = this.searchRows.length || this.mapPoints.length;
+    return parts.length ? `${parts.join(' ')} (${n})` : `${n} listings`;
+  }
+
+  saveCurrentFilter(): void {
+    const name = (this.filterName || '').trim();
+    if (!name) return;
+    const existing = this.savedFilters.some(f => f.name === name);
+    if (existing && !confirm(`"${name}" already exists — overwrite it?`)) return;
+    this.api.saveFilter(name, this.filterState()).subscribe({
+      next: () => { this.filterName = ''; this.activeFilter = name; this.loadSavedFilters();
+                    this.shareMsg = `saved "${name}"`; },
+      error: () => { this.shareMsg = 'save failed'; },
+    });
+  }
+
+  loadFilter(name: string): void {
+    const f = this.savedFilters.find(x => x.name === name);
+    if (f) { this.applyFilterState(f.filters); this.activeFilter = name;
+             this.shareMsg = `loaded "${name}"`; }
+  }
+
+  removeFilter(name: string): void {
+    if (!name || !confirm(`Delete the saved view "${name}"? The listings are untouched.`)) return;
+    this.api.deleteFilter(name).subscribe({
+      // Clear the selection too, or the dropdown keeps showing a view that no
+      // longer exists and its delete button offers to remove it again.
+      next: () => { if (this.activeFilter === name) this.activeFilter = '';
+                    this.shareMsg = `deleted "${name}"`; this.loadSavedFilters(); },
+      error: () => { this.shareMsg = 'delete failed'; },
+    });
+  }
+
+  /** A link that restores this exact view. */
+  copyShareLink(): void {
+    const blob = btoa(encodeURIComponent(JSON.stringify(this.filterState())));
+    const url = `${location.origin}${location.pathname}#f=${blob}`;
+    const done = () => { this.shareMsg = 'link copied'; setTimeout(() => this.shareMsg = '', 2500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, done);
+    else { prompt('Copy this link', url); }
+  }
+
+  private restoreFromUrl(): void {
+    const m = location.hash.match(/[#&]f=([^&]+)/);
+    if (!m) return;
+    try { this.applyFilterState(JSON.parse(decodeURIComponent(atob(m[1]))), false); }
+    catch { /* a mangled link should not break the page */ }
+  }
+
+  // --- manual review -------------------------------------------------------
+  // A verdict is a judgement about a place, so it is kept per property and
+  // survives re-crawls, price changes and relistings under a new id.
+  reviewOpen = false;
+  // Search rows and map points are annotated identically server-side, so the
+  // review card works on either without a wrapper.
+  reviewQueue: any[] = [];
+  reviewIndex = 0;
+  reviewNote = '';
+  reviewTagInput = '';
+  reviewCounts: Record<string, number> = {};
+  // Gallery for the card on screen. The card image is one photo; the listing
+  // has ~24, and they only exist on the detail page — fetched on demand and
+  // cached, so browsing costs one request per listing you actually look at.
+  reviewPhotos: string[] = [];
+  reviewPhotoIndex = 0;
+  reviewPhotosLoading = false;
+  readonly VERDICTS = Object.entries(VERDICT_META)
+    .map(([key, m]) => ({ key: key as Verdict, ...m }));
+  // Which verdicts the map shows. Default hides nothing; the point of the
+  // status badge is to stop you reopening the same rejects, not to hide them.
+
+  /** Badges are off while working a queue: the verdict you gave last time (and
+   * the running tally) argue for repeating it, which is the one thing a fresh
+   * look should not do. The single detail sheet still shows them — there you
+   * opened that listing deliberately. */
+  showBadges = false;
+
+
+  /** What other people said about this listing. Yours is shown by the buttons
+   * you are about to press, so it is left out here. */
+  othersReviews(p: any): any[] {
+    return (p?.reviews || []).filter((r: any) => !r.mine && r.verdict);
+  }
+
+  /** Notes your group left on a listing, yours included.
+   *
+   * Hidden until asked for, the same reason the verdict badges are: reading
+   * "too dark, north facing" before looking at the photos decides the question
+   * for you. Once you have formed a view, or when you cannot see why they said
+   * no, it is exactly what you want. */
+  notesOpen: Record<string, boolean> = {};
+
+  groupNotes(p: any): any[] {
+    return (p?.reviews || []).filter((r: any) => (r.note || '').trim());
+  }
+
+  /** Who wrote what, for the table's hover text — the whole note, since a
+   * tooltip is free and opening the sheet is not. */
+  noteSummary(p: any): string {
+    return this.groupNotes(p)
+      .map((n: any) => `${n.mine ? 'you' : n.name}: ${n.note}`)
+      .join('\n');
+  }
+
+  toggleNotes(p: any): void {
+    const k = p?.property_id;
+    if (k) this.notesOpen[k] = !this.notesOpen[k];
+  }
+
+  // --- plot facts ------------------------------------------------------------
+  readonly PLOT_FLAGS: { key: string; label: string; good: boolean }[] = [
+    { key: 'corner',       label: '角地',        good: true },
+    { key: 'flag_lot',     label: '旗竿地',      good: false },
+    { key: 'no_rebuild',   label: '再建築不可',   good: false },
+    { key: 'slope',        label: '高低差・擁壁', good: false },
+    { key: 'encroachment', label: '越境',        good: false },
+    { key: 'build_tied',   label: '建築条件付',   good: false },
+    { key: 'power_line',   label: '高圧線',      good: false },
+    { key: 'cemetery',     label: '墓地隣接',     good: false },
+  ];
+
+  /** Aspect filter: which way the plot faces. Empty = any. */
+  aspects: string[] = [];
+  /** Flags to require (corner) or exclude (the rest). */
+  requireFlags: string[] = [];
+  excludeFlags: string[] = [];
+
+  toggleAspect(a: string): void {
+    this.aspects = this.aspects.includes(a)
+      ? this.aspects.filter(x => x !== a) : [...this.aspects, a];
+    this.applyRanges();
+  }
+
+  toggleFlag(key: string, exclude: boolean): void {
+    const list = exclude ? 'excludeFlags' : 'requireFlags';
+    const other = exclude ? 'requireFlags' : 'excludeFlags';
+    this[list] = this[list].includes(key)
+      ? this[list].filter(x => x !== key) : [...this[list], key];
+    this[other] = this[other].filter(x => x !== key);   // one or the other
+    this.applyRanges();
+  }
+
+  /** Filtered in the browser like the sliders: the facts are already on the row. */
+  private passesPlot(p: any): boolean {
+    const f = p?.plot;
+    if (this.aspects.length && !(f?.aspect && this.aspects.includes(f.aspect))) return false;
+    for (const k of this.requireFlags) if (!f?.flags?.includes(k)) return false;
+    for (const k of this.excludeFlags) if (f?.flags?.includes(k)) return false;
+    return true;
+  }
+
+  /** The plot facts only when there is something to print.
+   *
+   *  Chintai pages carry none of the land prose, so without this every rent
+   *  listing showed an empty line where the plot section should be. */
+  plotFacts(p: any): any | null {
+    const pl = p?.plot;
+    if (!pl) return null;
+    const something = pl.aspect_ja || pl.frontage_m || pl.floor
+                   || pl.light_score != null || (pl.flags || []).length;
+    return something ? pl : null;
+  }
+
+  /** Luminosity as four bulbs rather than a bar.
+   *
+   *  The score is inferred from which way the plot faces, not measured, and a
+   *  bar filled to 87% claims a precision it hasn't got. Four steps is about
+   *  what the underlying fact supports, and they fall straight out of the
+   *  compass: south-ish four, east or west three, north-ish two, due north one.
+   *  A corner, a wide road or a high floor can lift a plot into the next one. */
+  readonly BULBS = [1, 2, 3, 4];
+  lightBulbs(score: number): number {
+    return score >= 0.85 ? 4 : score >= 0.6 ? 3 : score >= 0.4 ? 2 : 1;
+  }
+
+  /** The explanation the scraper wrote for a flag, for the card's tooltip. */
+  flagNote(pl: any, key: string): string {
+    const i = (pl?.flags || []).indexOf(key);
+    return (i >= 0 && pl?.notes?.[i]) ? pl.notes[i] : this.flagLabel(key);
+  }
+
+  flagLabel(key: string): string {
+    return this.PLOT_FLAGS.find(f => f.key === key)?.label || key;
+  }
+
+  /** How many listings currently carry a flag, so a chip is not a dead end. */
+  flagCount(key: string): number {
+    return this.searchAll.filter((r: any) => r.plot?.flags?.includes(key)).length;
+  }
+
+  verdictMeta(v: Verdict | null | undefined) {
+    return v ? VERDICT_META[v] : null;
+  }
+
+  /** Start a review session over what the map is currently showing. */
+  /** Listings someone in your group has judged and you have not.
+   *
+   * These come first in the queue: a second opinion on a place your partner
+   * already looked at is worth more than a first opinion on a place neither of
+   * you has seen — it is the one that settles whether it stays on the list. */
+  awaitingMe(rows: any[] = this.searchRows): any[] {
+    const seen = new Set<string>();
+    return rows.filter(r => {
+      if (r.verdict || r.verdict_via) return false;
+      if (!(r.reviews || []).some((x: any) => !x.mine)) return false;
+      const k = this.houseId(r);
+      if (k && seen.has(k)) return false;                   // count a house once
+      if (k) seen.add(k);
+      return true;
+    });
+  }
+
+  /** The id of the *home* a row is about, for anything that must not ask or
+   * count twice: the review queue, the shortlist, the counters beside them.
+   *
+   * `dup_key` is the same advert down to the yen, which is what the table
+   * folds; `house_key` is the same rooms whatever they are priced at today.
+   * Reviewing is about homes — a flat re-listed ¥20,000 cheaper is not a new
+   * one to judge. Falls back to the advert, then to the listing itself, so a
+   * row the server did not group is still counted once rather than dropped.
+   * See scraper/dedupe.py. */
+  houseId(r: any): string {
+    return r?.house_key || r?.dup_key || r?.property_id || '';
+  }
+
+  /** Collapse re-posts in the results table.
+   *
+   * On by default: eight adverts for one house is the agents' problem, not
+   * something to read past. The row says how many there are and the sheet
+   * lists their ids, so nothing is hidden — it is folded. */
+  collapseDups = true;
+
+  /** One row per house, keeping the oldest listing as the one shown. */
+  collapsedRows(rows: any[]): any[] {
+    if (!this.collapseDups) return rows;
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const r of rows) {
+      const k = r['dup_key'];
+      if (k) {
+        if (seen.has(k)) continue;
+        seen.add(k);
+      }
+      out.push(r);
+    }
+    return out;
+  }
+
+  /** How many rows the table shows once re-posts of the same advert are
+   * folded. Not the same as the number of homes: one home advertised at two
+   * prices is two adverts, and the table keeps both because the price is the
+   * fact on the row. */
+  advertCount(rows: any[] = this.searchRows): number {
+    const keys = new Set<string>();
+    let loose = 0;
+    for (const r of rows) r['dup_key'] ? keys.add(r['dup_key']) : loose++;
+    return keys.size + loose;
+  }
+
+  /** How many homes the current results come to — what the Review button
+   * offers, so the number and the queue agree. */
+  distinctCount(rows: any[] = this.searchRows): number {
+    const keys = new Set<string>();
+    let loose = 0;
+    for (const r of rows) { const k = this.houseId(r); k ? keys.add(k) : loose++; }
+    return keys.size + loose;
+  }
+
+  startReview(onlyUnreviewed = true, source: 'map' | 'search' = 'map'): void {
+    const all = source === 'search' ? this.searchRows : this.mapPoints;
+    // One posting per home. Agents list the same property up to eight times,
+    // and judging a house is judging the house, not the advert — nor its price
+    // this week, so this collapses on the home rather than the advert.
+    const seen = new Set<string>();
+    const distinct = all.filter((p: any) => {
+      const k = this.houseId(p);
+      if (!k) return true;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    const pool = onlyUnreviewed
+      ? distinct.filter((p: any) => !p.verdict && !p.verdict_via)
+      : distinct;
+    if (!pool.length) return;
+    // Sort, don't filter: everything stays reviewable, but what your group is
+    // waiting on comes up first.
+    const rank = (p: any) => {
+      if (p.verdict) return 2;                                    // already yours
+      return (p.reviews || []).some((x: any) => !x.mine) ? 0 : 1; // theirs, then new
+    };
+    this.reviewQueue = [...pool].sort((a: any, b: any) => rank(a) - rank(b)) as any[];
+    this.reviewIndex = 0;
+    this.reviewNote = '';
+    this.reviewTagInput = '';
+    this.reviewOpen = true;
+    this.pushOverlay();
+    this.loadPhotos();
+    this.focusSheet();
+  }
+
+  closeReview(): void {
+    if (!this.reviewOpen) return;
+    this.reviewOpen = false;
+    this.popOverlay();
+  }
+
+  get reviewCard(): any | null {
+    return this.reviewQueue[this.reviewIndex] ?? null;
+  }
+
+  /** The listing currently being judged, wherever it is on screen.
+   *
+   * The review queue and the detail sheet are the same act — look at a
+   * listing, decide — so they share one photo gallery, one grade path and one
+   * set of keys, rather than each growing its own. The queue wins when both
+   * are open, because it sits on top. */
+  focusCard(): any | null {
+    return this.reviewOpen ? this.reviewCard : (this.detailModal?.point ?? null);
+  }
+
+  /** Everything the sheet shows for one listing: photos and the spec sheet,
+   * from a single request. The review queue and the detail sheet both call it,
+   * so a card looks the same whichever way you arrived at it. */
+  sheetData: PropertyDetail | null = null;
+  sheetError = '';
+
+  private loadCard(): void {
+    const c = this.focusCard();
+    this.sheetData = null;
+    this.sheetError = '';
+    this.reviewPhotoIndex = 0;
+    this.reviewPhotos = c?.image_url ? [c.image_url] : [];
+    if (!c) return;
+    this.reviewPhotosLoading = true;
+    this.api.detail(c.url).subscribe({
+      next: d => {
+        this.reviewPhotosLoading = false;
+        this.sheetData = d;
+        this.sheetError = d.error || '';
+        this.setPhotos(c, (d as any).images);
+      },
+      error: () => {
+        this.reviewPhotosLoading = false;
+        this.sheetError = 'request failed — is the local API running?';
+      },
+    });
+  }
+  private loadPhotos(): void { this.loadCard(); }
+
+  // --- swipe the gallery -----------------------------------------------------
+  // The photo follows the finger and settles: a swipe that only jumps on
+  // release gives you nothing to aim with, so it reads as unresponsive.
+  // Three slots are rendered — previous, current, next — and the track is
+  // translated, so the neighbouring photo is already there as you pull it in.
+  swiping = false;
+  dragX = 0;                 // px, live during the drag
+  gliding = false;           // true while the track animates to its resting place
+  private swipeX = 0;
+  private swipeY = 0;
+  private swipeW = 1;
+  private lastX = 0;
+  private lastY = 0;
+  private locked: 'x' | 'y' | null = null;
+
+  /** The same photo at a chosen width.
+   *
+   * SUUMO serves sale and land photos through a resizing endpoint whose size
+   * is in the URL — the page asks for 452px, which is soft on a half-screen
+   * sheet and worse blown up. The endpoint honours far larger: 1440x1080 comes
+   * back at 240KB. Rent photos are static files at their native size (often
+   * 210x280) and cannot be enlarged, so they are left alone rather than
+   * stretched. */
+  photoUrl(url: string | null, width: number): string {
+    if (!url || !/[?&]w=\d+/.test(url)) return url || '';
+    return url.replace(/([?&])w=\d+/, `$1w=${width}`)
+              .replace(/([?&])h=\d+/, `$1h=${Math.round(width * 0.75)}`);
+  }
+
+  /** Ask for what the screen can actually show, capped so a phone on a slow
+   * connection does not pull a 4K photo. */
+  galleryWidth(): number {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Math.min(1440, Math.round(Math.min(window.innerWidth, 1100) * dpr));
+  }
+
+  // --- lightbox --------------------------------------------------------------
+  lightbox = false;
+
+  /** The gallery was clicked. A drag ends in a click too, so a swipe must not
+   * also open the viewer — the ⛶ button calls openLightbox directly and is not
+   * subject to this. */
+  galleryClick(): void {
+    if (this.swipedFar) return;
+    this.openLightbox();
+  }
+
+  openLightbox(): void {
+    if (!this.reviewPhotos.length) return;
+    this.lightbox = true;
+    this.pushOverlay();
+    setTimeout(() => (document.querySelector('.lightbox') as HTMLElement | null)?.focus?.(), 0);
+  }
+  closeLightbox(): void {
+    if (!this.lightbox) return;
+    this.lightbox = false;
+    this.resetZoom();
+    this.popOverlay();
+  }
+
+  // --- overlays and the back gesture -----------------------------------------
+  // Each overlay pushes a history entry, so a back swipe closes the thing on
+  // top instead of leaving the app. Without this, swiping back out of the
+  // full-screen photo took you off the page entirely — past the viewer, past
+  // the listing you were reading, and out of the dashboard.
+  private overlayDepth = 0;
+  private ignoreNextPop = false;
+
+  private pushOverlay(): void {
+    this.overlayDepth++;
+    history.pushState({ overlay: this.overlayDepth }, '');
+  }
+
+  /** Closed from the UI: consume our history entry without closing another. */
+  private popOverlay(): void {
+    if (this.overlayDepth <= 0) return;
+    this.ignoreNextPop = true;
+    history.back();
+  }
+
+  @HostListener('window:popstate')
+  onPopState(): void {
+    if (this.overlayDepth > 0) this.overlayDepth--;
+    if (this.ignoreNextPop) { this.ignoreNextPop = false; return; }
+    // Topmost first, matching what a back gesture should feel like: the photo
+    // closes back to the listing, the listing back to the results.
+    this.zone.run(() => {
+      if (this.lightbox) this.lightbox = false;
+      else if (this.reviewOpen) this.reviewOpen = false;
+      else if (this.compareOpen) this.compareOpen = false;
+      else if (this.detailModal) this.detailModal = null;
+    });
+  }
+
+  photoAt(offset: number): string | null {
+    const n = this.reviewPhotos.length;
+    if (!n) return null;
+    return this.reviewPhotos[(this.reviewPhotoIndex + offset + n) % n];
+  }
+
+  // --- zoom ------------------------------------------------------------------
+  // Pinch is the browser's (touch-action: pinch-zoom). This is the same thing
+  // for a mouse, and it doubles as the way to look closely at one corner of a
+  // room without leaving the viewer.
+  zoom = 1;
+  panX = 0;
+  panY = 0;
+
+  toggleZoom(e: MouseEvent): void {
+    const el = e.currentTarget as HTMLElement;
+    if (this.zoom > 1) { this.resetZoom(); return; }
+    const r = el.getBoundingClientRect();
+    this.zoom = 2.5;
+    // Zoom towards the point clicked, so double-tapping a window shows that
+    // window rather than the middle of the photo.
+    this.panX = (r.width / 2 - (e.clientX - r.left)) * (this.zoom - 1);
+    this.panY = (r.height / 2 - (e.clientY - r.top)) * (this.zoom - 1);
+    this.clampPan(r);
+  }
+
+  resetZoom(): void { this.zoom = 1; this.panX = this.panY = 0; }
+
+  private clampPan(r: DOMRect): void {
+    const maxX = r.width * (this.zoom - 1) / 2;
+    const maxY = r.height * (this.zoom - 1) / 2;
+    this.panX = Math.max(-maxX, Math.min(maxX, this.panX));
+    this.panY = Math.max(-maxY, Math.min(maxY, this.panY));
+  }
+
+  swipeStart(e: PointerEvent): void {
+    // Never start a drag on a control. The gallery captures the pointer so a
+    // swipe survives leaving the image — but a captured pointer delivers its
+    // pointerup to the capturing element, so the click is computed against the
+    // gallery and the button under the cursor never sees it. That is why ‹ ›
+    // and ⛶ did nothing with a mouse while swiping worked on a phone.
+    if ((e.target as HTMLElement)?.closest('button')) return;
+    if (this.reviewPhotos.length < 2) return;
+    this.swiping = true;
+    this.locked = null;
+    this.gliding = false;
+    this.dragX = 0;
+    this.swipeX = this.lastX = e.clientX;
+    this.swipeY = this.lastY = e.clientY;
+    const el = e.currentTarget as HTMLElement;
+    this.swipeW = el.clientWidth || 1;
+    // Keep receiving the drag after the pointer leaves the image — full screen
+    // is edge to edge, so a swipe that starts near the side would otherwise
+    // stop halfway.
+    try { el.setPointerCapture(e.pointerId); } catch { /* mouse without capture */ }
+  }
+
+  swipeMove(e: PointerEvent): void {
+    if (!this.swiping) return;
+    const dx = e.clientX - this.swipeX, dy = e.clientY - this.swipeY;
+    // Zoomed in, a drag moves the photo rather than paging to the next one.
+    if (this.zoom > 1) {
+      e.preventDefault();
+      this.panX += e.clientX - this.lastX;
+      this.panY += e.clientY - this.lastY;
+      this.lastX = e.clientX; this.lastY = e.clientY;
+      this.clampPan((e.currentTarget as HTMLElement).getBoundingClientRect());
+      return;
+    }
+    // Decide once whether this gesture is the gallery's or the sheet's, so a
+    // diagonal drag does not fight between scrolling and paging.
+    if (!this.locked && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      this.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (this.locked !== 'x') return;
+    e.preventDefault();
+    this.dragX = dx;
+  }
+
+  swipedFar = false;
+
+  swipeEnd(): void {
+    if (!this.swiping) return;
+    this.swiping = false;
+    if (this.zoom > 1) { this.dragX = 0; return; }   // that was a pan
+    const dx = this.dragX;
+    // Remember whether this gesture was a drag, so the click it also fires
+    // does not open the lightbox.
+    this.swipedFar = Math.abs(dx) > 6;
+    setTimeout(() => this.swipedFar = false, 60);
+    // A tenth of the width, or a short decisive flick.
+    const far = Math.abs(dx) > Math.max(48, this.swipeW * 0.1);
+    this.gliding = true;
+    if (far) {
+      // Glide the rest of the way, then swap and drop back to centre with the
+      // animation off, so the new photo does not slide in a second time.
+      this.dragX = dx < 0 ? -this.swipeW : this.swipeW;
+      setTimeout(() => {
+        this.photoStep(dx < 0 ? 1 : -1);
+        this.gliding = false;
+        this.dragX = 0;
+      }, 180);
+    } else {
+      this.dragX = 0;                       // snap back
+      setTimeout(() => this.gliding = false, 180);
+    }
+  }
+
+  photoStep(step: number): void {
+    if (!this.reviewPhotos.length) return;
+    this.resetZoom();
+    const n = this.reviewPhotos.length;
+    this.reviewPhotoIndex = (this.reviewPhotoIndex + step + n) % n;
+  }
+
+  /** Record a verdict. Saved immediately — a review session should never lose
+   * work if the tab is closed halfway. */
+  grade(v: Verdict | null): void {
+    const card = this.focusCard();
+    if (!card) return;
+    const tags = this.reviewTagInput.split(',').map(t => t.trim()).filter(Boolean);
+    const note = this.reviewNote.trim();
+    this.api.saveReview(card.property_id, v, tags, note).subscribe({
+      next: () => {
+        this.applyVerdict(card, v, tags, note);
+        this.loadReviewCounts();
+        if (this.map) this.renderMarkers();
+      },
+      error: () => {},
+    });
+    // Grading never moves you on. Auto-advance takes the listing away at the
+    // moment you decided about it — before you can add the reason, change your
+    // mind, or pick it for comparison. Next is a button.
+  }
+
+  nextCard(step = 1): void {
+    const next = this.reviewIndex + step;
+    if (next < 0) { this.reviewIndex = 0; return; }
+    if (next >= this.reviewQueue.length) { this.closeReview(); return; }
+    this.reviewIndex = next;
+    // Show what was already said about this listing, rather than a blank slate.
+    const c = this.reviewQueue[next];
+    this.reviewNote = c?.review_note || '';
+    this.reviewTagInput = (c?.review_tags || []).join(', ');
+    this.loadCard();
+  }
+
+
+
+  /** How many of your verdicts the current filters actually show. A verdict
+   * sits on the property for good, but the filters are free to exclude it —
+   * without this you see "3 bad" next to one pin and assume something broke. */
+  reviewedShown(source: 'map' | 'search' = 'map'): number {
+    const rows: any[] = source === 'search' ? this.searchRows : this.mapPoints;
+    return rows.filter((r: any) => r.verdict).length;
+  }
+
+  reviewedTotal(): number {
+    return Object.values(this.reviewCounts).reduce((a, b) => a + (b || 0), 0);
+  }
+
+  loadReviewCounts(): void {
+    this.api.reviews().subscribe({
+      next: r => this.reviewCounts = r.counts || {},
+      error: () => {},
+    });
+  }
+
+  toggleVerdict(key: string): void {
+    this.shared.verdicts = this.shared.verdicts.includes(key)
+      ? this.shared.verdicts.filter(v => v !== key)
+      : [...this.shared.verdicts, key];
+    this.refreshBoth();
+  }
+
+  /** Apply the shared criteria wherever they are showing. */
+  refreshBoth(): void {
+    this.load();
+  }
+
+  /** Grade straight from the results table, without opening the card. */
+  quickGrade(row: any, v: Verdict | null): void {
+    const next = row.verdict === v ? null : v;
+    this.api.saveReview(row.property_id, next,
+                        row.review_tags || [], row.review_note || '').subscribe({
+      next: () => {
+        this.applyVerdict(row, next, row.review_tags || [], row.review_note || '');
+        this.loadReviewCounts();
+        if (this.map) this.renderMarkers();
+      },
+      error: () => {},
+    });
+  }
+
+  /** Record a saved verdict on the rows already on screen — the one you graded,
+   * and every other advert for the same home.
+   *
+   * The server spreads a verdict across a home on the next query; doing the
+   * same here is what stops the copy you have not touched yet from being
+   * offered as unseen for the rest of the session. The copy keeps its own
+   * `verdict` empty, exactly as the server leaves it: nothing is written in
+   * your name that you did not write, and `verdict_via` says where the
+   * judgement came from. The table, the map and the queue hold the same row
+   * objects, so one pass reaches all three. */
+  private applyVerdict(card: any, v: Verdict | null, tags: string[], note: string): void {
+    card.verdict = v;
+    card.review_tags = tags;
+    card.review_note = note;
+    card.verdict_via = null;
+    card.effective_verdict = v;
+    const home = this.houseId(card);
+    if (!home) return;
+    const kin = ([...this.searchAll, ...this.previewRows] as any[])
+      .filter(r => this.houseId(r) === home && r.property_id !== card.property_id);
+    // Clearing a verdict does not leave the home unjudged if another advert
+    // for it still carries one — the queue would offer it straight back.
+    const src = v ? card : kin.find(r => r.verdict) ?? null;
+    for (const r of kin) {
+      if (r.verdict) continue;                      // their own judgement stands
+      r.verdict_via = src ? { property_id: src.property_id, verdict: src.verdict } : null;
+      r.effective_verdict = src ? src.verdict : null;
+    }
+    if (!v && src) {
+      card.verdict_via = { property_id: src.property_id, verdict: src.verdict };
+      card.effective_verdict = src.verdict;
+    }
+  }
+
+
+
+  // --- range filters, shared by the Map and the Search tab -----------------
+  // Each tab loads once and filters in the browser: a slider has to respond to
+  // the drag, and a round trip per frame would not. Bounds come from the union
+  // of both tabs' data rather than being guessed, so the ends of every slider
+  // are reachable and one window means the same thing on both.
+  mapAll: MapPoint[] = [];
+  /** Everything the last search returned; `searchRows` is what survives the
+   * sliders, and is what the table, the exports and the review queue use. */
+  searchAll: Listing[] = [];
+  ranges: Record<string, { lo: number; hi: number }> = {};
+  rangeBounds: Record<string, { min: number; max: number; step: number }> = {};
+  /** Every numeric criterion, exactly once each.
+   *
+   * There is no separate "budget", "max rent", "min m²" or "max commute" box:
+   * a one-sided cut is just a range with one end open, so a second control for
+   * the same dimension is the same field twice. */
+  readonly RANGE_SPECS: { key: string; label: string; unit: string; step: number;
+                          hint?: string; pick: (p: Filterable) => number | null;
+                          pickMax?: (p: Filterable) => number | null }[] = [
+    // All-in cost, which is the only way one control can price a plot and a
+    // house on the same axis: buying land commits you to building on it, so a
+    // ¥90M plot is not a ¥90M purchase.
+    { key: 'price',  label: 'price, all-in',  unit: '¥',   step: 1_000_000,
+      hint: 'Purchase price. For a plot this includes the house you would have '
+          + 'to build on it, so plots and houses compare on the same axis.',
+      pick: p => p.market === 'rent' ? null
+                 : (p.price_yen == null ? null
+                    : p.price_yen + (p.category === 'land' ? this.buildCost() : 0)) },
+    { key: 'rent',   label: 'rent / month',   unit: '¥',   step: 10_000,
+      pick: p => p.market === 'rent' ? p.price_yen : null },
+    // Three size axes, because they are three different products — not one
+    // field repeated. A rental flat tops out around 108m² in this catchment,
+    // so a shared floor would delete the whole category.
+    { key: 'buym2',  label: 'buy · building', unit: 'm²',  step: 5,
+      pick: p => p.market !== 'rent' && p.category !== 'land' ? p.building_m2 : null,
+      pickMax: p => p.market !== 'rent' && p.category !== 'land'
+                    ? ((p as any).building_m2_max ?? null) : null },
+    { key: 'rentflat', label: 'rent · flat',  unit: 'm²',  step: 5,
+      pick: p => p.market === 'rent' && this.isFlat(p) ? p.building_m2 : null },
+    { key: 'renthouse', label: 'rent · house', unit: 'm²', step: 5,
+      pick: p => p.market === 'rent' && this.isHouse(p) ? p.building_m2 : null },
+    // Bare plots only. A house has a plot too, but when you are buying the
+    // house its land size is not what you are choosing on.
+    { key: 'land',   label: 'land (plots)',   unit: 'm²',  step: 5,
+      pick: p => p.category === 'land' ? p.land_m2 : null,
+      pickMax: p => p.category === 'land' ? ((p as any).land_m2_max ?? null) : null },
+    // What a plot can carry, rather than how big it is — 建ぺい率 and the
+    // frontage-road cap decide whether a house actually fits.
+    { key: 'buildable', label: 'buildable floor', unit: 'm²', step: 5,
+      pick: p => p.capacity ? p.capacity.max_floor_m2 : null },
+    { key: 'footprint', label: 'footprint',       unit: 'm²', step: 5,
+      pick: p => p.capacity ? p.capacity.max_footprint_m2 : null },
+    { key: 'lfit',   label: '🎓 to LFIT',      unit: 'min', step: 1,
+      pick: p => p.commute_min ?? null },
+    { key: 'age',    label: 'age',             unit: 'yr',  step: 1,
+      hint: 'Listings with no stated age (新築, land) have no age to test, so '
+          + 'they are never cut by this.',
+      pick: p => (p as any).age_years ?? null },
+  ];
+
+  /** The house a plot obliges you to build, at the standard ¥250k/m². */
+  buildCost(): number { return this.budgetBuildM2 * 250_000; }
+
+  /** What a plot gives up before anything can be built: the 42条2項 setback
+   * and any private-road share. Empty when nothing comes off. */
+  setbackNote(cap: any): string {
+    if (!cap) return '';
+    if (cap.deducted_m2) {
+      const what = cap.setback_m2 ? 'セットバック' : '私道負担';
+      return `− ${cap.deducted_m2} m² ${what} (builds on ${cap.buildable_land_m2} m²)`;
+    }
+    if (cap.setback_status === 'required') return 'セットバック required, area not stated';
+    if (cap.setback_status === 'done') return 'セットバック 済 — area is already net';
+    return '';
+  }
+
+  /** '109.1 – 120.3' for a listing selling several units, else the one area.
+   * Showing only the floor understated these by up to 20%. */
+  areaSpan(lo: number | null | undefined, hi: number | null | undefined): string {
+    if (lo == null) return '—';
+    return hi != null && hi > lo ? `${lo} – ${hi}` : `${lo}`;
+  }
+
+  isHouse(p: Filterable): boolean {
+    const l = p.property_label || '';
+    return l.includes('一戸建') || (p.market !== 'rent' && p.category !== 'land' && !l.includes('マンション'));
+  }
+  isFlat(p: Filterable): boolean {
+    const l = p.property_label || '';
+    return l.includes('マンション') || l.includes('アパート') || l.includes('テラス');
+  }
+
+  /** Slider bounds from the data itself, so both ends are always reachable. */
+  private computeBounds(points: Filterable[]): void {
+    for (const spec of this.RANGE_SPECS) {
+      const vals = points.map(spec.pick).filter((v): v is number => v != null);
+      if (!vals.length) { delete this.rangeBounds[spec.key]; continue; }
+      const lo = Math.floor(Math.min(...vals) / spec.step) * spec.step;
+      const hi = Math.ceil(Math.max(...vals) / spec.step) * spec.step;
+      this.rangeBounds[spec.key] = { min: lo, max: hi, step: spec.step };
+      const cur = this.ranges[spec.key];
+      // Keep the user's window when new data arrives, clamped to what exists.
+      this.ranges[spec.key] = cur
+        ? { lo: Math.max(lo, Math.min(cur.lo, hi)), hi: Math.min(hi, Math.max(cur.hi, lo)) }
+        : { lo, hi };
+    }
+  }
+
+  /** A listing passes if every dimension it *has* is inside its window.
+   * A plot has no building, a flat is not a house — those tests simply do not
+   * apply, rather than excluding the row. */
+  private inRanges(p: Filterable): boolean {
+    for (const spec of this.RANGE_SPECS) {
+      const b = this.rangeBounds[spec.key], r = this.ranges[spec.key];
+      if (!b || !r) continue;
+      const v = spec.pick(p);
+      if (v == null) continue;
+      // A listing selling 109–120m² should survive a "≥115m²" window: one of
+      // its units clears it. So a span is kept when it *overlaps* the window,
+      // not when its floor happens to sit inside.
+      const hi = spec.pickMax ? (spec.pickMax(p) ?? v) : v;
+      if (Math.max(v, hi) < r.lo || Math.min(v, hi) > r.hi) return false;
+    }
+    return true;
+  }
+
+  /** One dataset, so one set of bounds — the sliders mean the same thing on
+   * both tabs by construction. */
+  private rebuildBounds(): void {
+    this.computeBounds(this.searchAll as Filterable[]);
+  }
+
+  /** Re-filter both tabs, without touching the server. */
+  applyRanges(): void {
+    const keep = (r: any) => this.passesType(r) && this.passesPlot(r)
+                          && this.inRanges(r as Filterable);
+    this.mapPoints = this.mapAll.filter(keep);
+    this.searchRows = this.searchAll.filter(keep);
+    this.renderMarkers();
+  }
+
+  resetRanges(): void {
+    this.ranges = {};
+    this.rebuildBounds();
+    this.applyRanges();
+  }
+
+  rangeLabel(key: string): string {
+    const spec = this.RANGE_SPECS.find(s => s.key === key)!;
+    const r = this.ranges[key], b = this.rangeBounds[key];
+    if (!r || !b) return '—';
+    const fmt = (v: number) => spec.unit === '¥' ? this.fmtYen(v) : `${v}${spec.unit === 'm²' ? '' : ''}`;
+    const full = r.lo <= b.min && r.hi >= b.max;
+    return full ? `any (${fmt(b.min)}–${fmt(b.max)})` : `${fmt(r.lo)} – ${fmt(r.hi)}`;
+  }
+  // Forced exit year. null -> each option shown at its own best-by-IRR year.
+  compareSellYear: number | null = null;
+  // The rent-or-buy article's own form defaults, so the two tools agree unless
+  // you change something here.
+  compareAssumptions: CompareAssumptions = {
+    loan_rate: 0.015, loan_term: 35, down_payment_pct: 0.20, broker_fee_pct: 0.035,
+    maintenance_rate: 0.007, land_spread_vs_rent: 0, rent_inflation: 0.01,
+    renewal_fee_months: 1, opportunity_cost_real: 0.05, simulation_years: 20,
+    build_cost_per_m2: 250_000, build_cost_per_m2_rc: 350_000,
+    cost_inflation: null, property_tax_rate: 0.014, city_planning_rate: 0.003,
+    building_assessment_ratio: 0.55, new_build_relief_years: 3,
+    maintenance_on_building_only: true, maintenance_age_slope: 0.02,
+    house_residual_ratio: 0.10, acquisition_cost_pct: 0.04, loan_upfront_fee_pct: 0.022,
+    mortgage_credit_rate: 0.007, mortgage_credit_years: 13, mortgage_credit_cap: 315_000,
+    cgt_short_rate: 0.3963, cgt_long_rate: 0.20315, cgt_short_years: 5,
+    cgt_exemption: 30_000_000, sale_discount_pct: 0,
+    key_money_months: 1, guarantee_months: 0.5, moving_cost: 300_000, move_every_years: 0,
+    land_build_m2: 120, residential_land_relief: true, baseline_monthly_rent: 300_000,
+  };
+  // Snapshot before anything edits the live object, so "reset" restores what
+  // the model documents rather than whatever was last typed.
+  private readonly _defaults = { ...this.compareAssumptions };
+  // A plot needs a house before it can be compared with one, and the size is a
+  // decision the user must make rather than inherit silently from a default.
+  landSizeConfirmed = false;
+
+  // Reference landmarks shown on the map. Coordinates are approximate — edit
+  // freely / add more (e.g. other schools, stations, workplaces).
+  pois: { name: string; lat: number; lng: number; icon: string }[] = [
+    { name: 'Lycée Français Intl. de Tokyo', lat: 35.7501, lng: 139.7247, icon: '🎓' },
+  ];
+  private poiLayer: any = null;
+  // Which stacked-marker group is currently fanned out, and the layer holding it.
+  private spiderfied: string | null = null;
+  private spiderLayer: any = null;
+  // Reference landmark for the straight-line distance shown in popups.
+  refPoiName = 'Lycée Français Intl. de Tokyo';
+  // How the "route to <landmark>" links open in Google Maps. Transit is the
+  // sensible default for a Tokyo school run.
+  travelMode: 'transit' | 'walking' | 'bicycling' | 'driving' = 'transit';
+  travelModes = [
+    { key: 'transit',   label: '🚃 transit' },
+    { key: 'walking',   label: '🚶 walking' },
+    { key: 'bicycling', label: '🚲 cycling' },
+    { key: 'driving',   label: '🚗 driving' },
+  ];
+
+  // Live OpenStreetMap POI layers (queried from Overpass for the current view).
+  // Add categories here — each is one Overpass filter set + an emoji.
+  osmCats: { key: string; label: string; icon: string; filters: string[]; enabled: boolean }[] = [
+    { key: 'supermarket',  label: '🛒 Supermarket', icon: '🛒', enabled: true,
+      filters: ['node["shop"="supermarket"]', 'way["shop"="supermarket"]'] },
+    { key: 'convenience',  label: '🏪 Konbini', icon: '🏪', enabled: false,
+      filters: ['node["shop"="convenience"]', 'way["shop"="convenience"]'] },
+    { key: 'drugstore',    label: '💊 Drugstore', icon: '💊', enabled: false,
+      filters: ['node["shop"="chemist"]', 'way["shop"="chemist"]',
+                'node["amenity"="pharmacy"]', 'way["amenity"="pharmacy"]'] },
+    { key: 'school',       label: '🏫 School', icon: '🏫', enabled: false,
+      filters: ['node["amenity"="school"]', 'way["amenity"="school"]'] },
+    { key: 'kindergarten', label: '🧸 Nursery/Kindergarten', icon: '🧸', enabled: false,
+      filters: ['node["amenity"~"^(kindergarten|childcare)$"]',
+                'way["amenity"~"^(kindergarten|childcare)$"]'] },
+    { key: 'hospital',     label: '🏥 Hospital/Clinic', icon: '🏥', enabled: false,
+      filters: ['node["amenity"~"^(hospital|clinic|doctors)$"]',
+                'way["amenity"~"^(hospital|clinic|doctors)$"]'] },
+    { key: 'post',         label: '📮 Post office', icon: '📮', enabled: false,
+      filters: ['node["amenity"="post_office"]', 'way["amenity"="post_office"]'] },
+    { key: 'library',      label: '📚 Library', icon: '📚', enabled: false,
+      filters: ['node["amenity"="library"]', 'way["amenity"="library"]'] },
+    { key: 'bank',         label: '🏦 Bank', icon: '🏦', enabled: false,
+      filters: ['node["amenity"="bank"]', 'way["amenity"="bank"]'] },
+    { key: 'station',      label: '🚉 Station', icon: '🚉', enabled: false,
+      filters: ['node["railway"="station"]', 'node["railway"="halt"]'] },
+  ];
+  // --- hazard overlays (official Japanese government raster tiles) -----------
+  // Flood/landslide layers come from MLIT's ハザードマップポータル (disaportal);
+  // the ground/terrain layers come from 地理院タイル (GSI). Both are open data.
+  // Tiles are only fetched while a layer is toggled on, and areas with no data
+  // return HTTP 404 — Leaflet swaps those for a transparent pixel, so a layer
+  // that doesn't cover the current view just looks empty rather than broken.
+  hazardLayers: {
+    key: string; label: string; title: string; urls: string[];
+    legend: 'depth' | 'landslide' | 'ground' | 'gradient' | 'image';
+    source: 'gsi' | 'disaportal';
+    minZoom?: number; maxNativeZoom?: number; link?: string; legendImg?: string;
+    enabled: boolean;
+  }[] = [
+    { key: 'flood', label: '🌊 Flood', enabled: false, legend: 'depth', source: 'disaportal',
+      title: '洪水浸水想定区域（想定最大規模） — river flood depth, worst-case scenario',
+      urls: ['https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png'],
+      maxNativeZoom: 17 },
+    { key: 'naisui', label: '🌧️ Inland flood', enabled: false, legend: 'depth', source: 'disaportal',
+      title: '内水（雨水出水）浸水想定区域 — storm-drain / surface-water flooding',
+      urls: ['https://disaportaldata.gsi.go.jp/raster/02_naisui_data/{z}/{x}/{y}.png'],
+      maxNativeZoom: 17 },
+    { key: 'hightide', label: '🌀 Storm surge', enabled: false, legend: 'depth', source: 'disaportal',
+      title: '高潮浸水想定区域 — typhoon storm-surge inundation',
+      urls: ['https://disaportaldata.gsi.go.jp/raster/03_hightide_l2_shinsuishin_data/{z}/{x}/{y}.png'],
+      maxNativeZoom: 17 },
+    { key: 'tsunami', label: '🌊 Tsunami', enabled: false, legend: 'depth', source: 'disaportal',
+      title: '津波浸水想定 — tsunami inundation',
+      urls: ['https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png'],
+      maxNativeZoom: 17 },
+    { key: 'landslide', label: '⛰️ Landslide', enabled: false, legend: 'landslide', source: 'disaportal',
+      title: '土砂災害警戒区域 — debris flow, steep-slope collapse and landslide zones',
+      urls: [
+        'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png',
+        'https://disaportaldata.gsi.go.jp/raster/05_kyukeishakeikaikuiki/{z}/{x}/{y}.png',
+        'https://disaportaldata.gsi.go.jp/raster/05_jisuberikeikaikuiki/{z}/{x}/{y}.png',
+      ], maxNativeZoom: 17 },
+    // Earthquake shaking isn't published as open XYZ tiles, so these two stand
+    // in for it: shaking and liquefaction in Tokyo track the ground a building
+    // sits on — soft alluvial lowland and reclaimed/filled land amplify, the
+    // Musashino terrace does not.
+    { key: 'ground', label: '🏚️ Ground type', enabled: false, legend: 'ground', source: 'gsi',
+      title: '土地条件図 — landform classification (terrace / lowland / reclaimed land): ' +
+             'the ground-shaking proxy for earthquakes',
+      urls: ['https://cyberjapandata.gsi.go.jp/xyz/lcm25k_2012/{z}/{x}/{y}.png'],
+      // Published at z14–16 only. minZoom hides the layer when zoomed further
+      // out rather than letting Leaflet upscale (which would request thousands
+      // of z14 tiles for one wide view).
+      minZoom: 14, maxNativeZoom: 16,
+      link: 'https://cyberjapandata.gsi.go.jp/legend/lcm25k_2012/lc_legend.pdf' },
+    { key: 'fcterrain', label: '🏞️ River terrain', enabled: false, legend: 'image', source: 'gsi',
+      // Unlike the other overlays this one is a fully opaque sheet (it paints
+      // white/grey outside the surveyed river basins), so it hides the basemap
+      // until you pull the opacity down.
+      title: '治水地形分類図 — terrain along major rivers (natural levee, backswamp, ' +
+             'former channel, fill). Opaque sheet — lower the opacity to see the streets.',
+      urls: ['https://cyberjapandata.gsi.go.jp/xyz/lcmfc2/{z}/{x}/{y}.png'],
+      minZoom: 11, maxNativeZoom: 16,
+      legendImg: 'https://maps.gsi.go.jp/legend/lcmfc2_legend.jpg',
+      link: 'https://www.gsi.go.jp/bousaichiri/fc_index.html' },
+    { key: 'slope', label: '📐 Slope', enabled: false, legend: 'gradient', source: 'gsi',
+      title: '傾斜量図 — terrain steepness (white = gentle, black = steep)',
+      urls: ['https://cyberjapandata.gsi.go.jp/xyz/slopemap/{z}/{x}/{y}.png'],
+      maxNativeZoom: 15,
+      link: 'https://www.gsi.go.jp/bousaichiri/slopemap.html' },
+  ];
+  hazardOpacity = 0.6;
+  /** Both tabs pull the same slice of the DB; the sliders cut it in the
+   * browser. Sized to cover everything crawled so far. */
+  readonly FETCH_LIMIT = 5000;
+  mapZoom = 14;   // kept in sync with the map so we can flag zoom-limited layers
+  // key → the Leaflet tile layers currently on the map for that hazard entry
+  private hazardTiles: Record<string, any[]> = {};
+
+  // --- census choropleth (令和2年国勢調査 小地域集計) -------------------------
+  // Who actually lives on the block a listing sits on. Every layer below is
+  // 2020 census data for the 3,039 町丁 of the 23 wards, joined to the boundary
+  // polygons on KEY_CODE. Unlike the hazard tiles these are mutually exclusive —
+  // a choropleth paints every polygon, so only one can be read at a time.
+  censusLayers: CensusLayer[] = [
+    { key: 'land_value', group: 'Price', label: '💴 Land value',
+      title: 'Assessed land value per m² — the strongest single driver of price',
+      legendTitle: 'Land value (JPY/m²)', mode: 'fixed',
+      palette: ['#1a9850', '#91cf60', '#d9ef8b', '#fee08b', '#fc8d59', '#d73027'],
+      breaks: [307454, 506038, 669145, 1001982, 1746500],
+      unit: 'yen', value: p => p.land_value ?? null },
+
+    { key: 'density', group: 'People', label: '👥 Density',
+      title: 'Residents per km². Sparse blocks are parks, offices and industry',
+      legendTitle: 'People per km²', mode: 'quantile', breaks: [], unit: 'int',
+      value: p => p.AREA ? (p.JINKO || 0) / (p.AREA / 1e6) : null },
+    { key: 'children', group: 'People', label: '🧒 Under 15',
+      title: 'Share of residents under 15 — where families settle rather than pass through',
+      legendTitle: 'Aged under 15', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.ageShare(p, 'age_0_14') },
+    { key: 'young', group: 'People', label: '🎓 Aged 20–39',
+      title: 'Share aged 20–39 — the cohort forming households, and the one that sets rents',
+      legendTitle: 'Aged 20–39', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.ageShare(p, 'age_20_24', 'age_25_29', 'age_30_34', 'age_35_39') },
+    { key: 'seniors', group: 'People', label: '👴 Over 65',
+      title: 'Share aged 65+. Where this is high, the housing stock turns over within two decades',
+      legendTitle: 'Aged 65+', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.ageShare(p, 'age_65') },
+
+    { key: 'single', group: 'Households', label: '🚪 One-person',
+      title: 'Share of one-person households — over half the 23 wards, but wildly uneven block to block',
+      legendTitle: 'One-person households', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.blockShare(p, 'hh_general', 'hh_1person') },
+    { key: 'under6', group: 'Households', label: '👶 Child under 6',
+      title: 'Households with a child under six — where people are choosing to start a family',
+      legendTitle: 'Households with a child under 6', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.blockShare(p, 'hh_general', 'hh_under6') },
+
+    { key: 'owned', group: 'Housing stock', label: '🔑 Owner-occupied',
+      title: 'Share that own rather than rent. Owner-heavy blocks turn over slowly and list rarely',
+      legendTitle: 'Owner-occupied households', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.blockShare(p, 'hh_housed', 'hh_owned') },
+    { key: 'detached', group: 'Housing stock', label: '🏠 Detached',
+      title: 'Share in a detached house — the low-rise Tokyo the zoning map protects',
+      legendTitle: 'Households in detached houses', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.blockShare(p, 'hh_main', 'hh_detached') },
+    { key: 'highrise', group: 'Housing stock', label: '🏢 6F and up',
+      title: 'Share living six floors up or higher — the tower belt and station redevelopments',
+      legendTitle: 'Households in 6F+ buildings', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.blockShare(p, 'hh_main', 'hh_apt_6_10', 'hh_apt_11plus') },
+
+    { key: 'professionals', group: 'Work', label: '💼 Managers & pros',
+      title: 'Share of workers in managerial/professional/technical jobs — the closest the census gets to an income map',
+      legendTitle: 'Managers & professionals', mode: 'quantile', breaks: [], unit: 'pct',
+      value: p => this.blockShare(p, 'workers', 'work_managers', 'work_professional') },
+  ];
+
+  /** Only one choropleth can be readable at a time, so this is single-select. */
+  activeCensus: string | null = null;
+  censusOpacity = 0.6;
+  censusLoading = false;
+  censusMsg = '';
+
+  // Sequential blue ramp used by every layer except land value, which keeps the
+  // green→red scale the article's map established.
+  private readonly CENSUS_RAMP =
+    ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#104281'];
+  private readonly CENSUS_NO_DATA = '#e1e0d9';
+
+  private censusGeo: any[] | null = null;            // plo.json features
+  private censusStats: Record<string, BlockStats> | null = null;
+  private censusMeta: any = null;
+  private censusLayer: any = null;                   // the Leaflet GeoJSON layer
+
+  // 浸水深 (inundation depth) palette, sampled from the disaportal tiles themselves.
+  depthLegend = [
+    { color: '#F7F5A9', label: '< 0.5 m' },
+    { color: '#FFD8C0', label: '0.5–3 m' },
+    { color: '#FFB7B7', label: '3–5 m' },
+    { color: '#FF9191', label: '5–10 m' },
+    { color: '#F285C9', label: '10–20 m' },
+    { color: '#DC7ADC', label: '≥ 20 m' },
+  ];
+  landslideLegend = [
+    { color: '#FAE600', label: '警戒区域 (warning)' },
+    { color: '#FA2800', label: '特別警戒区域 (special)' },
+  ];
+
+  // 土地条件図 classes. Names + swatches come from GSI's own legend
+  // (cyberjapandata.gsi.go.jp/legend/lcm25k_2012/lc_legend.pdf); the colours
+  // below are what the tiles actually paint on a light basemap — GSI draws
+  // these fills at ~61% alpha, so a raw #FF6600 terrace reads as #FFA163.
+  // `firm` groups the classes you'd rather be buying on.
+  groundLegend: { color: string; jp: string; en: string; firm?: boolean }[] = [
+    { color: '#FFA163', jp: '台地・段丘',       en: 'terrace / plateau', firm: true },
+    { color: '#FFC182', jp: '段丘（完新世）',   en: 'younger terrace', firm: true },
+    { color: '#FFC1C1', jp: '台地・段丘（未区分）', en: 'terrace, undivided', firm: true },
+    { color: '#63E063', jp: '山地斜面等',       en: 'mountain slope', firm: true },
+    { color: '#C2C2A3', jp: '山麓堆積地形',     en: 'mountain-foot deposits' },
+    { color: '#E0E085', jp: '扇状地',           en: 'alluvial fan' },
+    { color: '#FFFF66', jp: '自然堤防',         en: 'natural levee — slightly higher', firm: true },
+    { color: '#E0FF66', jp: '砂州・砂丘',       en: 'sand bar / dune' },
+    { color: '#FFE0C2', jp: '天井川沿いの微高地', en: 'rise along a raised-bed river' },
+    { color: '#EBD4B6', jp: '凹地・浅い谷',     en: 'hollow / shallow valley' },
+    { color: '#C2FFE0', jp: '谷底平野・氾濫平野', en: 'valley floor / floodplain' },
+    { color: '#C2FFFF', jp: '海岸平野・三角州', en: 'coastal plain / delta' },
+    { color: '#85C2A3', jp: '後背低地・湿地',   en: 'backswamp — soft, poorly drained' },
+    { color: '#85A385', jp: '旧河道',           en: 'former river channel — soft' },
+    { color: '#A1C1E0', jp: '湿地',             en: 'marsh' },
+    { color: '#A1A1C1', jp: '河川敷・浜',       en: 'riverbed / beach' },
+    { color: '#A1E0FF', jp: '水部',             en: 'water' },
+    { color: '#63A1FF', jp: '旧水部',           en: 'former water body, now land' },
+    { color: '#C163E0', jp: '崖',               en: 'cliff' },
+    { color: '#E082E0', jp: '地すべり（滑落崖）', en: 'landslide scarp' },
+    { color: '#E0C1FF', jp: '地すべり（移動体）', en: 'landslide mass' },
+  ];
+  // GSI draws these as hatch patterns rather than flat colours, so they can't be
+  // reproduced as swatches — named here so at least you know what they are.
+  groundHatched = ['盛土地・埋立地 (fill / reclaimed)', '高い盛土地 2m以上 (deep fill)',
+                   '干拓地 (drained land)', '切土地 (cut ground)',
+                   '農耕平坦化地 (levelled farmland)', '改変工事中の区域 (under works)'];
+
+  showRail = true;   // draw train/subway lines (polylines) under the markers
+  private osmLayer: any = null;
+  private railLayer: any = null;
+  osmLoading = false;
+  osmMsg = '';
+  mapFull = false;   // CSS fullscreen (works on iOS, unlike the Fullscreen API)
+  mapFabOpen = false;   // fullscreen-only floating controls panel
+
+  /**
+   * The map controls, as one list driving both layouts. Windowed these are a
+   * chip row with the open section beneath; fullscreen the same chips sit in
+   * the FAB and open the same body in a floating panel. One section at a time
+   * in both, so the mental model does not change with the window size.
+   */
+  readonly controlSections = [
+    { key: 'display', icon: '🎨', label: 'Display',
+      hint: 'how the dots are coloured — filters live on the Search tab' },
+    { key: 'poi',     icon: '📍', label: 'Nearby',
+      hint: 'landmarks, rail lines and OpenStreetMap points of interest' },
+    { key: 'census',  icon: '👥', label: 'Census',
+      hint: '2020 census by town block' },
+    { key: 'hazard',  icon: '⚠️', label: 'Hazard',
+      hint: 'flood, landslide and ground-condition overlays' },
+  ];
+  /** Which section is open, in both layouts. null = collapsed. */
+  activeControl: string | null = 'display';
+
+  activeSection() {
+    return this.controlSections.find(s => s.key === this.activeControl) || null;
+  }
+
+  openControl(key: string): void {
+    // Clicking the open section closes it, so the map can have the full frame.
+    this.activeControl = this.activeControl === key ? null : key;
+  }
+
+  toggleFab(): void {
+    this.mapFabOpen = !this.mapFabOpen;
+    if (this.mapFabOpen && !this.activeControl) this.activeControl = 'display';
+  }
+
+  closeFab(): void {
+    this.mapFabOpen = false;
+  }
+
+  toggleMapFull(): void {
+    this.mapFull = !this.mapFull;
+    // Leaving fullscreen returns the controls to the page, so a panel left open
+    // would otherwise reappear the next time you go fullscreen.
+    if (!this.mapFull) this.mapFabOpen = false;
+    setTimeout(() => this.map?.invalidateSize(), 150);  // let the container resize first
+  }
+
+  freqPresets: FreqPreset[] = [
+    { label: 'Hourly', minutes: 60 },
+    { label: 'Every 6h', minutes: 360 },
+    { label: 'Every 12h', minutes: 720 },
+    { label: 'Daily', minutes: 1440 },
+    { label: 'Weekly', minutes: 10080 },
+  ];
+  freqIsCustom = false;
+
+  private pollTimer: any = null;
+
+  constructor(private api: ScraperService, private http: HttpClient, private zone: NgZone, private route: ActivatedRoute) {}
+
+  // Full-detail modal opened from a map popup's "See all details" button.
+  // Just "which listing is open"; its contents live in sheetData, shared with
+  // the review queue.
+  detailModal: { point?: any } | null = null;
+
+  ngOnInit(): void {
+    this.api.summary().subscribe({
+      next: s => { this.summary = s; this.apiError = ''; this.startPolling(); },
+      // "Offline" was the message for every failure, so a signed-out session
+      // read as a dead server and sent you to restart something that was
+      // running perfectly well. The status says which it is.
+      error: (e: any) => this.apiError =
+        e?.status === 401
+          ? 'Not signed in — use Sign in at the top right. The scraper API '
+            + 'checks the token on every call.'
+          : e?.status === 403
+          ? `${e?.error?.detail || 'This account is not on the allowlist'} — `
+            + 'ask to be added, or set SCRAPER_ALLOWED_EMAILS on the API.'
+          : `Scraper API offline at ${environment.scraperApiUrl} — start it:  `
+            + `cd api && ENABLE_SCRAPER=1 uvicorn api:app --reload --port 8000`,
+    });
+    this.api.config().subscribe({ next: c => this.config = c, error: () => {} });
+    this.loadJobs();
+    // Verdicts and presets are the two things that survive a reload, so load
+    // them up front. Without this the counters read 0 on a fresh page and it
+    // looks as though nothing was ever saved.
+    this.loadReviewCounts();
+    this.loadSavedFilters();
+    this.loadAccess();   // decides whether the Groups tab exists
+    // Default to the most recent crawl, both bounds on the same day: a window
+    // spanning several crawls mixes listings that were on the market on
+    // different mornings, and the newest one is what you are looking at.
+    this.ensureCrawlDates(() => {
+      if (this.shared.dateMode === 'latest') this.followLatest();
+      this.load();
+    });
+    this.openFromQueryParams();
+  }
+
+  /** A link from outside (finance's "Fill from a reviewed listing") can open one card's detail sheet directly, without
+   * it needing to be in the current search results: ?property_id=... plus whatever of the card's own fields the
+   * linker already has, so the sheet has something to show while `openDetails` fetches the rest by URL. Every field
+   * but `property_id` and `url` is cosmetic filler for the header - safe to leave out. */
+  private openFromQueryParams(): void {
+    const q = this.route.snapshot.queryParamMap;
+    const property_id = q.get('property_id');
+    const url = q.get('url');
+    if (!property_id || !url) return;
+    const num = (k: string) => { const v = q.get(k); return v === null ? null : Number(v); };
+    // The actual loan the linker (finance) is planning, if it sent one: the compare tool otherwise silently
+    // prices a generic 20%-down/35-year loan, which can make a real, more-leveraged purchase look worse than
+    // it is - not because the two tools disagree, but because they'd be pricing two different loans.
+    const downPct = num('down_payment_pct'), loanTerm = num('loan_term');
+    if (downPct !== null) this.compareAssumptions.down_payment_pct = downPct;
+    if (loanTerm !== null) this.compareAssumptions.loan_term = loanTerm;
+    this.openDetails({
+      property_id, url,
+      market: q.get('market') || 'sale', category: q.get('category') || '',
+      ward: q.get('ward') || '', title: q.get('title') || '',
+      address: '', station_raw: '', price_raw: '',
+      image_url: q.get('image_url'),
+      price_yen: num('price_yen'), layout: q.get('layout'),
+      building_m2: num('building_m2'), land_m2: num('land_m2'),
+      building_m2_max: null, land_m2_max: null, nearest_walk_min: null, age_years: null,
+    } as any);
+  }
+
+  // Local 'YYYY-MM-DD' (not UTC) — scrape_date is stamped in the machine's local time.
+  private localDate(d: Date): string {
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.lightbox) { this.closeLightbox(); return; }
+    // The review overlay sits above the sheet, so it closes first.
+    if (this.reviewOpen) { this.closeReview(); return; }
+    if (this.detailModal) this.closeDetails();
+  }
+
+  // Bound both on the document and on the panels themselves. The document
+  // listener is the one that has always been here; it depends on the event
+  // reaching the document, which it did not on desktop — the panels now listen
+  // directly, and whichever fires first does the work. The guard below makes a
+  // double delivery harmless: the same key does the same thing twice only if
+  // both listeners see the same event, which the stamp prevents.
+  @HostListener('document:keydown', ['$event'])
+  onReviewKey(e: KeyboardEvent): void {
+    if ((e as any).__handled) return;
+    (e as any).__handled = true;
+    if (!this.reviewOpen && !this.detailModal) return;
+    const el = e.target as HTMLElement;
+    // Only text entry swallows the keys. A range slider or a checkbox is an
+    // INPUT too, and blanket-skipping those meant the arrows stopped working
+    // for the rest of the session once you had touched the horizon slider.
+    const typing = el && (el.tagName === 'TEXTAREA'
+      || (el.tagName === 'INPUT'
+          && !['range', 'checkbox', 'radio', 'button'].includes((el as HTMLInputElement).type)));
+    if (typing) return;
+    const map: Record<string, () => void> = {
+      '1': () => this.grade('bad'),
+      '2': () => this.grade('maybe'),
+      '3': () => this.grade('good'),
+      'ArrowRight': () => this.photoStep(1),
+      'ArrowLeft': () => this.photoStep(-1),
+      'Right': () => this.photoStep(1),      // older key names, still emitted
+      'Left': () => this.photoStep(-1),
+      ' ': () => { if (this.reviewOpen) this.nextCard(); },
+      'Backspace': () => { if (this.reviewOpen) this.nextCard(-1); },
+      'Escape': () => {
+        if (this.lightbox) this.closeLightbox();
+        else if (this.reviewOpen) this.closeReview();
+        else this.closeDetails();
+      },
+    };
+    const fn = map[e.key];
+    if (fn) { e.preventDefault(); fn(); }
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    if (this.map) { this.map.remove(); this.map = null; }
+    this.lockPageScroll(false);
+  }
+
+  /** True while any overlay covers the page. */
+  private overlayOpen(): boolean {
+    return !!this.detailModal || this.compareOpen || this.reviewOpen || this.lightbox;
+  }
+
+  private scrollLocked = false;
+  /** Freeze the page behind an overlay.
+   *
+   * Scrolling inside the sheet otherwise scrolls the results underneath it, and
+   * a wheel over the backdrop scrolls them too — so closing the sheet left you
+   * somewhere else in the table. The scroll position is restored, because
+   * `overflow: hidden` on the body otherwise jumps you back to the top. */
+  private lockPageScroll(on: boolean): void {
+    if (on === this.scrollLocked) return;
+    this.scrollLocked = on;
+    const b = document.body;
+    if (on) {
+      this.savedScrollY = window.scrollY;
+      b.style.position = 'fixed';
+      b.style.top = `-${this.savedScrollY}px`;
+      b.style.left = '0';
+      b.style.right = '0';
+      b.style.overflow = 'hidden';
+    } else {
+      b.style.position = b.style.top = b.style.left = b.style.right = b.style.overflow = '';
+      window.scrollTo(0, this.savedScrollY);
+    }
+  }
+  private savedScrollY = 0;
+
+  // Every overlay opens and closes from several places, some of them straight
+  // from the template, so this is synced on each change-detection pass rather
+  // than hooked onto each of them.
+  ngDoCheck(): void {
+    this.lockPageScroll(this.overlayOpen());
+  }
+
+  // --- Report tab (crawl-to-crawl diff) ---
+
+  /** Both the Report and Map tabs need the list of crawl dates; fetch it once. */
+  private ensureCrawlDates(then?: () => void): void {
+    if (this.crawlDates.length) { then?.(); return; }
+    this.api.crawlDates().subscribe({
+      next: res => { this.crawlDates = res.dates; then?.(); },
+      // Still run the continuation. Callers load the listings in it, and
+      // swallowing it here left the page blank whenever this one call failed.
+      error: () => { this.diffError = 'could not reach the local API'; then?.(); },
+    });
+  }
+
+  openDiffReport(): void {
+    this.activeTab = 'report';
+    if (this.diff) return;
+    this.ensureCrawlDates(() => {
+      // Default to the two most recent crawls — the comparison people actually
+      // want on opening the tab.
+      if (this.crawlDates.length >= 2) {
+        this.diffTo = this.crawlDates[0].date;
+        this.diffFrom = this.crawlDates[1].date;
+        this.loadDiff();
+      } else if (this.crawlDates.length === 1) {
+        this.diffTo = this.diffFrom = this.crawlDates[0].date;
+        this.diffError = 'only one crawl on record — nothing to compare yet';
+      }
+    });
+  }
+
+  loadDiff(): void {
+    if (!this.diffFrom || !this.diffTo) return;
+    this.diffLoading = true;
+    this.diffError = '';
+    this.diffOpen = {};
+    this.api.diff(this.diffFrom, this.diffTo).subscribe({
+      next: d => { this.diff = d; this.diffLoading = false; },
+      error: () => {
+        this.diffLoading = false;
+        this.diffError = 'diff request failed — is the local API running?';
+      },
+    });
+  }
+
+  toggleDiffRow(id: string): void {
+    this.diffOpen[id] = !this.diffOpen[id];
+  }
+
+  /** `gone` rows the later crawl genuinely covered — a real delisting. */
+  goneWithScope(scope: 'covered' | 'partial' | 'absent'): DiffListing[] {
+    return (this.diff?.gone || []).filter(g => g.scope === scope);
+  }
+
+  /** `gone` rows the later crawl did not cover well enough to draw a conclusion. */
+  goneNotCovered(): DiffListing[] {
+    return (this.diff?.gone || []).filter(g => g.scope !== 'covered');
+  }
+
+  /** Render one side of a field change; money and areas get their units back. */
+  changeValue(c: FieldChange, side: 'from' | 'to'): string {
+    const v = c[side];
+    if (v === null || v === undefined || v === '') return '—';
+    if (c.field.endsWith('_yen')) return '¥' + Number(v).toLocaleString('en-US');
+    if (c.field.endsWith('_m2')) return `${v} m²`;
+    if (c.field === 'nearest_walk_min') return `${v} min`;
+    return String(v);
+  }
+
+  /** Signed percentage move, for price changes only. */
+  changeDelta(c: FieldChange): string {
+    if (!c.field.endsWith('_yen') || !c.from || !c.to) return '';
+    const pct = (Number(c.to) / Number(c.from) - 1) * 100;
+    return `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`;
+  }
+
+  changeIsUp(c: FieldChange): boolean {
+    return c.field.endsWith('_yen') && Number(c.to) > Number(c.from);
+  }
+
+  // --- Map tab (Leaflet map) ---
+  async openMap(): Promise<void> {
+    this.activeTab = 'map';
+    this.ensureCrawlDates();
+    // Let the (hidden) map container become visible, then init/refresh Leaflet.
+    setTimeout(async () => {
+      await this.ensureMap();
+      this.map?.invalidateSize();
+      // Draw whatever is currently in scope. Loading and drawing are separate
+      // things: the rows arrive at startup, so a check of "is it loaded?" was
+      // always true by the time the map existed and the markers were never
+      // put on it. Every filter change since then redrew an empty map.
+      if (!this.mapLoaded) this.load(); else this.renderMarkers();
+    }, 0);
+  }
+
+  private async ensureMap(): Promise<void> {
+    if (this.map) return;
+    this.L = await import('leaflet');
+    const ref = this.refPoi();  // center on the Lycée (reference landmark) by default
+    // attributionControl off: this is a private local tool and the corner badge
+    // collides with the fullscreen controls. The credit still ships wherever the
+    // map leaves this machine — see the caption in scraper/mapimage.py, which is
+    // what actually gets emailed.
+    this.map = this.L.map('scraperMap', {
+      center: [ref.lat, ref.lng], zoom: 14, maxZoom: 18, minZoom: 8,
+      attributionControl: false,
+    });
+    // Light, low-clutter basemap (CartoDB Positron) so the listing dots stand out.
+    this.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd', maxZoom: 20,
+    }).addTo(this.map);
+    // Census choropleth sits directly on the basemap, below the hazard tiles —
+    // it is background context for the listings, not something to read on top
+    // of a flood layer.
+    this.map.createPane('census');
+    this.map.getPane('census').style.zIndex = '240';
+    // Hazard tiles go in their own pane just above the basemap, so they cover
+    // the streets but stay under every marker, label and rail line.
+    this.map.createPane('hazard');
+    this.map.getPane('hazard').style.zIndex = '250';
+    // Dedicated pane above the marker/icon pane so listing dots always sit on top
+    // of the OSM POI icons (SVG overlays otherwise render below marker icons).
+    this.map.createPane('listings');
+    this.map.getPane('listings').style.zIndex = '650';
+    this.markerLayer = this.L.layerGroup().addTo(this.map);
+    this.renderPois();
+    // Some hazard layers only exist at high zoom — track zoom to warn about it.
+    this.mapZoom = this.map.getZoom();
+    this.map.on('zoomend', () => this.zone.run(() => {
+      this.mapZoom = this.map.getZoom();
+      // The fan is laid out in screen pixels, so it no longer lines up after a
+      // zoom — drop it rather than leave legs pointing at the wrong places.
+      this.collapseSpider();
+    }));
+    this.map.on('click', () => this.zone.run(() => this.collapseSpider()));
+    this.hazardLayers.filter(h => h.enabled).forEach(h => this.applyHazard(h));
+  }
+
+  // --- hazard overlays ---
+  toggleHazard(h: any): void {
+    h.enabled = !h.enabled;
+    this.applyHazard(h);
+  }
+
+  private applyHazard(h: any): void {
+    if (!this.map || !this.L) return;
+    if (h.enabled) {
+      if (this.hazardTiles[h.key]) return;
+      const attr = h.source === 'gsi'
+        ? '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>'
+        : '<a href="https://disaportal.gsi.go.jp/">ハザードマップポータル</a>';
+      this.hazardTiles[h.key] = h.urls.map((u: string) => this.L.tileLayer(u, {
+        pane: 'hazard', opacity: this.hazardOpacity, attribution: attr, maxZoom: 20,
+        minZoom: h.minZoom || 0, maxNativeZoom: h.maxNativeZoom,
+        // Uncovered areas 404 — draw nothing instead of a broken-image icon.
+        errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      }).addTo(this.map));
+    } else {
+      (this.hazardTiles[h.key] || []).forEach((l: any) => this.map.removeLayer(l));
+      delete this.hazardTiles[h.key];
+    }
+  }
+
+  setHazardOpacity(): void {
+    Object.values(this.hazardTiles).forEach(
+      layers => layers.forEach((l: any) => l.setOpacity(this.hazardOpacity)));
+  }
+
+  activeHazards(): any[] {
+    return this.hazardLayers.filter(h => h.enabled);
+  }
+
+  hasHazardLegend(kind: string): boolean {
+    return this.hazardLayers.some(h => h.enabled && h.legend === kind);
+  }
+
+  // Layers published only at high zoom disappear when zoomed out — say so.
+  hiddenHazards(): any[] {
+    return this.hazardLayers.filter(h => h.enabled && h.minZoom && this.mapZoom < h.minZoom);
+  }
+
+  // Legends with too many classes to keep permanently open (土地条件図's 21
+  // classes, 治水地形分類図's full legend sheet) start collapsed.
+  openLegends: Record<string, boolean> = {};
+  toggleLegend(key: string): void {
+    this.openLegends[key] = !this.openLegends[key];
+  }
+
+  clearHazards(): void {
+    this.hazardLayers.forEach(h => { h.enabled = false; this.applyHazard(h); });
+  }
+
+  // --- census choropleth ---
+
+  private statsOf(props: any): BlockStats | null {
+    return this.censusStats?.[props.KEY_CODE] ?? null;
+  }
+
+  /** Percentage of the summed `parts` out of `total`, or null if anything is withheld. */
+  private blockShare(props: any, total: keyof BlockStats, ...parts: (keyof BlockStats)[]): number | null {
+    const s = this.statsOf(props);
+    if (!s) return null;
+    const denom = s[total];
+    if (!denom) return null;
+    let sum = 0;
+    for (const part of parts) {
+      if (s[part] === null) return null;
+      sum += s[part]!;
+    }
+    return (sum / denom) * 100;
+  }
+
+  /**
+   * Age shares divide by the population of *known* age. Tokyo's 年齢不詳 count
+   * is large, so dividing by the headline population would understate every
+   * band by roughly three points.
+   */
+  private ageShare(props: any, ...bands: (keyof BlockStats)[]): number | null {
+    const s = this.statsOf(props);
+    if (!s) return null;
+    if (s.age_0_14 === null || s.age_15_64 === null || s.age_65 === null) return null;
+    const known = s.age_0_14 + s.age_15_64 + s.age_65;
+    if (!known) return null;
+    let sum = 0;
+    for (const band of bands) {
+      if (s[band] === null) return null;
+      sum += s[band]!;
+    }
+    return (sum / known) * 100;
+  }
+
+  censusGroups(): string[] {
+    return [...new Set(this.censusLayers.map(l => l.group))];
+  }
+
+  censusIn(group: string): CensusLayer[] {
+    return this.censusLayers.filter(l => l.group === group);
+  }
+
+  activeCensusLayer(): CensusLayer | null {
+    return this.censusLayers.find(l => l.key === this.activeCensus) || null;
+  }
+
+  formatCensus(layer: CensusLayer, v: number): string {
+    if (layer.unit === 'yen') return '¥' + Math.round(v).toLocaleString('en-US');
+    if (layer.unit === 'pct') return v.toFixed(1) + '%';
+    return Math.round(v).toLocaleString('en-US');
+  }
+
+  /** Legend rows, highest bucket first, skipping classes nothing falls into. */
+  censusLegendRows(layer: CensusLayer): { color: string; label: string }[] {
+    const palette = layer.palette || this.CENSUS_RAMP;
+    const rows: { color: string; label: string }[] = [];
+    for (let i = palette.length - 1; i >= 0; i--) {
+      if (layer.bucketCounts && !layer.bucketCounts[i]) continue;
+      const label =
+        i === 0 ? `< ${this.formatCensus(layer, layer.breaks[0])}`
+        : i === layer.breaks.length ? `${this.formatCensus(layer, layer.breaks[i - 1])}+`
+        : `${this.formatCensus(layer, layer.breaks[i - 1])} – ${this.formatCensus(layer, layer.breaks[i])}`;
+      rows.push({ color: palette[i], label });
+    }
+    if (layer.noDataCount) rows.push({ color: this.CENSUS_NO_DATA, label: 'withheld / no residents' });
+    return rows;
+  }
+
+  async toggleCensus(layer: CensusLayer): Promise<void> {
+    if (this.activeCensus === layer.key) { this.clearCensus(); return; }
+    this.activeCensus = layer.key;
+    this.censusMsg = '';
+
+    if (!this.censusGeo) {
+      // ~11 MB of boundaries + counts, so it is only fetched once the user asks
+      // for a census layer rather than on every visit to the Report tab.
+      this.censusLoading = true;
+      try {
+        const [geo, stats] = await Promise.all([
+          firstValueFrom(this.http.get<any[]>('plo.json')),
+          firstValueFrom(this.http.get<any>('chome-stats.json')),
+        ]);
+        this.censusGeo = geo;
+        this.censusStats = stats.blocks;
+        this.censusMeta = stats.meta;
+        this.computeCensusBreaks();
+      } catch {
+        this.censusLoading = false;
+        this.activeCensus = null;
+        this.censusMsg = 'could not load the census data (plo.json / chome-stats.json)';
+        return;
+      }
+      this.censusLoading = false;
+    }
+
+    this.renderCensus();
+  }
+
+  clearCensus(): void {
+    this.activeCensus = null;
+    if (this.censusLayer && this.map) this.map.removeLayer(this.censusLayer);
+    this.censusLayer = null;
+  }
+
+  setCensusOpacity(): void {
+    this.censusLayer?.setStyle((f: any) => this.censusStyle(f));
+  }
+
+  private computeCensusBreaks(): void {
+    const all = (this.censusGeo || []).map(f => f.properties);
+    for (const layer of this.censusLayers) {
+      const raw = all.map(p => layer.value(p));
+      const values = raw
+        .filter((v): v is number => v !== null && !isNaN(v))
+        .sort((a, b) => a - b);
+      if (!values.length) continue;
+
+      if (layer.mode === 'quantile') {
+        // Five cutoffs -> six equal-count buckets.
+        layer.breaks = [1, 2, 3, 4, 5].map(i => values[Math.floor((i / 6) * (values.length - 1))]);
+      }
+
+      const palette = layer.palette || this.CENSUS_RAMP;
+      const counts = new Array(palette.length).fill(0);
+      for (const v of values) counts[this.censusBucket(layer, v)]++;
+      layer.bucketCounts = counts;
+      layer.noDataCount = raw.length - values.length;
+    }
+  }
+
+  private censusBucket(layer: CensusLayer, value: number): number {
+    for (let i = 0; i < layer.breaks.length; i++) {
+      if (value <= layer.breaks[i]) return i;
+    }
+    return (layer.palette || this.CENSUS_RAMP).length - 1;
+  }
+
+  private censusStyle(feature: any): any {
+    const layer = this.activeCensusLayer();
+    if (!layer) return {};
+    const value = layer.value(feature.properties);
+    const palette = layer.palette || this.CENSUS_RAMP;
+    return {
+      fillColor: value === null || isNaN(value)
+        ? this.CENSUS_NO_DATA : palette[this.censusBucket(layer, value)],
+      fillOpacity: this.censusOpacity,
+      color: '#fff', weight: 0.5, opacity: 0.6,
+    };
+  }
+
+  private renderCensus(): void {
+    if (!this.map || !this.L || !this.censusGeo) return;
+    const layer = this.activeCensusLayer();
+    if (!layer) return;
+
+    if (this.censusLayer) {
+      // Same geometry, different colours — restyle rather than rebuild 3,039
+      // polygons every time the layer changes.
+      this.censusLayer.setStyle((f: any) => this.censusStyle(f));
+      this.censusLayer.eachLayer((l: any) => l.setTooltipContent(this.censusTooltip(l.feature.properties)));
+      return;
+    }
+
+    this.censusLayer = this.L.geoJSON(this.censusGeo, {
+      pane: 'census',
+      style: (f: any) => this.censusStyle(f),
+      onEachFeature: (feature: any, lyr: any) => {
+        lyr.bindTooltip(this.censusTooltip(feature.properties), { sticky: true, className: 'census-tip' });
+      },
+    }).addTo(this.map);
+  }
+
+  private censusTooltip(props: any): string {
+    const layer = this.activeCensusLayer();
+    if (!layer) return '';
+    const v = layer.value(props);
+    const shown = v === null || isNaN(v) ? '—' : this.formatCensus(layer, v);
+    return `<b>${props.S_NAME || ''}</b><br>${props.CITY_NAME || ''}` +
+           `<br><span class="census-tip-v">${shown}</span>` +
+           `<span class="census-tip-k"> ${layer.legendTitle}</span>`;
+  }
+
+  private renderPois(): void {
+    if (!this.map || this.poiLayer) return;   // POIs are static → add once
+    this.poiLayer = this.L.layerGroup().addTo(this.map);
+    for (const p of this.pois) {
+      this.L.marker([p.lat, p.lng], {
+        icon: this.L.divIcon({ className: 'poi-icon', html: p.icon, iconSize: [22, 22] }),
+        zIndexOffset: 1000, interactive: true,
+      }).bindTooltip(p.name, { permanent: true, direction: 'right', className: 'poi-label', offset: [12, 0] })
+        .addTo(this.poiLayer);
+    }
+  }
+
+  /** The single place the server-side cuts are assembled.
+   *
+   * Both tabs call it, so they cannot drift into answering different
+   * questions — which they did: the map sent neither the budget, the floor
+   * areas nor the rent ceiling, so it showed listings the table had already
+   * removed, and the two disagreed about how many listings even existed. */
+  private buildFilters(): Filters {
+    const f: Filters = {
+      // Type is cut in the browser, not here: a chip can only show how many
+      // listings it holds if the response still contains the other types.
+      categories: [],
+      wards: this.shared.ward ? [this.shared.ward] : [],
+      eras: [...this.eras],
+      verdicts: [...this.shared.verdicts],
+      // Both tabs pull the same set; the sliders then cut it in the browser,
+      // so a table row and a map dot always mean the same thing.
+      limit: this.FETCH_LIMIT,
+    };
+    if (this.shared.dateFrom) f.date_from = this.shared.dateFrom;
+    if (this.shared.dateTo) f.date_to = this.shared.dateTo;
+    return f;
+  }
+
+  /** One fetch, two renderings.
+   *
+   * The tabs are the same listings drawn differently — a table and a set of
+   * dots — so they read one response rather than querying separately. Two
+   * requests could only ever agree by coincidence, and they did not: the map
+   * used to hold listings the table had already cut. */
+  load(): void {
+    this.lastLoad = Date.now();
+    this.api.search(this.buildFilters()).subscribe({
+      next: res => {
+        this.searched = true;
+        this.searchMeta = 'crawled data';
+        this.searchAll = res.rows;
+        // Same objects, not a copy: a verdict saved from the table is the same
+        // row the map redraws.
+        this.mapAll = res.rows as unknown as MapPoint[];
+        this.mapLoaded = true;
+        this.rebuildBounds();
+        if (this.pendingRanges) this.applyPendingRanges(); else this.applyRanges();
+      },
+      error: () => {},
+    });
+  }
+
+  // Both tabs' refresh buttons, and every filter change, land in the same place.
+  runSearch(): void { this.load(); }
+
+  // --- export search results for Google My Maps -----------------------------
+  // Google Maps proper can't bulk-import points; My Maps (mymaps.google.com)
+  // imports CSV and KML. Both export exactly the rows the Search tab is showing.
+  // KML needs coordinates, so it covers the detail-enriched subset only; CSV
+  // takes every row and leans on `address` for My Maps to geocode.
+  exportMsg = '';
+
+  private download(filename: string, mime: string, text: string): void {
+    const url = URL.createObjectURL(new Blob([text], { type: mime }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Filename stem describing the current search filters (kanji wards kept). */
+  private exportStem(): string {
+    return ['listings', this.shared.categories.join('-'),
+            this.shared.rentKinds.join('-'), this.shared.ward,
+            this.shared.dateTo || 'latest']
+      .filter(Boolean).join('-').replace(/[\\/:*?"<>|\s]+/g, '_');
+  }
+
+  /** How many search rows carry coordinates — i.e. how many KML can plot. */
+  geocodedCount(): number {
+    return this.searchRows.filter(r => r.lat != null && r.lng != null).length;
+  }
+
+  private ppm2Num(r: Listing): number | null {
+    const a = this.area(r);
+    return (r.price_yen && a) ? Math.round(r.price_yen / a) : null;
+  }
+
+  private csvName(r: Listing): string {
+    return `${r.price_raw || this.fmtYen(r.price_yen)}${r.layout ? ' ' + r.layout : ''}`;
+  }
+
+  exportCsv(): void {
+    const rows = this.searchRows;
+    if (!rows.length) { this.exportMsg = 'nothing to export — run a search first'; return; }
+    const cols: [string, (r: Listing) => any][] = [
+      ['name', r => this.csvName(r)],
+      ['lat', r => r.lat],
+      ['lng', r => r.lng],
+      ['address', r => r.address],
+      ['ward', r => r.ward],
+      ['category', r => r.category],
+      ['price_yen', r => r.price_yen],
+      ['price', r => r.price_raw || this.fmtYen(r.price_yen)],
+      ['layout', r => r.layout],
+      ['building_m2', r => r.building_m2],
+      ['land_m2', r => r.land_m2],
+      ['yen_per_m2', r => this.ppm2Num(r)],
+      ['walk_min', r => r.nearest_walk_min],
+      ['age_years', r => r.age_years],
+      ['station', r => r.station_raw],
+      ['km_to_ref', r => (r.lat != null && r.lng != null)
+        ? this.distanceToRef(r.lat, r.lng).toFixed(2) : null],
+      ['title', r => r.title],
+      ['url', r => r.url],
+      ['route_url', r => (r.lat != null && r.lng != null) ? this.routeUrl(r) : null],
+    ];
+    // RFC 4180 quoting; My Maps reads UTF-8 without a BOM.
+    const q = (v: any) => {
+      const s = v == null ? '' : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [cols.map(c => c[0]).join(',')]
+      .concat(rows.map(r => cols.map(c => q(c[1](r))).join(',')))
+      .join('\r\n');
+    this.download(`${this.exportStem()}.csv`, 'text/csv;charset=utf-8', csv);
+    const geo = this.geocodedCount();
+    this.exportMsg = `${rows.length} row(s) → CSV. In My Maps: Import, then pick ` +
+      (geo === rows.length ? 'lat/lng as the position columns' :
+        `lat/lng as the position columns (${rows.length - geo} row(s) have none — ` +
+        'use address instead to let Google geocode them)') + ' and name as the title.';
+  }
+
+  /** #rrggbb → KML's aabbggrr. */
+  private kmlColor(hex: string): string {
+    const h = hex.replace('#', '');
+    return 'ff' + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2);
+  }
+
+  exportKml(): void {
+    const rows = this.searchRows.filter(r => r.lat != null && r.lng != null);
+    if (!rows.length) {
+      this.exportMsg = this.searchRows.length
+        ? 'no coordinates in these results — KML needs them. Fetch 📍 details on the ' +
+          'rows you want (or export CSV and let My Maps geocode the addresses).'
+        : 'nothing to export — run a search first';
+      return;
+    }
+    const x = (s: any) => this.esc(s).replace(/'/g, '&apos;');
+    // CDATA can't contain its own terminator; nothing else needs escaping there.
+    const cdata = (s: string) => `<![CDATA[${s.replace(/]]>/g, ']]&gt;')}]]>`;
+    const ref = this.refPoi();
+
+    // One folder per category: My Maps turns each into its own layer, which also
+    // keeps big exports under its 2,000-features-per-layer ceiling.
+    const byCat = new Map<string, Listing[]>();
+    for (const r of rows) (byCat.get(r.category) || byCat.set(r.category, []).get(r.category)!).push(r);
+
+    const styles = this.catColors.map(c =>
+      `<Style id="cat-${x(c.key)}"><IconStyle><color>${this.kmlColor(c.color)}</color>` +
+      `<scale>1.1</scale><Icon><href>https://maps.google.com/mapfiles/kml/shapes/placemark_circle.png` +
+      `</href></Icon></IconStyle></Style>`).join('\n');
+
+    const placemark = (r: Listing) => {
+      const ppm2 = this.ppm2Num(r);
+      const facts: [string, any][] = [
+        ['price', r.price_raw || this.fmtYen(r.price_yen)],
+        ['layout', r.layout], ['building m²', r.building_m2], ['land m²', r.land_m2],
+        ['¥/m²', ppm2 ? ppm2.toLocaleString() : null],
+        ['walk to station', r.nearest_walk_min != null ? `${r.nearest_walk_min} min` : null],
+        ['age', r.age_years != null ? `${r.age_years} yr` : null],
+        ['km to ' + ref.name, this.distanceToRef(r.lat!, r.lng!).toFixed(1)],
+        ['ward', r.ward], ['address', r.address],
+      ];
+      const html =
+        facts.filter(e => e[1] != null && e[1] !== '')
+          .map(e => `<b>${this.esc(e[0])}:</b> ${this.esc(e[1])}<br>`).join('') +
+        `<a href="${this.esc(r.url)}">open on SUUMO</a> · ` +
+        `<a href="${this.esc(this.routeUrl(r))}">route to ${this.esc(ref.name)}</a>`;
+      return `<Placemark>
+  <name>${x(this.csvName(r))}</name>
+  <styleUrl>#cat-${x(r.category)}</styleUrl>
+  <description>${cdata(html)}</description>
+  <Point><coordinates>${r.lng},${r.lat},0</coordinates></Point>
+</Placemark>`;
+    };
+
+    const folders = [...byCat.entries()].map(([cat, pts]) => {
+      const label = this.catColors.find(c => c.key === cat)?.label || cat;
+      return `<Folder><name>${x(label)} (${pts.length})</name>\n${pts.map(placemark).join('\n')}\n</Folder>`;
+    }).join('\n');
+
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>${x(this.exportStem())}</name>
+<description>${cdata(`${rows.length} SUUMO listings`)}</description>
+${styles}
+<Folder><name>${x(ref.icon + ' ' + ref.name)}</name>
+  <Placemark><name>${x(ref.name)}</name>
+    <Point><coordinates>${ref.lng},${ref.lat},0</coordinates></Point></Placemark>
+</Folder>
+${folders}
+</Document>
+</kml>`;
+    this.download(`${this.exportStem()}.kml`, 'application/vnd.google-earth.kml+xml', kml);
+    const skipped = this.searchRows.length - rows.length;
+    const over = [...byCat.values()].filter(v => v.length > 2000).length;
+    this.exportMsg = `${rows.length} listing(s) in ${byCat.size} layer(s) → KML` +
+      (skipped ? `, ${skipped} skipped for having no coordinates` : '') + '. ' +
+      (over ? `⚠️ ${over} category exceeds My Maps' 2,000-per-layer limit and will be truncated on import. ` : '') +
+      'Import it into My Maps and the colours and popups come across as-is.';
+  }
+  refPoi(): { name: string; lat: number; lng: number; icon: string } {
+    return this.pois.find(p => p.name === this.refPoiName) || this.pois[0];
+  }
+
+  // Straight-line (haversine) km from a point to the current reference landmark.
+  // Approximate by design — most SUUMO coords are only chome-accurate.
+  distanceToRef(lat: number, lng: number): number {
+    const ref = this.refPoi();
+    const R = 6371, rad = (d: number) => d * Math.PI / 180;
+    const dLat = rad(ref.lat - lat), dLng = rad(ref.lng - lng);
+    const s = Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(lat)) * Math.cos(rad(ref.lat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+
+  renderMarkers(): void {
+    if (!this.map || !this.markerLayer) return;
+    this.markerLayer.clearLayers();
+    // collapseSpider, not just resetting the flag: the fan-out lives in its own
+    // layer, so clearing markerLayer left stale copies on the map — which is
+    // why a listing graded from a spidered cluster kept its old colour.
+    this.collapseSpider();
+
+    // Agents routinely list the same property, so a single set of coordinates
+    // can carry half a dozen listings — drawn naively they stack and all but
+    // the top one become unclickable. Group by exact position instead.
+    const groups = new Map<string, MapPoint[]>();
+    for (const p of this.mapPoints) {
+      if (p.lat == null || p.lng == null) continue;
+      const key = `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+      (groups.get(key) || groups.set(key, []).get(key)!).push(p);
+    }
+
+    for (const points of groups.values()) {
+      if (points.length === 1) {
+        this.listingMarker(points[0]).addTo(this.markerLayer);
+      } else {
+        this.clusterMarker(points).addTo(this.markerLayer);
+      }
+    }
+    // Stays centered on the Lycée (set at map init) rather than fitting to all listings.
+  }
+
+  /** One listing: a coloured dot with its detail popup. */
+  /** How a graded pin looks. Red read as an alert rather than a judgement, so
+   * a rejected listing now fades out instead of shouting, and the two you care
+   * about are marked by a ring rather than by hue alone. */
+  /** What a group has decided about a listing, as one word.
+   *
+   *   agreed    two or more of you looked and nobody said no — the shortlist
+   *   conflict  one said yes, another said no. The one case that must not be
+   *             greyed out: hiding it would resolve the disagreement by
+   *             default, in favour of whoever happened to say no
+   *   awaiting  someone judged it, you have not — your call settles it
+   *   agreed-no everyone who looked said no; twice as dead, so twice as faint
+   */
+  groupMark(p: any): 'agreed' | 'conflict' | 'awaiting' | 'agreed-no' | null {
+    const revs = (p?.reviews || []).filter((r: any) => r.verdict);
+    if (revs.length < 2 && !revs.some((r: any) => !r.mine)) return null;
+    const good = revs.filter((r: any) => r.verdict === 'good').length;
+    const bad = revs.filter((r: any) => r.verdict === 'bad').length;
+    if (good && bad) return 'conflict';
+    // Agreement needs someone to have actually said yes: two "maybe"s are two
+    // people withholding judgement, which is not a shortlist.
+    if (revs.length >= 2 && !bad && good) return 'agreed';
+    if (revs.length >= 2 && !good && bad === revs.length) return 'agreed-no';
+    if (!p.verdict && revs.some((r: any) => !r.mine)) return 'awaiting';
+    return null;
+  }
+
+  private markerStyle(p: MapPoint, radius: number): any {
+    // Fill is the type, always. The ring is the opinion. Nothing here touches
+    // fillColor: painting a verdict into it meant a 賃貸 you had agreed on was
+    // drawn in 土地's gold.
+    const base = { pane: 'listings', radius, opacity: 1, fillOpacity: 1,
+                   weight: 2.5, color: '#ffffff', className: 'listing-dot',
+                   fillColor: this.pointColor(p) };
+
+    // The group's view comes first, because it says more than yours alone.
+    const mark = this.groupMark(p);
+    if (mark === 'conflict') {
+      // Deliberately loud. One of you wants this house and the other does not,
+      // which is a conversation to have, not a dot to lose.
+      return { ...base, radius: radius + 2, color: this.RING.conflict, weight: 4,
+               className: 'listing-dot dot-conflict' };
+    }
+    if (mark === 'agreed') {
+      return { ...base, radius: radius + 3, color: this.RING.agreed, weight: 4,
+               className: 'listing-dot dot-agreed' };
+    }
+    if (mark === 'awaiting') {
+      return { ...base, radius: radius + 1, color: this.RING.awaiting, weight: 3,
+               className: 'listing-dot dot-awaiting' };
+    }
+    if (mark === 'agreed-no') {
+      return { ...base, radius: Math.max(3, radius - 3), fillOpacity: 0.25,
+               opacity: 0.5, color: this.RING.bad, weight: 1,
+               className: 'listing-dot dot-bad' };
+    }
+
+    // Your own verdict, when the group has not spoken. A re-post inherits it,
+    // so the same house looks the same however many times it is listed.
+    const mine = p.verdict || (p as any)['verdict_via']?.verdict;
+    if (mine === 'bad') {
+      // Faded and shrunk: still there so you know it was judged, but it stops
+      // competing for attention. It keeps its type colour, dimmed, so you can
+      // still see what it was without opening it.
+      return { ...base, radius: Math.max(4, radius - 2), fillOpacity: 0.35,
+               opacity: 0.6, color: this.RING.bad, weight: 1.5,
+               className: 'listing-dot dot-bad' };
+    }
+    if (mine === 'good') {
+      return { ...base, radius: radius + 1, color: this.RING.good, weight: 3.5,
+               className: 'listing-dot dot-good' };
+    }
+    if (mine === 'maybe') {
+      return { ...base, color: this.RING.maybe, weight: 3.5,
+               className: 'listing-dot dot-maybe' };
+    }
+    return base;
+  }
+
+  private listingMarker(p: MapPoint, radius = 7): any {
+    const marker = this.L.circleMarker([p.lat, p.lng],
+      this.markerStyle(p, radius)).bindPopup(this.popupHtml(p));
+    // Wire the popup's "See all details" button back into Angular.
+    marker.on('popupopen', (e: any) => {
+      const root = e.popup.getElement();
+      const btn = root?.querySelector('.allbtn');
+      if (btn) btn.onclick = () => this.zone.run(() => this.openDetails(p));
+      const rev = root?.querySelector('.revbtn');
+      if (rev) rev.onclick = () => this.zone.run(() => {
+        this.reviewQueue = [p]; this.reviewIndex = 0;
+        this.reviewNote = p.review_note || '';
+        this.reviewTagInput = (p.review_tags || []).join(', ');
+        this.reviewOpen = true;
+        this.pushOverlay();          // so back closes it, like every other overlay
+        this.map?.closePopup();
+        this.loadPhotos();
+      });
+      const cmp = root?.querySelector('.cmpbtn');
+      if (cmp) cmp.onclick = () => this.zone.run(() => {
+        this.toggleCompare(p);
+        this.map?.closePopup();
+      });
+    });
+    return marker;
+  }
+
+  /**
+   * Several listings at one position: a badge showing how many, which fans them
+   * out into a ring on click ("spiderfy") so each becomes individually
+   * clickable. Clicking the badge again — or opening another one — collapses it.
+   */
+  private clusterMarker(points: MapPoint[]): any {
+    const [lat, lng] = [points[0].lat, points[0].lng];
+    // Mixed groups read as grey; a uniform one keeps its colour — under
+    // whichever dimension the dots are currently coloured by.
+    // Same rule as a single dot: the fill says what these are, the ring says
+    // what you make of them. A cluster that painted itself gold when it held
+    // anything you liked was saying "opinion" in the channel that everywhere
+    // else says "type" — and gold is 土地, so a group of 賃貸 read as plots.
+    const shades = new Set(points.map(p => this.pointColor(p)));
+    const color = shades.size === 1 ? this.pointColor(points[0]) : '#6b7280';
+
+    const marks = points.map(p => this.groupMark(p));
+    const verdicts = points.map(p => p.verdict || (p as any)['verdict_via']?.verdict);
+    let ring = 'rgba(255,255,255,0.9)';
+    let dim = '';
+    if (marks.includes('conflict')) ring = this.RING.conflict;
+    else if (marks.includes('agreed')) ring = this.RING.agreed;
+    else if (marks.includes('awaiting')) ring = this.RING.awaiting;
+    else if (verdicts.includes('good')) ring = this.RING.good;
+    else if (verdicts.includes('maybe')) ring = this.RING.maybe;
+    // Everything here has been rejected: fade it, keeping the type colour.
+    if (verdicts.length && verdicts.every(v => v === 'bad')) {
+      ring = this.RING.bad;
+      dim = 'opacity:0.45;';
+    }
+
+    const badge = this.L.marker([lat, lng], {
+      pane: 'listings',
+      icon: this.L.divIcon({
+        className: 'cluster-dot',
+        html: `<span style="background:${color};border-color:${ring};${dim}">`
+            + `${points.length}</span>`,
+        iconSize: [26, 26], iconAnchor: [13, 13],
+      }),
+    });
+    badge.on('click', () => this.zone.run(() => this.toggleSpider(points)));
+    return badge;
+  }
+
+  private toggleSpider(points: MapPoint[]): void {
+    const key = `${points[0].lat},${points[0].lng}`;
+    // Note the state has to be read *before* collapsing, which resets it —
+    // otherwise a second click on the same badge reopens instead of closing.
+    const wasOpen = this.spiderfied === key;
+    this.collapseSpider();
+    if (wasOpen) return;
+
+    this.spiderfied = key;
+    this.spiderLayer = this.L.layerGroup().addTo(this.map);
+
+    // Radius in pixels, converted to a lat/lng offset at the current zoom so
+    // the ring keeps its on-screen size however far you are zoomed in.
+    const centre = this.map.latLngToLayerPoint([points[0].lat, points[0].lng]);
+    const radius = 18 + points.length * 4;
+
+    points.forEach((p, i) => {
+      const angle = (2 * Math.PI * i) / points.length - Math.PI / 2;
+      const offset = this.L.point(centre.x + radius * Math.cos(angle),
+                                  centre.y + radius * Math.sin(angle));
+      const latlng = this.map.layerPointToLatLng(offset);
+
+      this.L.polyline([[p.lat, p.lng], latlng], {
+        pane: 'listings', color: '#94a3b8', weight: 1.5, opacity: 0.8,
+      }).addTo(this.spiderLayer);
+
+      const leg = this.listingMarker({ ...p, lat: latlng.lat, lng: latlng.lng }, 8);
+      leg.addTo(this.spiderLayer);
+    });
+  }
+
+  private collapseSpider(): void {
+    if (this.spiderLayer) {
+      this.map.removeLayer(this.spiderLayer);
+      this.spiderLayer = null;
+    }
+    this.spiderfied = null;
+  }
+
+  /** 中古一戸建て rather than used_house — the diff tables are read at a glance. */
+  catLabel(category: string): string {
+    return (this.config?.categories || []).find(c => c.key === category)?.label
+        || this.catColors.find(c => c.key === category)?.label
+        || category;
+  }
+
+  catColor(category: string): string {
+    return this.catColors.find(c => c.key === category)?.color || '#6b7280';
+  }
+
+  /** Dot colour under the active `colorBy` mode. Grey = unknown era. */
+  /** The fill says what a listing *is* — nothing else.
+   *
+   * It used to be overloaded: a verdict replaced the category colour, and the
+   * group states filled gold, which is the colour of 土地 — so a 賃貸 you
+   * disagreed about was drawn as a plot. One channel, one meaning:
+   *
+   *     fill    what it is        category, or 耐震基準 when colouring by era
+   *     ring    what you think    your verdict, or the group's
+   *     size    how much it wants your attention
+   */
+  pointColor(p: MapPoint): string {
+    if (this.colorBy === 'era') return p.era ? ERA_META[p.era].color : '#9ca3af';
+    return this.catColor(p.category);
+  }
+
+  /** Ring colours. The same three verdict colours the chips and pills use, so
+   * green means good everywhere, plus two states only a group can be in. */
+  private readonly RING = {
+    good: VERDICT_META.good.color,
+    maybe: VERDICT_META.maybe.color,
+    bad: '#d7dce2',
+    agreed: VERDICT_META.good.color,
+    conflict: '#db2777',      // in neither the category nor the verdict palette
+    awaiting: '#7c3aed',
+  };
+
+  // --- compare -------------------------------------------------------------
+
+  isCompared(id: string): boolean {
+    return this.compareSel.some(s => s.property_id === id);
+  }
+
+  /** A comparison is being assembled — the map turns into a picker. */
+  /** Explicit pick mode: the table shows checkboxes and rows stop opening the
+   * sheet, so choosing four listings is four clicks rather than four round
+   * trips through a per-row button. Having picks also counts, so the map popup
+   * keeps behaving as a picker while a comparison is being assembled. */
+  comparePick = false;
+  compareMode(): boolean {
+    return this.comparePick || this.compareSel.length > 0;
+  }
+
+  toggleComparePick(): void {
+    this.comparePick = !this.comparePick;
+    if (!this.comparePick && !this.compareSel.length) this.clearCompare();
+  }
+
+  /** Add/remove a listing from the tray. Picking a third replaces the oldest,
+   * which beats making the user hunt for the deselect. */
+  toggleCompare(r: { property_id: string; title?: string | null; category?: string;
+                     market?: string; price_raw?: string | null }): void {
+    if (this.isCompared(r.property_id)) {
+      this.compareSel = this.compareSel.filter(s => s.property_id !== r.property_id);
+    } else {
+      const slot = {
+        property_id: r.property_id,
+        label: (r.title || r.category || r.property_id).slice(0, 40),
+        market: r.market || '',
+        category: r.category || '',
+        price_raw: r.price_raw ?? null,
+      };
+      this.compareSel = [...this.compareSel, slot].slice(-this.COMPARE_MAX);
+    }
+    // Deliberately does NOT clear compareResult. Ticking a row is how you
+    // choose what to chart, and on the Compare tab the rows are the priced
+    // shortlist — throwing the prices away because you ticked one of them made
+    // the table vanish the moment you touched it.
+    this.compareError = '';
+    this.landSizeConfirmed = false;
+    if (this.map) this.renderMarkers();   // refresh the ✓ state in open popups
+  }
+
+  /** True while a picked plot still needs its build size confirmed. */
+  hasLandPick(): boolean {
+    return this.compareSel.some(s => s.category === 'land');
+  }
+
+  compareReady(): boolean {
+    return this.compareSel.length >= 2 && (!this.hasLandPick() || this.landSizeConfirmed);
+  }
+
+  confirmLandSize(): void {
+    this.landSizeConfirmed = true;
+    this.runCompare();
+  }
+
+  /** Years offered in the sell-at dropdown. */
+  sellYears(): number[] {
+    const n = this.compareResult?.options?.[0]?.series?.length ?? 0;
+    return Array.from({ length: Math.max(0, n - 1) }, (_, k) => k + 1);
+  }
+
+  /** The exit year used for option `i`: the forced one, else its own peak. */
+  exitYear(i: number): number {
+    if (this.compareSellYear != null) return this.compareSellYear;
+    const d = this.compareResult?.verdict?.irr_vs_anchor?.[i];
+    return d?.peak_year ?? (this.compareResult?.assumptions?.simulation_years ?? 0);
+  }
+
+  /** IRR / NPV against the anchor at that option's exit year. */
+  atExit(i: number): { irr: number | null; npv: number } | null {
+    const d = this.compareResult?.verdict?.irr_vs_anchor?.[i];
+    if (!d) return null;
+    const y = this.exitYear(i);
+    return d.series.find(p => p.year === y) ?? null;
+  }
+
+  /** Recurring monthly cash, and how it compares with the anchor's. */
+  monthlyAt(i: number): { own: number; anchor: number; delta: number } | null {
+    const res = this.compareResult;
+    if (!res) return null;
+    const a = res.verdict.anchor_index;
+    // Year 1 is the first full year on the steady footing (year 0 carries the
+    // move-in / purchase one-offs, reported separately).
+    const y = Math.min(1, res.options[i].monthly_costs.length - 1);
+    const own = res.options[i].monthly_costs[y];
+    const anchor = res.options[a].monthly_costs[y];
+    return { own, anchor, delta: own - anchor };
+  }
+
+  equityAt(i: number): number {
+    const o = this.compareResult?.options?.[i];
+    return o ? (o.exit_values[this.exitYear(i)] ?? 0) : 0;
+  }
+
+  setAnchor(i: number | null): void {
+    // The tray hands us a position in the current result; store the listing it
+    // refers to, so it still means that listing after the next run.
+    this.compareAnchorId = (i == null) ? null
+      : (this.compareResult?.options?.[i]?.property_id ?? null);
+    this.runCompare();
+  }
+
+  clearCompare(): void {
+    this.compareSel = [];
+    this.compareAnchorId = null;
+    this.landSizeConfirmed = false;
+    this.compareResult = null;
+    this.compareOpen = false;
+    if (this.map) this.renderMarkers();
+  }
+
+  /** Price the whole shortlist at once.
+   *
+   * The tray compares a handful because its charts stop being readable past
+   * that; a table does not care, and "of everything we said yes to, which is
+   * the best deal" is the question the shortlist exists to ask. Opens nothing —
+   * the answer belongs on the tab you are already looking at. */
+  runShortlist(): void {
+    const ids = this.shortlist().map(r => r.property_id).slice(0, 40);
+    if (ids.length < 2) {
+      this.compareError = 'Mark at least two listings ♥︎ — there is nothing to compare yet.';
+      return;
+    }
+    // Deliberately not gated on confirming the build assumption. The tray asks
+    // because you picked one specific plot; here the plots are whatever the
+    // group liked, and refusing to run left the button doing nothing with no
+    // way to say yes. The assumption is stated above the table and re-prices
+    // when changed.
+    this.compareLoading = true;
+    this.compareError = '';
+    // If the chosen baseline is not among the listings being compared, say so
+    // rather than quietly measuring from something else.
+    if (this.compareAnchorId && !ids.includes(this.compareAnchorId)) {
+      this.compareAnchorId = null;
+      this.compareError = 'The baseline you chose is no longer in this list, so '
+                        + 'everything is measured from the least-capital option again.';
+    }
+    this.api.compare(ids, this.compareAssumptions,
+                     this.shared.dateTo || null, this.anchorIndexIn(ids)).subscribe({
+      next: res => {
+        this.compareLoading = false;
+        if (res.error) { this.compareError = res.error; this.compareResult = null; }
+        else { this.compareResult = res; this.resultSeq++; }
+      },
+      error: err => {
+        this.compareLoading = false;
+        this.compareError = `Comparison failed: ${err.message || err.status || 'unknown error'}`;
+      },
+    });
+  }
+
+  /** Options in the model's own ranking, cheapest first, with the numbers a
+   * table can show side by side. */
+  rankedOptions(): { o: CompareOption; rank: number; vsBest: number;
+                     irr: number | null; sellYear: number | null }[] {
+    const res = this.compareResult;
+    if (!res) return [];
+    const order = res.verdict?.ranking?.length
+      ? res.verdict.ranking
+      : res.options.map((_, i) => i).sort((a, b) => res.options[a].pv_cost - res.options[b].pv_cost);
+    // Measured from the baseline, not from the cheapest row. Measuring from
+    // the cheapest made every figure positive by construction — nothing can be
+    // cheaper than the cheapest — so a column headed "vs baseline" could never
+    // show a saving, which is half of what it is for.
+    const anchorIdx = res.verdict?.anchor_index ?? order[0];
+    const base = res.options[anchorIdx]?.pv_cost ?? 0;
+    // IRR against the anchor — the cheapest option on the list — at the same
+    // horizon the ranking uses. It used to come from buy_vs_rent_by_option,
+    // which measures against the *generic rent baseline* rather than against
+    // anything in the table, so a house could show 14% while ranking below a
+    // rental that cost less. Two columns answering different questions read as
+    // a contradiction; on one basis, an IRR above the hurdle and a better PV
+    // are the same statement.
+    const anchor = res.verdict?.anchor_index;
+    return order.map((idx, n) => {
+      const vs: any = (res.verdict as any)?.irr_vs_anchor?.[idx];
+      const atHorizon = vs?.irr_at_horizon !== undefined
+        ? { irr: vs.irr_at_horizon }
+        : (vs?.series?.length ? vs.series[vs.series.length - 1] : null);
+      return {
+        o: res.options[idx],
+        rank: n + 1,
+        // pv_cost is a cost, so it is negative and *less* negative is cheaper —
+        // subtracting the other way round put a minus in front of every option
+        // that is worse. Quoted against the cheapest, so the column reads
+        // "what this one costs you extra" rather than a present value nobody
+        // can size on its own.
+        // Positive means money in your pocket: this option saves that much
+        // against the baseline over the horizon. Negative means it costs that
+        // much more. The other way round — positive for "extra cost" — reads
+        // backwards next to a green row.
+        vsBest: res.options[idx].pv_cost - base,
+        // An IRR only means "return" when the stream invests: money out first,
+        // money back later. The model marks the shape; anything else is a
+        // borrowing rate and is shown as a dash rather than a number that
+        // reads fine and is wrong.
+        irr: (idx === anchor || vs?.shape !== 'investing') ? null : (atHorizon?.irr ?? null),
+        isAnchor: idx === anchor,
+        // peak_year — not peak_irr_year, which is nothing and left the column
+        // empty on every row.
+        sellYear: (idx === anchor || vs?.shape !== 'investing') ? null : (vs?.peak_year ?? null),
+      };
+    });
+  }
+
+  /** The shortlist and its prices as one list.
+   *
+   * They were two tables listing the same houses — one to look at, one to read
+   * the numbers off — which means finding the same row twice. Priced order when
+   * there is a price, shortlist order before that, and the financial columns
+   * simply empty until the model has run. */
+  // Rebuilt only when something it depends on changes.
+  //
+  // The template iterates this, and returning a fresh array on every
+  // change-detection pass makes Angular destroy and recreate every row —
+  // constantly, since ngDoCheck and each pointer event trigger a pass. A click
+  // then lands on a node that has already been replaced, which is why rows
+  // stopped opening and a long press never completed. Same objects out for the
+  // same inputs, plus trackBy in the template, and the rows stay put.
+  private rowsCache: { key: string; rows: any[] } | null = null;
+  /** Bumped whenever a new set of prices arrives. */
+  private resultSeq = 0;
+
+  shortlistRows(): any[] {
+    const short = this.shortlist();
+    // resultSeq, not the shape of the result: changing an assumption re-prices
+    // the same listings in the same order, so a key built from counts and
+    // indexes is identical afterwards and the table kept showing the old
+    // numbers. Raising the build cost by ¥150k/m² moves a plot's present value
+    // by ¥26M and nothing appeared to happen.
+    const key = [this.resultSeq, this.agreedOnly, short.length,
+                 short.map(r => r.property_id + ':' + (r['verdict'] || '')).join(',')].join('|');
+    if (this.rowsCache?.key === key) return this.rowsCache.rows;
+    const rows = this.buildShortlistRows(short);
+    this.rowsCache = { key, rows };
+    return rows;
+  }
+
+  trackRow = (_: number, x: any) => x.r?.property_id ?? _;
+
+  private buildShortlistRows(shortlist: any[]): any[] {
+    const ranked = this.rankedOptions();
+    if (!ranked.length) {
+      return shortlist.map(r => ({ r, rank: null, o: null,
+                                   vsBest: null, irr: null, sellYear: null }));
+    }
+    // Look the listing up in everything loaded, not just the filtered
+    // shortlist. A CompareOption carries prices and nothing else — no reviews,
+    // no notes, no photos, no hazard — so falling back to it hands the detail
+    // sheet a stripped object and the sheet quietly renders half of itself.
+    // The lookup missed whenever the shortlist moved on from what was priced:
+    // a verdict changed, "agreed only" toggled, a filter narrowed.
+    const byId = new Map<string, any>(this.searchAll.map(r => [r.property_id, r]));
+    for (const r of shortlist) byId.set(r.property_id, r);
+    const rows: any[] = ranked.map(x => ({ ...x, r: byId.get(x.o.property_id) ?? x.o }));
+    // Anything the model could not price — beyond the 24 it takes at a time —
+    // still belongs on the list, at the end, rather than disappearing because
+    // it could not be ranked.
+    const priced = new Set(ranked.map(x => x.o.property_id));
+    for (const r of shortlist) {
+      if (!priced.has(r.property_id)) {
+        rows.push({ r, rank: null, o: null, vsBest: null, irr: null, sellYear: null });
+      }
+    }
+    return rows;
+  }
+
+  runCompare(): void {
+    if (this.compareSel.length < 2) return;
+    if (this.hasLandPick() && !this.landSizeConfirmed) return;
+    this.compareOpen = true;
+    this.compareLoading = true;
+    this.compareError = '';
+    const trayIds = this.compareSel.map(s => s.property_id);
+    this.api.compare(trayIds, this.compareAssumptions,
+                     this.shared.dateTo || null, this.anchorIndexIn(trayIds)).subscribe({
+      next: res => {
+        this.compareLoading = false;
+        if (res.error) { this.compareError = res.error; this.compareResult = null; }
+        else { this.compareResult = res; }
+        this.resultSeq++;
+      },
+      error: err => {
+        this.compareLoading = false;
+        this.compareError = `Comparison failed: ${err.message || err.status || 'unknown error'}`;
+      },
+    });
+  }
+
+  /** The two PV-cost curves as SVG polyline points, plus where they cross. */
+  compareChart(): {
+    lines: { pts: string; color: string; label: string }[];
+    cross: { x: number; y: number; year: number } | null;
+    yTicks: { y: number; label: string }[];
+    xTicks: { x: number; label: string }[];
+    w: number; h: number;
+  } | null {
+    const opts = this.compareResult?.options;
+    if (!opts || opts.length < 2) return null;
+    const w = 560, h = 240, padL = 62, padB = 26, padT = 10, padR = 10;
+    const years = Math.max(...opts.map(o => o.series.length - 1));
+    const vals = opts.flatMap(o => o.series.map(p => p.pv_cost));
+    const lo = Math.min(...vals, 0), hi = Math.max(...vals, 0);
+    const span = (hi - lo) || 1;
+    const X = (t: number) => padL + (t / years) * (w - padL - padR);
+    const Y = (v: number) => padT + (1 - (v - lo) / span) * (h - padT - padB);
+
+    const lines = opts.map((o, i) => ({
+      pts: o.series.map(p => `${X(p.year).toFixed(1)},${Y(p.pv_cost).toFixed(1)}`).join(' '),
+      color: this.COMPARE_COLORS[i % this.COMPARE_COLORS.length],
+      label: this.compareShort(o),
+    }));
+
+    // Crossover: the first year the option that is currently cheapest changes
+    // hands — the answer to "how long do I have to stay for this to pay off".
+    // With more than two options that is a lead change anywhere in the field,
+    // which is still the same question.
+    let cross: { x: number; y: number; year: number } | null = null;
+    const leaderAt = (t: number) => {
+      let best = 0;
+      for (let i = 1; i < opts.length; i++) {
+        if ((opts[i].series[t]?.pv_cost ?? -Infinity) > (opts[best].series[t]?.pv_cost ?? -Infinity)) best = i;
+      }
+      return best;
+    };
+    const len = Math.min(...opts.map(o => o.series.length));
+    for (let t = 1; t < len; t++) {
+      if (leaderAt(t) !== leaderAt(t - 1)) {
+        cross = { x: X(t), y: Y(opts[leaderAt(t)].series[t].pv_cost), year: t };
+        break;
+      }
+    }
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => {
+      const v = lo + f * span;
+      return { y: Y(v), label: this.fmtYen(Math.round(v)) };
+    });
+    const step = years <= 10 ? 2 : years <= 25 ? 5 : 10;
+    const xTicks = [];
+    for (let t = 0; t <= years; t += step) xTicks.push({ x: X(t), label: String(t) });
+    return { lines, cross, yTicks, xTicks, w, h };
+  }
+
+  /** Maintenance is charged on land+building, so the headline rate understates
+   * what it means for the building — the only part that actually wears out.
+   * Show both bases, since the gap between them is entirely the land share. */
+  private maintenanceLabel(d: Record<string, any>): string {
+    const m = Number(d['maintenance_y1'] || 0);
+    const bld = Number(d['house_value'] || 0);
+    const total = Number(d['price_yen'] || 0);
+    const ofTotal = total ? ` — ${(m / total * 100).toFixed(2)}% of land+building` : '';
+    const ofBld = bld ? `, ${(m / bld * 100).toFixed(2)}% of the building` : '';
+    return `${this.fmtYen(m)}/yr${ofTotal}${ofBld}`;
+  }
+
+  eraColor(e: SeismicEra): string { return ERA_META[e].color; }
+  eraShort(e: SeismicEra): string { return ERA_META[e].short; }
+
+  /** The model's own view of a listing, so the numbers are auditable rather
+   * than arriving out of a black box. */
+  derivedList(o: CompareOption): { k: string; v: string }[] {
+    const d = o.derived || {};
+    const yen = (v: any) => (v == null ? '—' : this.fmtYen(Number(v)));
+    if (d['mode'] === 'rent') {
+      return [
+        { k: 'monthly rent + 管理費', v: yen(d['monthly_rent']) },
+        { k: 'deposit (敷金)', v: yen(d['deposit_yen']) + ' — not charged in the model' },
+        { k: 'key money (礼金)', v: yen(d['key_money_yen']) + ' — not charged in the model' },
+      ];
+    }
+    const out = [
+      { k: 'asking price', v: yen(d['price_yen']) },
+      { k: 'building, as new', v: yen(d['house_value']) },
+      { k: 'building, today', v: yen(d['building_now']) },
+      { k: 'land (residual)', v: yen(d['land_value']) },
+      { k: 'building age', v: `${d['house_age'] ?? '—'} yr of ${d['fully_amortized_age'] ?? '—'} yr useful life` },
+      { k: 'down payment', v: yen(d['down_payment']) },
+      { k: 'loan principal', v: yen(d['principal']) },
+      { k: 'assessed value yr 1 (課税標準)', v: yen(d['assessed_y1']) + ' — 70% of market' },
+      { k: 'property tax yr 1', v: yen(d['property_tax_y1']) + '/yr — 固定資産税 1.4% + 都市計画税 0.3%' },
+      { k: 'maintenance yr 1', v: this.maintenanceLabel(d) },
+      { k: 'acquisition costs', v: yen(d['acquisition_cost']) + ' — 取得税・登記・司法書士' },
+      { k: 'loan up-front fee', v: yen(d['loan_upfront_fee']) + ' — 融資手数料/保証料' },
+    ];
+    if (d['price_was_range']) {
+      out.push({ k: '⚠ price', v: 'listing quotes a range — modelled at the midpoint' });
+    }
+    if (d['age_assumed']) {
+      out.push({ k: '⚠ age', v: 'not stated by the listing — modelled as brand new' });
+    }
+    if (d['note']) out.push({ k: '⚠ note', v: String(d['note']) });
+    return out;
+  }
+
+  /** IRR of every option against the anchor, year by year. Financing-shaped
+   * streams are drawn dashed: their rate is a borrowing cost, so they cannot
+   * be read on the same scale as the rest. */
+  irrChart(): {
+    lines: { pts: string; color: string; label: string; dashed: boolean;
+             peak: { x: number; y: number; year: number; irr: number } | null }[];
+    zeroY: number; hurdleY: number; hurdlePct: string;
+    yTicks: { y: number; label: string }[];
+    xTicks: { x: number; label: string }[];
+    w: number; h: number;
+  } | null {
+    const res = this.compareResult;
+    if (!res?.verdict?.irr_vs_anchor) return null;
+    const entries = Object.entries(res.verdict.irr_vs_anchor)
+      .map(([k, v]) => ({ i: +k, d: v }))
+      .filter(e => e.d.series.some(p => p.irr != null));
+    if (!entries.length) return null;
+
+    const w = 560, h = 240, padL = 52, padB = 26, padT = 12, padR = 10;
+    const years = Math.max(...entries.map(e => e.d.series.length - 1));
+    const hurdle = res.verdict.hurdle_rate;
+    // Early years can be wildly negative; clamp the floor so the useful part
+    // of the curve is not squashed into the top pixel row.
+    const all = entries.flatMap(e => e.d.series.map(p => p.irr).filter((v): v is number => v != null));
+    const hi = Math.max(...all, hurdle, 0);
+    const lo = Math.max(Math.min(...all, 0), -Math.max(hi, 0.5));
+    const span = (hi - lo) || 1;
+    const X = (t: number) => padL + (t / years) * (w - padL - padR);
+    const Y = (v: number) => padT + (1 - (Math.min(Math.max(v, lo), hi) - lo) / span) * (h - padT - padB);
+
+    const lines = entries.map(e => {
+      const pts = e.d.series.filter(p => p.irr != null)
+        .map(p => `${X(p.year).toFixed(1)},${Y(p.irr as number).toFixed(1)}`).join(' ');
+      const peak = e.d.peak_year != null && e.d.peak_irr != null
+        ? { x: X(e.d.peak_year), y: Y(e.d.peak_irr), year: e.d.peak_year, irr: e.d.peak_irr }
+        : null;
+      return {
+        pts, color: this.COMPARE_COLORS[e.i % this.COMPARE_COLORS.length],
+        label: this.compareShort(res.options[e.i]) + (e.d.shape === 'financing' ? ' (financing)' : ''),
+        dashed: e.d.shape === 'financing', peak,
+      };
+    });
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => {
+      const v = lo + f * span;
+      return { y: Y(v), label: (v * 100).toFixed(0) + '%' };
+    });
+    const step = years <= 10 ? 2 : years <= 25 ? 5 : 10;
+    const xTicks = [];
+    for (let t = 0; t <= years; t += step) xTicks.push({ x: X(t), label: String(t) });
+    return { lines, zeroY: Y(0), hurdleY: Y(hurdle),
+             hurdlePct: (hurdle * 100).toFixed(2), yTicks, xTicks, w, h };
+  }
+
+  /** Ground risk, as one line. Bands are coloured because the numbers alone
+   * (ARV 1.81, AVS 199) mean nothing without a scale. */
+  hazardLine(p: any, html = true): string {
+    const h = p?.hazard;
+    if (!h) return '';
+    const band = (b: string | null) =>
+      b === 'high' ? '#c2410c' : b === 'medium' ? '#ca8a04' : '#15803d';
+    const bits: string[] = [];
+    if (h.shaking) bits.push(html
+      ? `<b style="color:${band(h.shaking)}">揺れやすさ ${this.esc(h.shaking)}</b>`
+        + `<span style="color:#666"> (増幅率 ${this.esc(h.arv)})</span>`
+      : `揺れやすさ ${h.shaking} (${h.arv})`);
+    if (h.liquefaction) bits.push(html
+      ? `<b style="color:${band(h.liquefaction)}">液状化 ${this.esc(h.liquefaction)}</b>`
+        + `<span style="color:#666"> (${this.esc(h.landform)})</span>`
+      : `液状化 ${h.liquefaction} (${h.landform})`);
+    if (h.elevation_m != null) bits.push(`標高 ${h.elevation_m} m`);
+    if (h.quake6_30yr != null) bits.push(`震度6弱 30年 ${(h.quake6_30yr * 100).toFixed(0)}%`);
+    return bits.join(' · ');
+  }
+
+  hazardBandColor(b: string | null | undefined): string {
+    return b === 'high' ? '#c2410c' : b === 'medium' ? '#ca8a04'
+         : b === 'low' ? '#15803d' : '#9aa1ab';
+  }
+
+  /** Where to check the restrictions this tool cannot compute.
+   *
+   * 高度地区, 日影規制 and absolute height caps are municipal designations: not
+   * in the national dataset, and the ward sites move their pages constantly —
+   * eight of nine guessed ward URLs were already dead. Only the Tokyo-wide
+   * 都市計画情報 portal is stable, so link that and carry the address across for
+   * the search, rather than shipping links that rot.
+   */
+  private zoningLink(p: MapPoint): string {
+    const addr = (p.address || '').trim();
+    const tokyo = (addr.startsWith('東京') || !addr);
+    const url = tokyo
+      ? 'https://www2.wagmap.jp/tokyo_tokeizu/Portal'
+      : `https://www.google.com/search?q=${encodeURIComponent(addr + ' 都市計画情報 用途地域 高度地区')}`;
+    const what = tokyo ? '東京都都市計画情報' : '市の都市計画情報';
+    return `<a href="${this.esc(url)}" target="_blank" rel="noopener"`
+         + ` title="Check 高度地区 / 日影規制 / height caps for ${this.esc(addr)} — this tool cannot compute them">`
+         + `🗾 ${this.esc(what)} ↗</a>`;
+  }
+
+  /** The listing's nearest station, named. "N min walk to stn" was ambiguous
+   * next to the commute line, which names whichever station is fastest to the
+   * school — often a different one, and sometimes a longer walk. */
+  private nearestStation(p: MapPoint): string | null {
+    const raw = p.station_raw || '';
+    // rent: 東京メトロ南北線/志茂駅 歩8分   sale: 都営三田線「板橋本町」徒歩9分
+    const stops: { line: string; name: string; walk: number }[] = [];
+    for (const m of raw.matchAll(/([^\/／,、]+)[\/／]\s*([^\/／,、\s]+?)駅\s*歩\s*(\d+)\s*分/g)) {
+      stops.push({ line: m[1].trim(), name: m[2], walk: +m[3] });
+    }
+    for (const m of raw.matchAll(/([^「]+)「([^」]+)」\s*徒歩\s*(\d+)\s*分/g)) {
+      stops.push({ line: m[1].trim(), name: m[2], walk: +m[3] });
+    }
+    if (!stops.length) {
+      return p.nearest_walk_min != null ? `${p.nearest_walk_min} min walk to stn` : null;
+    }
+    stops.sort((a, b) => a.walk - b.walk);
+    const n = stops[0];
+    const more = stops.length > 1 ? ` +${stops.length - 1}` : '';
+    return `${this.esc(n.walk)}′ to ${this.esc(n.name)} (${this.esc(n.line)})${more}`;
+  }
+
+  /** The listing's own type word, for labelling its floor area. */
+  buildingWord(p: MapPoint): string {
+    const label = p.property_label || '';
+    if (label.includes('一戸建')) return 'house';
+    if (label.includes('マンション')) return 'flat';
+    if (label.includes('アパート')) return 'apt';
+    if (label.includes('テラス') || label.includes('タウン')) return 'terrace';
+    return p.market === 'rent' ? 'unit' : 'house';
+  }
+
+  /** What a land listing may cost, once the house you must build is paid for. */
+  /** What is left for the plot itself once the house is paid for, at the top
+   * of the current price window. Used in the popup, not as a filter. */
+  landCeiling(): number {
+    return (this.ranges['price']?.hi ?? 0) - this.buildCost();
+  }
+
+  /** Break down the school commute for a tooltip. */
+  commuteTip(r: any): string {
+    if (r?.commute_min == null) return 'no cached commute for this listing\u2019s stations';
+    const t = r.commute_transfers;
+    return `${r.commute_walk_min}′ walk to ${r.commute_from} · ${r.commute_transit_min}′ train`
+         + ` · arrive ${r.commute_via}` + (t ? ` · ${t} change${t > 1 ? 's' : ''}` : ' · direct');
+  }
+
+  compareShort(o: CompareOption): string {
+    return `${o.market === 'rent' ? 'rent' : 'buy'} · ${o.price_raw || this.fmtYen(o.price_yen)}`;
+  }
+
+  /** Percent-typed assumption fields, edited as percents but stored as rates. */
+  asPct(v: number): number { return Math.round(v * 1000) / 10; }
+  setPct(key: keyof CompareAssumptions, pct: any): void {
+    (this.compareAssumptions[key] as number) = (Number(pct) || 0) / 100;
+  }
+
+  toggleEra(key: SeismicEra): void {
+    this.eras = this.eras.includes(key)
+      ? this.eras.filter(e => e !== key)
+      : [...this.eras, key];
+    this.refreshBoth();
+  }
+
+  // --- live OSM POIs (supermarkets, clinics) via Overpass, for current view ---
+  loadOsmPois(): void {
+    if (!this.map) return;
+    const b = this.map.getBounds();
+    const bbox = `${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}`;
+    const active = this.osmCats.filter(c => c.enabled);
+    if (this.showRail) this.loadRailLines(bbox);
+    if (!active.length) {
+      this.osmMsg = this.showRail ? 'loading rail lines…' : 'select at least one category';
+      if (this.osmLayer) this.osmLayer.clearLayers();
+      return;
+    }
+    const parts = active.flatMap(c => c.filters.map(f => `${f}(${bbox});`)).join('');
+    const query = `[out:json][timeout:25];(${parts});out center 800;`;
+
+    this.osmLoading = true;
+    this.osmMsg = 'loading from OpenStreetMap…';
+    this.http.post<any>('https://overpass-api.de/api/interpreter', query, { responseType: 'json' })
+      .subscribe({
+        next: res => { this.osmLoading = false; this.renderOsm(res?.elements || []); },
+        error: () => { this.osmLoading = false;
+          this.osmMsg = 'OSM request failed — the public Overpass endpoint may be busy; try again.'; },
+      });
+  }
+
+  // Train/subway lines as polylines (line geometry, not points). Excludes yard/
+  // siding service tracks. Drawn under the POI icons + listing dots.
+  private loadRailLines(bbox: string): void {
+    const q = `[out:json][timeout:25];(way["railway"~"^(rail|subway|light_rail|monorail)$"]["service"!~"."](${bbox}););out geom 2500;`;
+    this.http.post<any>('https://overpass-api.de/api/interpreter', q, { responseType: 'json' })
+      .subscribe({ next: res => this.renderRail(res?.elements || []), error: () => {} });
+  }
+
+  private renderRail(ways: any[]): void {
+    if (!this.railLayer) this.railLayer = this.L.layerGroup().addTo(this.map);
+    this.railLayer.clearLayers();
+    for (const w of ways) {
+      if (!w.geometry) continue;
+      const latlngs = w.geometry.map((g: any) => [g.lat, g.lon]);
+      const subway = w.tags?.railway === 'subway';
+      const name = w.tags?.name || w.tags?.['name:en'] || (subway ? 'Subway line' : 'Rail line');
+      const operator = w.tags?.operator || w.tags?.['operator:en'] || '';
+      const popup = `<div class="mappop"><strong>🚃 ${this.esc(name)}</strong>` +
+        (operator ? `<br><span style="color:#666">${this.esc(operator)}</span>` : '') + `</div>`;
+      // wide transparent hit-line so the thin rail is easy to click…
+      this.L.polyline(latlngs, { color: '#000', weight: 12, opacity: 0, interactive: true })
+        .bindPopup(popup).addTo(this.railLayer);
+      // …with the visible thin line drawn on top (clicks pass through to the hit-line)
+      this.L.polyline(latlngs, {
+        color: subway ? '#2563eb' : '#7c8698', weight: 2.5, opacity: 0.55, interactive: false,
+      }).addTo(this.railLayer);
+    }
+  }
+
+  // Map an OSM element's tags to one of our categories (for icon + label).
+  private osmCatForTags(t: any): { icon: string; label: string } {
+    const shop = t?.shop, am = t?.amenity;
+    if (shop === 'supermarket') return this.osmCatByKey('supermarket');
+    if (shop === 'convenience') return this.osmCatByKey('convenience');
+    if (shop === 'chemist' || am === 'pharmacy') return this.osmCatByKey('drugstore');
+    if (am === 'school') return this.osmCatByKey('school');
+    if (am === 'kindergarten' || am === 'childcare') return this.osmCatByKey('kindergarten');
+    if (am === 'hospital' || am === 'clinic' || am === 'doctors') return this.osmCatByKey('hospital');
+    if (am === 'post_office') return this.osmCatByKey('post');
+    if (am === 'library') return this.osmCatByKey('library');
+    if (am === 'bank') return this.osmCatByKey('bank');
+    if (t?.railway === 'station' || t?.railway === 'halt') return this.osmCatByKey('station');
+    return { icon: '📍', label: 'POI' };
+  }
+  private osmCatByKey(key: string) {
+    return this.osmCats.find(c => c.key === key) || { icon: '📍', label: 'POI' };
+  }
+
+  private renderOsm(elements: any[]): void {
+    if (!this.osmLayer) this.osmLayer = this.L.layerGroup().addTo(this.map);
+    this.osmLayer.clearLayers();
+    let n = 0;
+    for (const el of elements) {
+      const lat = el.lat ?? el.center?.lat;
+      const lng = el.lon ?? el.center?.lon;
+      if (lat == null || lng == null) continue;
+      const cat = this.osmCatForTags(el.tags);
+      const name = el.tags?.name || el.tags?.['name:en'] || cat.label;
+      const tagAddr = this.osmAddress(el.tags);
+      const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+      const gmaps = this.mapsUrl({ lat, lng });
+      const html = `<div class="mappop"><strong>${cat.icon} ${this.esc(name)}</strong>` +
+        `<br><span class="osm-addr" style="color:#666">${tagAddr ? this.esc(tagAddr) : 'looking up address…'}</span>` +
+        `<br><a href="${gmaps}" target="_blank" rel="noopener">open in Google Maps ↗</a></div>`;
+      const marker = this.L.marker([lat, lng], {
+        icon: this.L.divIcon({ className: 'osm-icon', html: cat.icon, iconSize: [18, 18] }),
+      }).bindPopup(html);
+      if (!tagAddr) marker.on('popupopen', (e: any) => this.fillOsmAddress(e, lat, lng, key));
+      marker.addTo(this.osmLayer);
+      n++;
+    }
+    this.osmMsg = `${n} place${n === 1 ? '' : 's'} in view`;
+  }
+
+  // Compose an address from OSM addr:* tags (rare in Japan — usually empty).
+  private osmAddress(t: any): string {
+    if (!t) return '';
+    if (t['addr:full']) return t['addr:full'];
+    return ['addr:province', 'addr:city', 'addr:ward', 'addr:quarter',
+            'addr:neighbourhood', 'addr:block_number', 'addr:housenumber']
+      .map(k => t[k]).filter(Boolean).join('');
+  }
+
+  // Lazily reverse-geocode a POI (Nominatim) when its popup opens; cached.
+  private geoCache = new Map<string, string>();
+  private fillOsmAddress(e: any, lat: number, lng: number, key: string): void {
+    const span = e.popup.getElement()?.querySelector('.osm-addr') as HTMLElement | null;
+    if (!span || span.dataset['done']) return;
+    const set = (t: string) => { span.textContent = t || 'address unavailable'; span.dataset['done'] = '1'; };
+    if (this.geoCache.has(key)) { set(this.geoCache.get(key)!); return; }
+    this.http.get<any>(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja`)
+      .subscribe({
+        next: r => { const a = this.formatNominatim(r); this.geoCache.set(key, a); set(a); },
+        error: () => set(''),
+      });
+  }
+  private formatNominatim(r: any): string {
+    const a = r?.address || {};
+    const parts = [a.state || a.province, a.city || a.town || a.county, a.city_district,
+                   a.suburb, a.neighbourhood || a.quarter, a.block_number, a.house_number]
+      .filter(Boolean);
+    return parts.length ? parts.join('') : String(r?.display_name || '').replace(/,\s*日本$/, '');
+  }
+
+  clearOsmPois(): void {
+    if (this.osmLayer) this.osmLayer.clearLayers();
+    if (this.railLayer) this.railLayer.clearLayers();
+    this.osmMsg = '';
+  }
+
+  private esc(s: any): string {
+    return String(s ?? '').replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[c]);
+  }
+
+  /**
+   * "built 1998" when the listing states a build date. Rent cards only ever
+   * give an age ("築12年"), so there the year is derived and marked with ~.
+   * The year itself comes from the server (build_year_est), so the map and the
+   * era filter can never disagree about which side of a revision a listing is.
+   */
+  /** SUUMO publishes no pin for some listings, so their position is geocoded
+   * from the address — which resolves to the 丁目, not the building. Say so,
+   * rather than letting a block centre pass for a surveyed location. */
+  approxNote(p: any): string {
+    return p?.location_source === 'geocoded'
+      ? ` <span title="No pin published for this listing — placed from its address, so it is accurate to the 丁目 (block), not the building." style="color:#b07d00">≈ approx</span>`
+      : '';
+  }
+
+  private builtLabel(p: MapPoint): string | null {
+    if (p.build_year_est == null) return null;
+    const tilde = p.build_year == null ? '~' : '';
+    const age = p.age_years != null ? ` <span style="color:#999">(築${this.esc(p.age_years)}年)</span>` : '';
+    return `built ${tilde}${this.esc(p.build_year_est)}${age}`;
+  }
+
+  /** Your own verdict, so a listing you already rejected says so on sight. */
+  private verdictBadge(p: MapPoint): string {
+    const pill = (bg: string, text: string, title: string) =>
+      `<span title="${this.esc(title)}" style="background:${bg};color:#fff;`
+      + `padding:1px 6px;border-radius:2px;font-size:11px;font-weight:700">`
+      + `${this.esc(text)}</span> `;
+
+    let out = '';
+    if (p.verdict) {
+      const m = VERDICT_META[p.verdict];
+      out += pill(m.color, `${m.icon} ${m.label}`,
+                  (p.review_tags || []).join(', ') || `you: ${m.label}`);
+    }
+    // Who else said what, by name. The disagreement is the point — a dot you
+    // and your partner rate differently is the one worth talking about.
+    const others = ((p as any).reviews || []).filter((r: any) => !r.mine && r.verdict);
+    for (const r of others) {
+      const m = VERDICT_META[r.verdict as Verdict];
+      out += pill(m.color, `${m.icon} ${r.name}`,
+                  `${r.name}: ${m.label}${r.note ? ' — ' + r.note : ''}`);
+    }
+    const mark = this.groupMark(p);
+    if (mark === 'conflict') out += pill('#db2777', '⚡ you disagree', 'one yes, one no');
+    if (mark === 'agreed') out += pill('#15803d', '✓ agreed', 'you both like this one');
+    if (mark === 'awaiting') out += pill('#7c3aed', '👥 your turn', 'they judged it, you have not');
+    return out;
+  }
+
+  /** Coloured 耐震基準 chip, with a caveat when the tier isn't certain. */
+  private eraBadge(p: MapPoint): string {
+    if (!p.era) return '';
+    const meta = ERA_META[p.era];
+    const why = p.build_year == null
+      ? 'year derived from 築N年, so the tier is approximate'
+      : 'built on a revision boundary year — the 建築確認 date decides, and listings do not state it';
+    const mark = p.era_approx
+      ? `<span title="${this.esc(why)}" style="cursor:help"> ≈</span>` : '';
+    return `<span style="background:${meta.color};color:#fff;padding:1px 6px;` +
+           `border-radius:9px;font-size:11px">${this.esc(meta.short)}${mark}</span> `;
+  }
+
+  private popupHtml(p: MapPoint): string {
+    const esc = (s: any) => this.esc(s);
+    const area = (p.building_m2 || 0) || p.land_m2;
+    const ppm2 = (p.price_yen && area) ? Math.round(p.price_yen / area).toLocaleString() + ' ¥/m²' : null;
+    const price = esc(p.price_raw || this.fmtYen(p.price_yen));
+    // Always surface price + house (building) size + land size when available.
+    const bits = [
+      p.layout ? esc(p.layout) : null,
+      // Label the area by what the listing actually is. Calling every
+      // building "house" hid the distinction that decides the size floor —
+      // a 85m² 賃貸マンション clears it, a 85m² 賃貸一戸建て does not.
+      p.building_m2 != null
+        ? `${esc(this.buildingWord(p))} ${esc(p.building_m2)} m²` : null,
+      p.land_m2 != null ? `land ${esc(p.land_m2)} m²` : null,
+      this.nearestStation(p),
+      this.builtLabel(p),
+      ppm2 ? esc(ppm2) : null,
+    ].filter(Boolean).join(' · ');
+    // For a plot, the useful size is not the land but the house it can carry.
+    const cap = p.capacity;
+    // Lead with the plan you would actually build, not with the maximum. The
+    // storey count to exhaust the whole 容積率 allowance answers a question
+    // nobody asks — on a 68m² footprint it says "4 floors" when the 130m²
+    // house you want takes two.
+    const want = this.budgetBuildM2;
+    const capLine = cap
+      ? `<span style="color:#1e5b96">🏗️ a <b>${esc(want)} m²</b> house needs `
+        + `<b>${esc(Math.ceil(want / cap.max_footprint_m2))} floors</b> here`
+        + ` (${esc(cap.max_footprint_m2)} m² per floor)</span>`
+        + `<span style="color:#666"> — allows up to ${esc(cap.max_floor_m2)} m² total;`
+        + ` 建ぺい率 ${esc(cap.coverage_pct)}%, 容積率 ${esc(cap.far_effective_pct)}%`
+        + (cap.limited_by === 'road width'
+            ? ` <b>capped by the ${esc(cap.road_width_m)} m road</b> from ${esc(cap.far_pct)}%`
+            : ` as designated`)
+        + (cap.zone ? ` · ${esc(cap.zone)}` : '')
+        + (cap.deducted_m2
+            ? ` · on ${esc(cap.buildable_land_m2)} m² of the ${esc(cap.land_m2)} m² plot,`
+              + ` after ${esc(cap.deducted_m2)} m² of `
+              + (cap.setback_m2 ? 'セットバック' : '私道負担')
+            : '')
+        + `</span>`
+        + (cap.setback_status === 'required' && !cap.setback_m2
+            ? `<br><span style="color:#b45309">⚠ セットバック required but not`
+              + ` quantified — the plot loses land to widen the road, so this`
+              + ` is an upper bound</span>`
+            : '')
+        + (cap.restrictions && cap.restrictions.length
+            ? `<br><span style="color:#b45309">⚠ not included: `
+              + cap.restrictions.map((r: string) => esc(r)).join('; ')
+              + ` — ${this.zoningLink(p)}</span>`
+            : `<br><span style="color:#999">${this.zoningLink(p)}</span>`)
+        + `<br>`
+      : '';
+
+    const ref = this.refPoi();
+    // The school run is the constraint, so lead with the real journey. The
+    // straight-line distance is kept only as a small aside: it is a poor proxy
+    // — 志茂 is nearer the school than 東十条 and ten minutes further from it.
+    const km = `${this.distanceToRef(p.lat, p.lng).toFixed(1)} km straight line`;
+    const commute = p.commute_min != null
+      ? `<b>🎓 ${esc(p.commute_min)} min to LFIT</b>`
+        + `<span style="color:#666"> — ${esc(p.commute_walk_min)}′ walk to `
+        + `${esc(p.commute_from)}, ${esc(p.commute_transit_min)}′ train, arrive `
+        + `${esc(p.commute_via)}</span>`
+        + `<br><span style="color:#999;font-size:0.92em">${km}</span>`
+      : `<span style="color:#999">🎓 commute unknown — ${km} to ${esc(ref.name)}</span>`;
+    const picked = this.isCompared(p.property_id);
+
+    // While a comparison is being assembled the popup is a picker: everything
+    // that navigates away from the map would lose the selection in progress,
+    // so only the pick/unpick action is offered.
+    const actions = this.compareMode()
+      ? `<button class="cmpbtn${picked ? ' on' : ''}" type="button">${
+           picked ? '✓ picked — click to remove' : '⚖️ Add to comparison'}</button>`
+      : `<a href="${esc(p.url)}" target="_blank" rel="noopener">open on SUUMO ↗</a>
+         · <a href="${esc(this.routeUrl(p))}" target="_blank" rel="noopener"
+              title="Google Maps route from this listing to ${esc(ref.name)} (${esc(this.travelMode)})"
+           >🗺️ route to ${esc(ref.name.split(' ')[0])} ↗</a>
+         <button class="cmpbtn" type="button">⚖️ Compare</button>
+         <button class="revbtn" type="button">🔍 Review</button>`;
+
+    const photo = p.image_url
+      ? `<img class="popimg" src="${this.esc(p.image_url)}" alt="" loading="lazy">` : '';
+    return `<div class="mappop">
+      ${photo}
+      ${this.verdictBadge(p)}${this.eraBadge(p)}<strong>${price}</strong> · ${esc(p.property_label || p.category)}<br>
+      ${bits}<br>
+      ${capLine}<span style="color:#1e5b96">${commute}</span><br>
+      ${this.hazardLine(p) ? `<span>🌊 ${this.hazardLine(p)}</span>`
+          + (p.hazard_map_url ? ` <a href="${esc(p.hazard_map_url)}" target="_blank"
+               rel="noopener" title="浸水 and 土砂災害 are not computed — check them here"
+               >hazard map ↗</a>` : '') + '<br>' : ''}
+      <span style="color:#666">${esc(p.address || '')}</span>${this.approxNote(p)}<br>
+      ${actions}
+    </div>`;
+  }
+
+  // Open the full detail sheet for a listing (cached today's snapshot, else fetch).
+  /** The one detail view, opened from a map dot or a table row — the table
+   * used to expand a second, thinner version of the same thing inline. */
+  openDetails(p: MapPoint | Listing): void {
+    if (!this.detailModal) this.pushOverlay();
+    this.detailModal = { point: p };
+    this.loadCard();
+    this.focusSheet();
+  }
+
+  /** Give the sheet the keyboard.
+   *
+   * The key handler listens on the document, so in principle it hears
+   * everything — but only if focus is somewhere that lets the event through.
+   * Opening the sheet from a button leaves focus on that button, and a browser
+   * may act on the arrows itself before the document sees them. Focusing the
+   * panel makes the keys unambiguous, and lets a screen reader follow the
+   * change of context. */
+  private focusSheet(): void {
+    setTimeout(() => {
+      const el = document.querySelector('.modal.sheet') as HTMLElement | null;
+      el?.focus?.();
+    }, 0);
+  }
+
+  /** The file a photo URL points at, ignoring how it was requested.
+   *
+   * The same image arrives in two forms — the search card's and the detail
+   * page's — differing only in the resize parameters, so comparing URLs made
+   * every gallery open on the same photo twice. */
+  private photoKey(u: string): string {
+    return (u.match(/([^/%]+\.(?:jpg|jpeg|png))/i)?.[1] || u).toLowerCase();
+  }
+
+  /** Card photo first (it is the one you already recognise), then the rest,
+   * each file once. */
+  private setPhotos(card: any, images?: string[]): void {
+    if (!images?.length) return;
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const u of (card.image_url ? [card.image_url, ...images] : images)) {
+      const k = this.photoKey(u);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(u);
+    }
+    this.reviewPhotos = out;
+    this.reviewPhotoIndex = 0;
+  }
+
+  closeDetails(): void {
+    if (!this.detailModal) return;
+    this.detailModal = null;
+    this.popOverlay();
+  }
+
+  // --- sheet grip: drag to resize, drag down to dismiss, click to close -----
+  // A bar that only responded to clicks reads as broken, because a grip is the
+  // one control everyone tries to drag.
+  sheetHeight = 82;                      // dvh
+  private gripStartY = 0;
+  private gripStartH = 82;
+  private gripMoved = false;
+
+  gripDown(e: PointerEvent): void {
+    e.preventDefault();
+    this.gripStartY = e.clientY;
+    this.gripStartH = this.sheetHeight;
+    this.gripMoved = false;
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const dy = ev.clientY - this.gripStartY;
+      if (Math.abs(dy) > 3) this.gripMoved = true;
+      // Dragging up grows the sheet; down shrinks it, and past the floor it
+      // is a dismiss gesture rather than a resize.
+      const vh = window.innerHeight / 100;
+      this.zone.run(() => {
+        this.sheetHeight = Math.min(94, Math.max(18, this.gripStartH - dy / vh));
+      });
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      this.zone.run(() => {
+        // A click, or dragged down small enough to mean "put it away".
+        if (!this.gripMoved || this.sheetHeight <= 26) {
+          this.sheetHeight = 82;         // reset for the next listing
+          this.closeDetails();
+        }
+      });
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  }
+
+  // Poll jobs + live crawl status every 5s while the dashboard is open, so a
+  // running scheduled crawl and its result show up without a manual refresh.
+  private startPolling(): void {
+    if (this.pollTimer) return;
+    this.pollTimer = setInterval(() => {
+      this.loadJobs();
+      this.api.crawlStatus().subscribe({
+        next: s => {
+          // A crawl that just finished has added listings the screen cannot
+          // know about, which is the only reason a refresh button existed.
+          // Noticing the transition is the machine's job, not yours.
+          const wasRunning = this.liveStatus?.state === 'running';
+          this.liveStatus = s;
+          if (wasRunning && s.state !== 'running') this.load();
+        },
+        error: () => {},
+      });
+    }, 5000);
+  }
+
+  /** Coming back to the tab picks up what other people did while you were away
+   * — a partner's verdicts, a crawl someone else started. Cheaper and more
+   * timely than polling for it, and it is the moment you would have reached for
+   * a refresh button. */
+  @HostListener('document:visibilitychange')
+  onVisible(): void {
+    if (document.visibilityState !== 'visible' || !this.searched) return;
+    if (Date.now() - this.lastLoad < 30_000) return;   // just looked; leave it alone
+    this.load();
+    this.loadReviewCounts();
+  }
+  private lastLoad = 0;
+
+  loadJobs(): void {
+    this.api.jobs().subscribe({ next: s => this.sched = s, error: () => {} });
+  }
+
+  // --- job form (URL-based) ---
+  // Open an empty scheduled-scraper form.
+  newJob(): void {
+    this.openJobForm(blankJob(), null);
+  }
+
+  editJob(j: ScheduledJob): void {
+    this.openJobForm({
+      name: j.name, mode: 'url', categories: [], wards: [], url: j.url,
+      max_pages: j.max_pages, min_delay: j.min_delay, max_delay: j.max_delay,
+      interval_minutes: j.interval_minutes, enabled: j.enabled,
+    }, j.id);
+  }
+
+  private openJobForm(form: JobInput, editingId: string | null): void {
+    this.form = form;
+    this.editingId = editingId;
+    this.freqIsCustom = !this.freqPresets.some(p => p.minutes === form.interval_minutes);
+    this.jobMsg = '';
+    this.showJobForm = true;
+    // reset any prior preview so the form starts clean
+    this.previewRows = []; this.previewStats = null; this.previewMeta = ''; this.urlPending = '';
+  }
+
+  cancelJob(): void { this.showJobForm = false; this.jobMsg = ''; }
+
+  // Put a starter SUUMO URL into the crawler form (from the quick-link tiles).
+  useStarterUrl(url: string): void { this.form.url = url; }
+
+  setFreq(minutes: number): void { this.form.interval_minutes = minutes; this.freqIsCustom = false; }
+  setCustomFreq(): void { this.freqIsCustom = true; }
+
+  saveJob(): void {
+    if (!this.form.url.trim()) {
+      this.jobMsg = 'paste a SUUMO search-results URL'; return;
+    }
+    this.form.mode = 'url';
+    const done = () => { this.showJobForm = false; this.jobMsg = ''; this.loadJobs(); };
+    if (this.editingId) {
+      this.api.updateJob(this.editingId, this.form).subscribe({ next: done, error: e => this.jobMsg = 'save failed: ' + (e?.message || '') });
+    } else {
+      this.api.createJob(this.form).subscribe({ next: done, error: e => this.jobMsg = 'save failed: ' + (e?.message || '') });
+    }
+  }
+
+  runJobNow(j: ScheduledJob): void {
+    this.api.runJob(j.id).subscribe({ next: () => this.loadJobs(), error: () => {} });
+  }
+
+  toggleJobEnabled(j: ScheduledJob): void {
+    this.api.updateJob(j.id, {
+      name: j.name, mode: j.mode, categories: j.categories, wards: j.wards, url: j.url,
+      max_pages: j.max_pages, min_delay: j.min_delay, max_delay: j.max_delay,
+      interval_minutes: j.interval_minutes, enabled: !j.enabled,
+    }).subscribe({ next: () => this.loadJobs(), error: () => {} });
+  }
+
+  deleteJob(j: ScheduledJob): void {
+    if (!confirm(`Delete scheduled scraper “${j.name || j.id}”?`)) return;
+    this.api.deleteJob(j.id).subscribe({ next: () => this.loadJobs(), error: () => {} });
+  }
+
+  // --- job display helpers ---
+  isRunning(j: ScheduledJob): boolean { return this.sched?.running_id === j.id; }
+
+  fmtInterval(mins: number): string {
+    const p = this.freqPresets.find(x => x.minutes === mins);
+    if (p) return p.label.toLowerCase();
+    if (mins % 1440 === 0) return `every ${mins / 1440}d`;
+    if (mins % 60 === 0) return `every ${mins / 60}h`;
+    return `every ${mins}m`;
+  }
+
+  // Shorten a SUUMO URL for display (drop protocol; keep host + key params).
+  shortUrl(u: string): string {
+    if (!u) return '—';
+    return u.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  }
+
+  fmtWhen(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Live-preview the crawler's URL (inside the create/edit form) so you can
+  // confirm it returns sensible listings before saving the crawler.
+  previewCrawler(): void {
+    const url = (this.form.url || '').trim();
+    if (!url) { this.urlPending = 'paste a SUUMO search URL to preview'; return; }
+    this.urlPreviewing = true;
+    this.urlPending = 'fetching live from SUUMO (polite delay)…';
+    this.api.previewUrl({ categories: [], wards: [], limit: 300,
+                          url, max_pages: 1, persist: false })
+      .subscribe({
+        next: res => {
+          this.urlPreviewing = false;
+          if (res.error) { this.urlPending = res.error; return; }
+          this.urlPending = '';
+          const m = res.meta;
+          this.previewMeta = `preview${m ? ' · ' + m.category + '/' + m.ward_label : ''} · ${res.fetched} listings`;
+          this.previewStats = res.stats; this.previewRows = res.rows;
+        },
+        error: err => { this.urlPreviewing = false; this.urlPending = 'request failed — is the local API running? ' + (err?.message || ''); },
+      });
+  }
+
+  // Takes anything carrying coordinates (PropertyDetail, MapPoint, a POI) so
+  // every "open in Google Maps" link on the page is built the same way.
+  mapsUrl(d: { lat?: number | null; lng?: number | null }): string {
+    return `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lng}`;
+  }
+
+  /**
+   * Google Maps directions from a listing to the current reference landmark
+   * (the Lycée by default). Coordinates on both ends rather than a place name,
+   * so the route matches the pin and the km figure shown in the popup.
+   */
+  routeUrl(from: { lat?: number | null; lng?: number | null }): string {
+    const ref = this.refPoi();
+    return 'https://www.google.com/maps/dir/?api=1' +
+      `&origin=${from.lat},${from.lng}&destination=${ref.lat},${ref.lng}` +
+      `&travelmode=${this.travelMode}`;
+  }
+
+  // --- spec-sheet cleaning + curation ---
+  // Older enriched rows still have "… ヒント" tooltip text baked into the key
+  // (the extractor now strips it at source); clean it here too for those.
+  private cleanKey(k: string): string {
+    return k.replace(/\s*ヒント\s*$/, '').replace(/[:：]\s*$/, '').trim();
+  }
+  private normKey(k: string): string {
+    return this.cleanKey(k).replace(/[（）()\s・]/g, '');
+  }
+  private emptyVal(v: string): boolean {
+    const t = (v || '').trim();
+    return !t || t === '-' || t === '−' || t === 'ー' || t === '—';
+  }
+
+  // Important fields, surfaced first: [key matcher, display label].
+  private keyFactDefs: [string, string][] = [
+    ['所在地', 'Address'], ['交通', 'Access'], ['間取り', 'Layout'],
+    ['土地面積', 'Land area'], ['建物面積', 'Building area'],
+    ['建ぺい率・容積率', 'Coverage / FAR (建ぺい率・容積率)'], ['用途地域', 'Zoning (用途地域)'],
+    ['地目', 'Land category (地目)'], ['土地の権利形態', 'Land rights (権利形態)'],
+    ['私道負担・道路', 'Road / private road'], ['接道', 'Frontage road'],
+    ['構造・工法', 'Structure (構造)'], ['完成時期', 'Built / completion'],
+    ['引渡可能時期', 'Handover'], ['総戸数', 'Total units'], ['取引態様', 'Transaction type'],
+  ];
+  // Nav / contact-form / company boilerplate to hide from the sheet.
+  private specJunk = [
+    'お名前', 'メールアドレス', '電話番号', 'ご住所', 'お問い合わせ', 'お問い合せ', '必須',
+    'を買う', '借りる', '建てる', '売る', 'リフォームする', '住まいの相談', 'サポート',
+    '会社概要', '問い合わせ先', '免許番号', '情報提供日', '次回更新予定日', '取引条件有効期限',
+    'イベント情報', '販売スケジュール', '関連リンク', '担当者', '半角', '物件名',
+  ];
+
+  // Curated important fields (ordered), only those present with a real value.
+  keyFacts(d?: PropertyDetail): { label: string; value: string }[] {
+    if (!d?.specs) return [];
+    const entries = Object.entries(d.specs);
+    const out: { label: string; value: string }[] = [];
+    for (const [matcher, label] of this.keyFactDefs) {
+      const nm = matcher.replace(/[（）()\s・]/g, '');
+      const hit = entries.find(([k, v]) => this.normKey(k).includes(nm) && !this.emptyVal(v));
+      if (hit) out.push({ label, value: hit[1] });
+    }
+    return out;
+  }
+
+  private isKeyFact(k: string): boolean {
+    const nk = this.normKey(k);
+    return this.keyFactDefs.some(([m]) => nk.includes(m.replace(/[（）()\s・]/g, '')));
+  }
+
+  // Remaining real fields (cleaned, non-empty, junk-free, not already a key fact).
+  otherSpecs(d?: PropertyDetail): { k: string; v: string }[] {
+    return this.cleanedSpecs(d).filter(e => !this.isKeyFact(e.k));
+  }
+
+  // Cleaned full list (used by the search-results expansion).
+  specList(d?: PropertyDetail): { k: string; v: string }[] {
+    return this.cleanedSpecs(d);
+  }
+
+  private cleanedSpecs(d?: PropertyDetail): { k: string; v: string }[] {
+    if (!d?.specs) return [];
+    const seen = new Set<string>();
+    const out: { k: string; v: string }[] = [];
+    for (const [k, v] of Object.entries(d.specs)) {
+      if (this.emptyVal(v)) continue;
+      const ck = this.cleanKey(k);
+      if (!ck || seen.has(ck) || this.specJunk.some(j => ck.includes(j))) continue;
+      seen.add(ck);
+      out.push({ k: ck, v });
+    }
+    return out;
+  }
+
+  // --- results table sorting (numeric columns) ------------------------------
+  // Shared by the Search tab and the crawler preview — only one of those two
+  // tables is on screen at a time. A null key means "keep the server's order".
+  sortKey: string | null = null;
+  sortDir: 1 | -1 = 1;
+
+  /** Value a sortable column compares on; null = blank cell (sinks to bottom). */
+  private sortVal(r: Listing, key: string): number | null {
+    switch (key) {
+      case 'price': return r.price_yen;
+      case 'ppm2': {
+        const a = this.area(r);
+        return (r.price_yen && a) ? r.price_yen / a : null;
+      }
+      case 'building_m2': return r.building_m2;
+      case 'land_m2': return r.land_m2;
+      case 'age_years': return r.age_years;
+      case 'walk': return r.nearest_walk_min;
+      case 'commute_min': return (r as any).commute_min ?? null;
+      default: return null;
+    }
+  }
+
+  /** Columns that sort as text. Type groups by what the row *is*, then by the
+   * finer label, so 賃貸マンション and 賃貸アパート stay apart inside 賃貸. */
+  private sortText(r: Listing, key: string): string | null {
+    switch (key) {
+      case 'type': return `${this.catLabel(r.category)}\u0000${r['property_label'] || ''}`;
+      case 'ward': return r.ward || null;
+      case 'layout': return r.layout || null;
+      default: return null;
+    }
+  }
+  private readonly TEXT_SORT = new Set(['type', 'ward', 'layout']);
+
+  /** Click cycle on a header: ascending → descending → back to unsorted. */
+  toggleSort(key: string): void {
+    if (this.sortKey !== key) { this.sortKey = key; this.sortDir = 1; }
+    else if (this.sortDir === 1) { this.sortDir = -1; }
+    else { this.sortKey = null; this.sortDir = 1; }
+  }
+
+  // Memoised so the template gets a stable array reference between change
+  // detection passes (a fresh array every check trips *ngFor's dev-mode check).
+  private sortCache: { src: Listing[]; key: string; dir: number; out: Listing[] } | null = null;
+
+  sortRows(rows: Listing[]): Listing[] {
+    const key = this.sortKey;
+    if (!key || !rows || rows.length < 2) return rows;
+    const c = this.sortCache;
+    if (c && c.src === rows && c.key === key && c.dir === this.sortDir) return c.out;
+    const text = this.TEXT_SORT.has(key);
+    const out = [...rows].sort((a, b) => {
+      const x = text ? this.sortText(a, key) : this.sortVal(a, key);
+      const y = text ? this.sortText(b, key) : this.sortVal(b, key);
+      if (x == null) return y == null ? 0 : 1;   // blanks last, both directions
+      if (y == null) return -1;
+      // Japanese labels need a collator; a plain < compares code points and
+      // orders 賃貸/土地/中古 arbitrarily.
+      return (text ? (x as string).localeCompare(y as string, 'ja')
+                   : (x as number) - (y as number)) * this.sortDir;
+    });
+    this.sortCache = { src: rows, key, dir: this.sortDir, out };
+    return out;
+  }
+
+  /** Arrow shown in a sortable header ('' when that column isn't the sort key). */
+  sortArrow(key: string): string {
+    if (this.sortKey !== key) return '';
+    return this.sortDir === 1 ? '▲' : '▼';
+  }
+
+  // --- formatting helpers ---
+  fmtYen(y: number | null | undefined): string {
+    if (y == null) return '—';
+    if (y >= 1e8) return (y / 1e8).toFixed(2).replace(/\.00$/, '') + '億';
+    return Math.round(y / 1e4).toLocaleString() + '万';
+  }
+  area(r: Listing): number | null { return (r.building_m2 || 0) || r.land_m2; }
+  ppm2(r: Listing): string {
+    const a = this.area(r);
+    return (r.price_yen && a) ? Math.round(r.price_yen / a).toLocaleString() : '—';
+  }
+}

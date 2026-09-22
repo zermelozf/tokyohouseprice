@@ -3,6 +3,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LanguageService } from '../../services/language.service';
 import { CommonModule } from '@angular/common';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
+// Same source of truth that gates the /scraper route: dev-routes.ts in local
+// builds, swapped for an empty dev-routes.prod.ts in deploy builds via
+// angular.json fileReplacements. (environment.prod.ts is NOT swapped in, so we
+// can't rely on environment.production here.)
+import { devRoutes } from '../../dev-routes';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -42,6 +48,18 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
               Rent vs Buy
             </a>
             
+            <!-- Local-only SUUMO scraper dashboard: hidden in production builds,
+                 and hidden until you are signed in — the route and the API both
+                 refuse anyway, so offering the link is just a dead end. -->
+            <a *ngIf="showScraper && (auth.user$ | async)"
+               routerLink="/scraper"
+               class="navbar-item"
+               routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact: true}"
+               (click)="closeMenu()">
+              Scraper
+            </a>
+
             <div class="nav-item dropdown" (mouseleave)="closeBlogMenu()">
               <button class="navbar-item dropdown-toggle" (click)="toggleBlogMenu()">
                 Blog <span class="arrow-down" [class.open]="isBlogMenuOpen"></span>
@@ -70,11 +88,39 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
           <div class="language-switcher">
             <app-language-selector></app-language-selector>
           </div>
+
+          <!-- Sign-in belongs in the bar, not behind an admin URL: it is how
+               your reviews get your name on them. -->
+          <div class="auth-box">
+            <ng-container *ngIf="auth.user$ | async as user; else signedOut">
+              <img *ngIf="user.photoURL" [src]="user.photoURL" class="auth-avatar" alt="">
+              <span class="auth-name" [title]="user.email || ''">{{ user.displayName || user.email }}</span>
+              <button class="auth-btn" (click)="signOut()" i18n="@@nav.signOut">Sign out</button>
+            </ng-container>
+            <ng-template #signedOut>
+              <button class="auth-btn primary" (click)="signIn()" [disabled]="busy">
+                <i class="fab fa-google"></i>
+                <span i18n="@@nav.signIn">{{ busy ? 'Signing in…' : 'Sign in' }}</span>
+              </button>
+            </ng-template>
+            <span class="auth-err" *ngIf="authError">{{ authError }}</span>
+          </div>
         </div>
       </div>
     </nav>
   `,
   styles: [`
+    .auth-box { display: flex; align-items: center; gap: 0.5rem; margin-left: 0.75rem; }
+    .auth-avatar { width: 26px; height: 26px; border-radius: 50%; }
+    .auth-name { font-size: 0.8rem; color: #555; max-width: 11rem;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .auth-btn { border: 1px solid #ddd; background: #fff; color: #444; cursor: pointer;
+                padding: 0.3rem 0.7rem; border-radius: 4px; font-size: 0.8rem; }
+    .auth-btn.primary { background: #FF69B4; border-color: #FF69B4; color: #fff; }
+    .auth-btn:hover { filter: brightness(0.97); }
+    .auth-err { font-size: 0.75rem; color: #c2410c; }
+    @media (max-width: 768px) { .auth-name { display: none; } }
+
     .navbar {
       background-color: #ffffff;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -355,9 +401,33 @@ export class NavbarComponent implements OnInit {
   currentLang: string;
   isMenuOpen = false;
   isBlogMenuOpen = false;
+  // The route has to exist in this build (local dev; devRoutes is emptied in
+  // deploy builds) *and* you have to be signed in — see the template.
+  showScraper = devRoutes.some(r => r.path === 'scraper');
+  busy = false;
+  authError = '';
 
-  constructor(private languageService: LanguageService) {
+  constructor(private languageService: LanguageService,
+              public auth: AuthService) {
     this.currentLang = this.languageService.getCurrentLang();
+  }
+
+  async signIn(): Promise<void> {
+    this.busy = true;
+    this.authError = '';
+    try {
+      await this.auth.signInWithGoogle();
+    } catch (e: any) {
+      // A closed popup is the user changing their mind, not a failure worth
+      // shouting about.
+      this.authError = e?.code === 'auth/popup-closed-by-user' ? '' : 'sign-in failed';
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async signOut(): Promise<void> {
+    try { await this.auth.signOut(); } catch { this.authError = 'sign-out failed'; }
   }
   
   ngOnInit(): void {

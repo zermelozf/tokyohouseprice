@@ -1,0 +1,374 @@
+"""Orchestrate a crawl: fetch -> bronze -> parse -> silver, page by page."""
+from __future__ import annotations
+
+import logging
+import re
+from datetime import datetime, timedelta
+
+from . import bronze, silver, parse_sale, parse_rent, suumo_url, normalize, detail, query
+from . import commute
+from .config import CATEGORIES, WARDS, build_search_url
+from .db import init_db
+from .fetch import Fetcher
+
+log = logging.getLogger("suumo.pipeline")
+
+_PARSERS = {"sale": parse_sale.parse_page, "rent": parse_rent.parse_page}
+
+
+# Detail pages are the expensive half of a crawl — one fetch per property, two
+# for rent (the map lives on a separate tab). A property an hour from the school
+# is never going to be chosen, so paying for its exact coordinates is waste.
+ENRICH_COMMUTE_MAX_MIN = 40
+# SUUMO's own price ceiling stops at 1億2千万, so the budget cannot be pushed
+# into the search URL — which means over-budget listings arrive anyway. Gate
+# the detail fetch on it too, or the expensive half of the crawl is spent on
+# properties that were never candidates.
+ENRICH_BUDGET_YEN = 200_000_000
+# A crawl stops when a page comes back with no cards, which is the honest end
+# of a result set — SUUMO answers a page past the end with its station-picker,
+# which parses to zero. So this is a runaway backstop, not a budget: list pages
+# are one fetch per ~30 listings, the expensive half is the detail pass, and
+# out-of-scope rows are dropped before they are stored. A low cap truncated
+# silently instead: the 賃貸 crawl saw 90 of 583 listings, so a different slice
+# surfaced each day and the rest read as "not re-crawled".
+MAX_PAGES = 200
+# How long a detail snapshot is trusted when the page publishes no
+# 次回更新予定日 (sale pages generally do not). Chosen to match the median lead
+# time SUUMO gives on the pages that do state one.
+DETAIL_MAX_AGE_DAYS = 7
+
+
+def in_scope(row: dict, commute_max: int | None, budget_yen: int | None,
+             cache: dict | None = None) -> bool:
+    """Whether a listing is a candidate at all.
+
+    SUUMO cannot express either limit in a search URL — its price ceiling stops
+    at 1億2千万, and a station-based search knows nothing about the walk from
+    the listing to that station — so a crawl returns listings that are out of
+    scope on arrival. Storing them means every later step (enrichment,
+    geocoding, the map) has to keep re-deciding to ignore them.
+
+    Anything that cannot be judged — no cached commute, no price — is kept, so
+    a missing lookup never silently drops a listing.
+    """
+    if commute_max is not None:
+        got = commute.listing_commute(row.get("station_raw"), cache
+                                      if cache is not None else commute.table())
+        if got and got["commute_min"] > commute_max:
+            return False
+    if budget_yen is not None and row.get("price_yen") is not None:
+        cap = query.budget_ceiling(row, {"budget_yen": budget_yen})
+        if cap is not None and row["price_yen"] > cap:
+            return False
+    return True
+
+
+def keep_in_scope(snapshots: list[dict],
+                  commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
+                  budget_yen: int | None = ENRICH_BUDGET_YEN) -> tuple[list[dict], int]:
+    """(kept, dropped) — applied before the rows are written, not after."""
+    if commute_max is None and budget_yen is None:
+        return snapshots, 0
+    cache = commute.table()
+    kept = [r for r in snapshots if in_scope(r, commute_max, budget_yen, cache)]
+    return kept, len(snapshots) - len(kept)
+
+
+def reparse_details(limit: int | None = None) -> dict:
+    """Re-extract every archived detail page, without fetching anything.
+
+    This is what bronze is for. An extractor fix — a photo pattern, a spec
+    label, a coordinate format — should cost a pass over stored HTML, not
+    another crawl of SUUMO. Pages archived from now on are re-readable this
+    way; the ones fetched before detail archiving existed are not, which is
+    what made the resizeImage fix expensive.
+    """
+    from . import bronze, detail
+    from .db import connect as _connect
+    conn = _connect()
+    try:
+        pages = list(conn.execute(
+            "SELECT path, url, MAX(fetched_at) FROM fetch_manifest "
+            "WHERE market = 'detail' GROUP BY url ORDER BY fetched_at DESC"))
+    finally:
+        conn.close()
+    if limit:
+        pages = pages[:limit]
+    day = datetime.now().strftime("%Y-%m-%d")
+    done = failed = 0
+    for row in pages:
+        try:
+            html = bronze.read_page(row["path"])
+        except Exception as exc:
+            log.warning("bronze read failed for %s: %s", row["path"], exc)
+            failed += 1
+            continue
+        try:
+            loc = detail.extract_location(html)
+            extracted = detail.extract_specs(html)
+            specs = extracted["specs"]
+            m = re.search(r"/((?:nc|jnc)_[0-9]+)/", row["url"] or "")
+            query.save_detail({
+                "property_id": m.group(1) if m else None,
+                "url": row["url"],
+                "lat": loc["lat"], "lng": loc["lng"],
+                "address": specs.get("所在地") or specs.get("住所"),
+                "title": extracted.get("title"),
+                "specs": specs,
+                "images": detail.extract_images(html),
+            }, scrape_date=day)
+            done += 1
+        except Exception as exc:
+            log.warning("reparse failed for %s: %s", row["url"], exc)
+            failed += 1
+    return {"pages": len(pages), "reparsed": done, "failed": failed}
+
+
+def prune(commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
+          budget_yen: int | None = ENRICH_BUDGET_YEN,
+          dry_run: bool = True) -> dict:
+    """Delete stored listings that were never candidates.
+
+    Crawls returned them because SUUMO cannot express either limit in a search
+    URL; keeping them means the map, the enrichment pass and the geocoder each
+    spend effort on listings that are then filtered out anyway.
+
+    Out of scope means deleted, with no exception for having been reviewed: a
+    listing an hour from the school is not a candidate whatever you thought of
+    it. The verdict itself survives in listing_review, which records decisions
+    rather than listings.
+
+    Bronze HTML is untouched — it is the source of truth, and silver can be
+    rebuilt from it, so this is reversible in the way that matters.
+    """
+    from . import query as _q
+    rows = _q.search_db({"limit": 1_000_000})
+    cache = commute.table()
+    doomed = [r["property_id"] for r in rows
+              if not in_scope(r, commute_max, budget_yen, cache)]
+    out = {"scanned": len(rows), "out_of_scope": len(doomed),
+           "deleting": len(doomed),
+           "remaining": len(rows) - len(doomed), "dry_run": dry_run,
+           "commute_max": commute_max, "budget_yen": budget_yen}
+    if dry_run or not doomed:
+        return out
+    conn = init_db()
+    try:
+        for i in range(0, len(doomed), 500):
+            chunk = doomed[i:i + 500]
+            marks = ",".join("?" * len(chunk))
+            conn.execute(f"DELETE FROM listings_snapshot WHERE property_id IN ({marks})", chunk)
+            conn.execute(f"DELETE FROM property_detail WHERE property_id IN ({marks})", chunk)
+        conn.commit()
+        conn.execute("VACUUM")
+    finally:
+        conn.close()
+    return out
+
+
+def _worth_enriching(pids: list[str], commute_max: int | None,
+                     budget_yen: int | None) -> set[str]:
+    """Which of `pids` deserve a detail fetch.
+
+    Anything that cannot be judged — no cached commute, no price — is kept, so
+    a missing lookup never silently drops a listing.
+    """
+    if not pids or (commute_max is None and budget_yen is None):
+        return set(pids)
+    cache = commute.table()
+    conn = query.connect()
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT property_id, station_raw, category, building_m2, price_yen "
+            "FROM listings_snapshot "
+            f"WHERE property_id IN ({','.join('?' * len(pids))})", pids).fetchall()
+    finally:
+        conn.close()
+    keep = set(pids)
+    for r in rows:
+        if commute_max is not None:
+            got = commute.listing_commute(r["station_raw"], cache)
+            if got and got["commute_min"] > commute_max:
+                keep.discard(r["property_id"])
+                continue
+        if budget_yen is not None and r["price_yen"] is not None:
+            cap = query.budget_ceiling(dict(r), {"budget_yen": budget_yen})
+            if cap is not None and r["price_yen"] > cap:
+                keep.discard(r["property_id"])
+    return keep
+
+
+def _fetched_within(property_id: str, today: str, days: int) -> bool:
+    """Was this property's detail fetched in the last `days`? Coordinates never
+    move and spec edits are rare, so a recent snapshot is as good as a new one."""
+    cutoff = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=days)).strftime("%Y-%m-%d")
+    conn = query.connect()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM property_detail WHERE property_id = ? AND scrape_date >= ? "
+            "LIMIT 1", (property_id, cutoff)).fetchone()
+    finally:
+        conn.close()
+    return row is not None
+
+
+def enrich_details(fetcher: Fetcher, scraped: dict[str, str], scrape_date: str,
+                   commute_max: int | None = ENRICH_COMMUTE_MAX_MIN,
+                   budget_yen: int | None = ENRICH_BUDGET_YEN) -> int:
+    """Post-processing: fetch each just-crawled property's detail page for its
+    exact location + full spec table, storing a (property_id, scrape_date)
+    snapshot. Skips properties already enriched today, and any beyond
+    `commute_max` minutes of the school; one failure never aborts the rest.
+    Returns how many were newly fetched.
+    """
+    done = 0
+    near = _worth_enriching([p for p in scraped if p], commute_max, budget_yen)
+    skipped = len(scraped) - len(near)
+    if skipped:
+        log.info("enrich: skipping %d listing(s) beyond %s min or over ¥%s",
+                 skipped, commute_max, f"{budget_yen:,}" if budget_yen else "—")
+    stale = 0
+    for pid, url in scraped.items():
+        if not pid or not url or pid not in near:
+            continue
+        if query.get_detail(pid, scrape_date):
+            continue                       # already done today
+        # SUUMO states when it will next refresh a listing (次回更新予定日,
+        # typically a week out). Before that date the page cannot have changed,
+        # so re-fetching it is guaranteed waste.
+        fresh_until = query.detail_fresh_until(pid)
+        if fresh_until:
+            if fresh_until > scrape_date:
+                stale += 1
+                continue
+        elif _fetched_within(pid, scrape_date, DETAIL_MAX_AGE_DAYS):
+            stale += 1
+            continue
+        try:
+            res = detail.scrape_detail(url, fetcher=fetcher)
+            query.save_detail(res, scrape_date=scrape_date)
+            done += 1
+        except Exception as exc:  # keep going; enrichment is best-effort
+            log.warning("enrich %s failed: %s", pid, exc)
+    if stale:
+        log.info("enrich: %d listing(s) still fresh per 次回更新予定日", stale)
+    return done
+
+
+def crawl_category_ward(conn, fetcher: Fetcher, category: str, ward: str,
+                        max_pages: int = MAX_PAGES, scraped: dict | None = None) -> dict:
+    """Crawl up to `max_pages` of one category+ward. Returns a small summary.
+    If `scraped` is given, records each listing's {property_id: url} for the
+    post-crawl detail enrichment pass."""
+    cat = CATEGORIES[category]
+    parse_page = _PARSERS[cat["parser"]]
+    ctx = {"market": cat["market"], "category": category, "ward": ward}
+    now = datetime.now()
+
+    total_records = 0
+    pages_done = 0
+    for page in range(1, max_pages + 1):
+        url = build_search_url(category, ward, page)
+        html = fetcher.get(url)
+        records = parse_page(html, ctx)
+        bronze.save_page(conn, source="suumo", market=cat["market"],
+                         category=category, ward=ward, page=page, url=url,
+                         html=html, n_cards=len(records))
+        if not records:
+            log.info("%s/%s page %d: 0 cards, stopping", category, ward, page)
+            break
+        if scraped is not None:
+            for r in records:
+                if r.get("property_id") and r.get("url"):
+                    scraped[r["property_id"]] = r["url"]
+        snaps, dropped = keep_in_scope(
+            [silver.to_snapshot(r, scraped_at=now) for r in records])
+        n = silver.upsert(conn, snaps)
+        total_records += n
+        pages_done = page
+        log.info("%s/%s page %d: %d listings%s", category, ward, page, n,
+                 f" ({dropped} out of scope, not stored)" if dropped else "")
+
+    return {"category": category, "ward": ward,
+            "pages": pages_done, "listings": total_records}
+
+
+def crawl_url(url: str, max_pages: int = MAX_PAGES,
+              min_delay: float = 2.0, max_delay: float = 4.0,
+              enrich: bool = True) -> dict:
+    """Crawl a pasted SUUMO search-results URL (bronze+silver), then (if `enrich`)
+    fetch each listing's detail page for exact location + full specs."""
+    meta = suumo_url.parse_suumo_url(url)
+    parse_page = _PARSERS[meta["parser"]]
+    ctx = {"market": meta["market"], "category": meta["category"], "ward": meta["ward_label"]}
+    now = datetime.now()
+
+    conn = init_db()
+    total, pages_done, enriched = 0, 0, 0
+    scraped: dict[str, str] = {}
+    with Fetcher(min_delay=min_delay, max_delay=max_delay) as fetcher:
+        for page in range(1, max_pages + 1):
+            purl = suumo_url.page_url(url, page)
+            html = fetcher.get(purl)
+            records = parse_page(html, ctx)
+            for r in records:  # label each listing by its own ward (URL may span several)
+                r["ward"] = normalize.ward_from_address(r.get("address")) or meta["ward_label"]
+                if r.get("property_id") and r.get("url"):
+                    scraped[r["property_id"]] = r["url"]
+            bronze.save_page(conn, source="suumo", market=meta["market"],
+                             category=meta["category"], ward=meta["ward_label"],
+                             page=page, url=purl, html=html, n_cards=len(records))
+            if not records:
+                break
+            snaps, dropped = keep_in_scope(
+                [silver.to_snapshot(r, scraped_at=now) for r in records])
+            n = silver.upsert(conn, snaps)
+            total += n
+            pages_done = page
+            log.info("url-crawl %s/%s page %d: %d listings%s",
+                     meta["category"], meta["ward_label"], page, n,
+                     f" ({dropped} out of scope, not stored)" if dropped else "")
+        if enrich and scraped:
+            day = now.strftime("%Y-%m-%d")
+            enriched = enrich_details(fetcher, scraped, day)
+            log.info("enriched %d/%d detail pages", enriched, len(scraped))
+    conn.close()
+    return {"url": url, **meta, "pages": pages_done, "listings": total,
+            "enriched": enriched, "seen": len(scraped)}
+
+
+def crawl(categories: list[str], wards: list[str], max_pages: int = MAX_PAGES,
+          min_delay: float = 2.0, max_delay: float = 4.0,
+          enrich: bool = True) -> list[dict]:
+    """Crawl the cartesian product of categories x wards, then (if `enrich`)
+    fetch each listing's detail page for exact location + full specs."""
+    for c in categories:
+        if c not in CATEGORIES:
+            raise ValueError(f"unknown category {c!r}")
+    for w in wards:
+        if w not in WARDS:
+            raise ValueError(f"unknown ward {w!r}")
+
+    conn = init_db()
+    summaries: list[dict] = []
+    scraped: dict[str, str] = {}
+    with Fetcher(min_delay=min_delay, max_delay=max_delay) as fetcher:
+        for ward in wards:
+            for category in categories:
+                try:
+                    s = crawl_category_ward(conn, fetcher, category, ward, max_pages,
+                                            scraped=scraped)
+                    summaries.append(s)
+                except Exception as exc:  # keep going; one failure shouldn't abort the crawl
+                    log.error("crawl %s/%s failed: %s", category, ward, exc)
+                    summaries.append({"category": category, "ward": ward,
+                                      "pages": 0, "listings": 0, "error": str(exc)})
+        if enrich and scraped:
+            day = datetime.now().strftime("%Y-%m-%d")
+            got = enrich_details(fetcher, scraped, day)
+            log.info("enriched %d/%d detail pages", got, len(scraped))
+            summaries.append({"category": "(details)", "ward": "", "pages": 0,
+                              "listings": 0, "enriched": got, "seen": len(scraped)})
+    conn.close()
+    return summaries
